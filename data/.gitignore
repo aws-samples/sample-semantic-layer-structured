@@ -1,0 +1,43 @@
+# Ignore downloaded ontology sources (large files ~500MB)
+ontology-sources/
+
+# Ignore converted markdown docs (generated files)
+ontology-docs/
+
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+virtualenv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Data files (uncomment specific patterns as needed)
+# *.csv
+# *.parquet
+# *.json
+# *.db
+# *.sqlite
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude
+.claude/*

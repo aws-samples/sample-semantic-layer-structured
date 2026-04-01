@@ -1,0 +1,59 @@
+{
+  "name": "semantic-layer-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@aws-amplify/ui-react": "6.15.0",
+    "@cloudscape-design/components": "3.0.1200",
+    "@cloudscape-design/global-styles": "1.0.50",
+    "aws-amplify": "6.16.2",
+    "axios": "1.13.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-force-graph-2d": "1.29.1",
+    "react-markdown": "10.1.0",
+    "react-router-dom": "6.30.3",
+    "recharts": "2.15.4",
+    "socket.io-client": "4.8.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/react": "18.3.28",
+    "@types/react-dom": "18.3.7",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "overrides": {
+    "nth-check": "^2.0.1",
+    "webpack-dev-server": "^4.15.1",
+    "postcss": "^8.4.31",
+    "serialize-javascript": ">=7.0.3",
+    "underscore": ">=1.13.8",
+    "fast-xml-parser": "5.5.8",
+    "socket.io-parser": "4.2.6"
+  }
+}

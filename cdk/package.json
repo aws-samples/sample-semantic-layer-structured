@@ -1,0 +1,48 @@
+{
+  "name": "semantic-layer-cdk",
+  "version": "1.0.0",
+  "description": "AWS CDK infrastructure for Semantic Layer with Insurance Data",
+  "main": "bin/app.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy --all",
+    "diff": "cdk diff",
+    "destroy": "cdk destroy --all"
+  },
+  "keywords": [
+    "aws",
+    "cdk",
+    "semantic-layer",
+    "neptune",
+    "bedrock",
+    "agentcore"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.160",
+    "@types/jest": "29.5.14",
+    "@types/node": "20.19.33",
+    "aws-cdk": "2.1106.0",
+    "jest": "29.7.0",
+    "ts-jest": "29.4.6",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-bedrock-agentcore-alpha": "2.245.0-alpha.0",
+    "@aws-sdk/client-codebuild": "3.990.0",
+    "aws-cdk-lib": "2.245.0",
+    "cdk-nag": "2.37.55",
+    "constructs": "10.5.1",
+    "esbuild": "0.27.4"
+  },
+  "overrides": {
+    "brace-expansion": "1.1.13",
+    "brace-expansion@^5": "5.0.5"
+  }
+}

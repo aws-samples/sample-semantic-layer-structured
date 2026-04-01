@@ -1,0 +1,221 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Python Virtual Environments
+venv/
+venv
+.venv/
+env/
+ENV/
+virtualenv/
+.env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Python Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+data/eval
+data/eval/*
+
+**.log**
+
+# Node.js / Frontend
+**node_modules**
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp
+.pnp.js
+
+# Frontend Build Output
+/frontend/build
+/frontend/dist
+/frontend/.next
+/frontend/out
+/frontend/.nuxt
+/frontend/.cache
+/frontend/.parcel-cache
+
+# Testing / Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# AWS CDK
+cdk.out/
+cdk.out.*/
+.cdk.staging/
+cdk.context.json
+*.assets.json
+cdk/cdk-outputs-*.json
+cdk/cdk-outputs-lambda.json
+cdk/cdk-outputs-agentcore.json
+
+# AWS SAM
+.aws-sam/
+
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.env
+
+# AWS Credentials (NEVER commit these)
+.aws/
+*credentials*
+*.pem
+*.key
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+.history/
+.vs/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.cache/
+tmp/
+temp/
+
+# Data Files (uncomment if needed)
+data/eval
+data/eval*
+docs/plans
+docs/plans*
+docs/research
+docs/research*
+docs/workshop
+docs/workshop*
+# *.csv
+# *.parquet
+# *.json
+# *.db
+# *.sqlite
+
+# Large Files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Documentation
+docs/
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+site/
+docs/plans/
+docs/research/
+docs/workshop/
+docs/security_reports/
+
+# Package files
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Compiled source
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# CloudFormation generated templates
+*.template.json
+*.template.yaml
+
+# Terraform (if used)
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Local configuration
+config.local.json
+local.config.js
+
+# Generated files
+generated/
+.generated/
+
+# Worktrees (Git Worktree directories)
+/worktrees/
+.worktrees/
+.claude
+.claude/

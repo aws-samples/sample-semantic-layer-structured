@@ -1,0 +1,73 @@
+# Version control
+.git/**
+
+# Dependencies
+node_modules/**
+
+# Build outputs
+cdk.out/**
+dist/**
+build/**
+out/**
+lib/**/*.js
+lib/**/*.d.ts
+
+# Cache directories
+.cache/**
+.ruff_cache/**
+.pytest_cache/**
+.nyc_output/**
+
+# Python
+__pycache__/**
+**/__pycache__/**
+venv/**
+.venv/**
+env/**
+ENV/**
+*.egg-info/**
+.eggs/**
+
+# Testing
+coverage/**
+htmlcov/**
+test-results/**
+playwright-report/**
+playwright/.cache/**
+
+# CDK
+.cdk.staging/**
+
+# AWS
+.aws-sam/**
+
+# Jupyter
+.ipynb_checkpoints/**
+.virtual_documents/**
+
+# IDEs
+.vscode/**
+.idea/**
+.settings/**
+
+# OS files
+.DS_Store
+**/.DS_Store
+
+# Logs
+logs/**
+
+# Temporary files
+tmp/**
+.temp/**
+
+# Git worktrees
+worktrees/**
+
+# Project-specific
+.husky/**
+.kiro/**
+.factory/**
+test-data/**
+.claude/**
+docs/kit/**

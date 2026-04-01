@@ -1,0 +1,9 @@
+# Semgrep path exclusions
+#
+# frontend/src: ~80 jsx-not-internationalized findings excluded — this is a demo application
+# and i18n is explicitly out of scope. react-props-spreading in test setup is intentional RTL usage.
+frontend/src/
+
+# cdk-outputs-lambda.json: Cognito UserPoolClientId and CloudFront header value trigger generic-api-key
+# false positives — same values suppressed in .checkov.yaml and .gitleaksignore
+cdk/cdk-outputs-lambda.json

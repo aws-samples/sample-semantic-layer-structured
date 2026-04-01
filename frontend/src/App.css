@@ -1,0 +1,19 @@
+/* Increase the width of the TopNavigation identity section to prevent title truncation */
+[class*="awsui_identity"] {
+  max-width: 400px !important;
+  min-width: 300px !important;
+}
+
+/* Target the identity link text specifically */
+[class*="awsui_identity"] a {
+  max-width: 400px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Ensure the title text doesn't get truncated */
+[class*="awsui_title"] {
+  max-width: none !important;
+  overflow: visible !important;
+}

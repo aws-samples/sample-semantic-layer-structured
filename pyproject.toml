@@ -1,0 +1,3 @@
+[tool.bandit]
+# B311 is suppressed inline in generate_complete_synthetic_data.py via # nosec B311 comments
+# (per_file_ignores is not a valid Bandit key and is silently ignored)

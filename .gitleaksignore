@@ -1,0 +1,6 @@
+# Gitleaks ignore file - excludes false positive findings
+# Format: fingerprint from gitleaks report
+
+# False positive: README.md documentation placeholder tokens
+96decd88f69cb1976e7ea9d89fa9a90dadf99eeb:README.md:curl-auth-header:689
+357f37738cdb897f6a9ff040916871b178adcfd0:README.md:curl-auth-header:694

@@ -1,0 +1,4 @@
+# DLQ Processor Lambda Dependencies
+boto3>=1.34.0
+# Note: PyIceberg dependencies are in the shared Lambda layer if DLQ processor writes directly,
+# but this version re-invokes stream processor Lambda to avoid layer duplication

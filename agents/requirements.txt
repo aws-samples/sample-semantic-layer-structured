@@ -20,7 +20,7 @@ pydantic==2.12.5  # Data validation for models
 
 # Authentication and security
 PyJWT==2.12.1  # JWT token validation
-cryptography==46.0.6  # Cryptographic functions for JWT
+cryptography==46.0.7  # Cryptographic functions for JWT
 
 # HTTP client
 aiohttp==3.13.3  # Async HTTP client (required by smithy-http)

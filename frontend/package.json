@@ -7,7 +7,7 @@
     "@cloudscape-design/components": "3.0.1200",
     "@cloudscape-design/global-styles": "1.0.50",
     "aws-amplify": "6.16.2",
-    "axios": "1.13.5",
+    "axios": "1.15.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-force-graph-2d": "1.29.1",

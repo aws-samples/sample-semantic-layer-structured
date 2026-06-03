@@ -23,7 +23,7 @@ PyJWT==2.12.1  # JWT token validation
 cryptography==46.0.6  # Cryptographic functions for JWT
 
 # HTTP client
-aiohttp==3.13.3  # Async HTTP client (required by smithy-http)
+aiohttp==3.14.0  # Async HTTP client (required by smithy-http)
 requests==2.33.1  # HTTP requests for auth validation
 
 # Environment configuration

@@ -19,7 +19,7 @@ aws-opentelemetry-distro==0.15.0  # Distributed tracing (minimum version for Age
 pydantic==2.12.5  # Data validation for models
 
 # Authentication and security
-PyJWT==2.12.1  # JWT token validation
+PyJWT==2.13.0  # JWT token validation
 cryptography==46.0.6  # Cryptographic functions for JWT
 
 # HTTP client

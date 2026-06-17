@@ -1,0 +1,9 @@
+# DS-0002: Lambda base images (public.ecr.aws/lambda/python:*) require root.
+# The AWS Lambda Runtime bootstrap (/var/runtime/bootstrap) must run as UID 0.
+# Adding USER non-root breaks the invocation path. Checkov CKV_DOCKER_3 is also
+# suppressed in each Dockerfile for the same reason. Re-evaluate if any Lambda
+# image migrates to python:3.12-slim + awslambdaric (as rest-api/Dockerfile does).
+DS-0002
+
+# docs/ contains workshop reference material (PDFs, PPTX, raw CF snippets) — not deployed IaC.
+# Always pass --skip-dirs docs/ when running trivy on this repo.

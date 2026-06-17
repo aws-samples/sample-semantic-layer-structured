@@ -1,0 +1,8 @@
+{
+  "comment": "Foundation models invoked by this agent. Read by cdk/lib/stacks/backend/agentcore-stack.ts to derive bedrock:InvokeModel IAM grants. Every model_id literal in *.py under this directory must appear here (enforced by tests/unit/test_model_manifests.py).",
+  "foundation_models": [
+    "global.anthropic.claude-sonnet-4-6",
+    "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+    "amazon.titan-embed-text-v2:0"
+  ]
+}

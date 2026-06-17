@@ -1,0 +1,2 @@
+bedrock-agentcore-starter-toolkit==0.1.19
+boto3>=1.38.0

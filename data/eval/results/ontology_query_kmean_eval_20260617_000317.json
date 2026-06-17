@@ -1,0 +1,226 @@
+{
+  "notebook": "6_ontology_query",
+  "arm_label": "vkg",
+  "agent": "ontology_query_agent",
+  "agent_id": "semantic_layer_dev_ontology_query-HKGVpkE6XK",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:runtime/semantic_layer_dev_ontology_query-HKGVpkE6XK",
+  "eval_id": "vkg-ontology_curated_layer-8b3529dc",
+  "eval_k": 3,
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "FinalAnswerFaithfulness_3a3be4af-wWAuBoGbFL",
+    "SqlGrounded_3a3be4af-e1uxpK6wkT",
+    "ToolCallOrdering_3a3be4af-GSqchbFFl6"
+  ],
+  "custom_evaluators": {
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_3a3be4af-wWAuBoGbFL",
+    "SqlGrounded": "SqlGrounded_3a3be4af-e1uxpK6wkT",
+    "ToolCallOrdering": "ToolCallOrdering_3a3be4af-GSqchbFFl6"
+  },
+  "mean_scores": {
+    "Builtin.GoalSuccessRate": 0.5,
+    "FinalAnswerFaithfulness": 0.5,
+    "SqlGrounded": 0.8367,
+    "ToolCallOrdering": 0.8333
+  },
+  "std_scores": {
+    "Builtin.GoalSuccessRate": 0.0,
+    "FinalAnswerFaithfulness": 0.049,
+    "SqlGrounded": 0.0613,
+    "ToolCallOrdering": 0.0793
+  },
+  "per_run_scores": [
+    {
+      "run": 1,
+      "batch_id": "ontquery_gt_batch_r1_28cfc5a0-a14f431e59",
+      "status": "COMPLETED",
+      "scores": {
+        "ToolCallOrdering": 0.94,
+        "Builtin.GoalSuccessRate": 0.5,
+        "SqlGrounded": 0.75,
+        "FinalAnswerFaithfulness": 0.56
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 19.58,
+        "input_tokens": 309365,
+        "output_tokens": 7260,
+        "total_tokens": 728004
+      }
+    },
+    {
+      "run": 2,
+      "batch_id": "ontquery_gt_batch_r2_e8e4edc4-ead8d6a45b",
+      "status": "COMPLETED",
+      "scores": {
+        "ToolCallOrdering": 0.81,
+        "Builtin.GoalSuccessRate": 0.5,
+        "SqlGrounded": 0.88,
+        "FinalAnswerFaithfulness": 0.44
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 18.76,
+        "input_tokens": 309747,
+        "output_tokens": 7105,
+        "total_tokens": 728614
+      }
+    },
+    {
+      "run": 3,
+      "batch_id": "ontquery_gt_batch_r3_8fe6c5c8-5f16c4c6cc",
+      "status": "COMPLETED",
+      "scores": {
+        "ToolCallOrdering": 0.75,
+        "Builtin.GoalSuccessRate": 0.5,
+        "SqlGrounded": 0.88,
+        "FinalAnswerFaithfulness": 0.5
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 21.08,
+        "input_tokens": 330262,
+        "output_tokens": 9189,
+        "total_tokens": 795609
+      }
+    }
+  ],
+  "agent_perf_mean": {
+    "avg_wall_clock_s": 19.8067,
+    "input_tokens": 316458.0,
+    "output_tokens": 7851.3333,
+    "total_tokens": 750742.3333
+  },
+  "per_scenario_goal_mean": {
+    "gt-row-07": 0.0,
+    "gt-row-14": 1.0,
+    "gt-row-03": 0.0,
+    "gt-row-15": 1.0,
+    "gt-row-02": 0.3333,
+    "gt-row-00": 0.0,
+    "gt-row-13": 1.0,
+    "gt-row-04": 0.0,
+    "mt-simulated-party-count": 1.0,
+    "gt-row-08": 0.0,
+    "gt-row-06": 1.0,
+    "gt-row-01": 0.0,
+    "gt-row-05": 1.0,
+    "mt-no-spurious-clarify": 1.0,
+    "mt-stable-options": 0.6667,
+    "mt-parties-clarify": 0.0
+  },
+  "per_scenario_agent": {
+    "gt-row-02": {
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 20507,
+      "avg_wall_clock_s": 17.23
+    },
+    "gt-row-00": {
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "emitted_sql": true,
+      "sql_run_fraction": 0.3333,
+      "avg_total_tokens": 43432,
+      "avg_wall_clock_s": 32.76
+    },
+    "gt-row-03": {
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 20301,
+      "avg_wall_clock_s": 11.51
+    },
+    "gt-row-01": {
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 54544,
+      "avg_wall_clock_s": 34.97
+    },
+    "gt-row-05": {
+      "question": "How many parties are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 32159,
+      "avg_wall_clock_s": 16.98
+    },
+    "gt-row-07": {
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 6.6
+    },
+    "gt-row-04": {
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 41452,
+      "avg_wall_clock_s": 31.25
+    },
+    "gt-row-06": {
+      "question": "List the top 10 coverage products by name.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 65101,
+      "avg_wall_clock_s": 18.53
+    },
+    "mt-no-spurious-clarify": {
+      "question": "How many parties are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 32033,
+      "avg_wall_clock_s": 15.6
+    },
+    "gt-row-08": {
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 59638,
+      "avg_wall_clock_s": 18.15
+    },
+    "mt-parties-clarify": {
+      "question": "How many are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 32172,
+      "avg_wall_clock_s": 37.74
+    },
+    "mt-simulated-party-count": {
+      "question": "I need to know how many parties exist in the curated layer.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 36884,
+      "avg_wall_clock_s": 17.2
+    },
+    "mt-stable-options": {
+      "question": "How many are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 32203,
+      "avg_wall_clock_s": 56.27
+    },
+    "gt-row-13": {
+      "question": "What are some common metrics that could be calculated with this data?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 23.19
+    },
+    "gt-row-14": {
+      "question": "What can I ask about this semantic layer?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 22.59
+    },
+    "gt-row-15": {
+      "question": "Explain what the coverage table represents.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 15.78
+    }
+  }
+}

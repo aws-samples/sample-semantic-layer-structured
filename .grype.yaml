@@ -1,0 +1,14 @@
+# Grype configuration — vulnerability scan ignore rules.
+#
+# Each entry documents WHY a finding is accepted. Re-evaluate on dependency bumps.
+ignore:
+  # GHSA-vpq2-c234-7xj6 — @tootallnate/once "Incorrect Control Flow Scoping".
+  # Transitive, build-time-only dependency: pulled by http-proxy-agent (a dev/build
+  # tooling chain in frontend/), never bundled into the deployed React app or any
+  # Lambda runtime. Low severity (INFO) and not reachable from production code paths.
+  # Tracked for upstream remediation via Dependabot; ignored until http-proxy-agent
+  # publishes a release that drops the @tootallnate/once 2.x pin.
+  - vulnerability: GHSA-vpq2-c234-7xj6
+    package:
+      name: "@tootallnate/once"
+      version: 2.0.1

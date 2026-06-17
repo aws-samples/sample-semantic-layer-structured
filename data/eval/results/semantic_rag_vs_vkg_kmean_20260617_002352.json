@@ -1,0 +1,122 @@
+{
+  "eval_k": {
+    "semantic-rag": 3,
+    "vkg": 3
+  },
+  "sources": {
+    "semantic-rag": "metadata_query_kmean_eval_20260617_001519.json",
+    "vkg": "ontology_query_kmean_eval_20260617_000317.json"
+  },
+  "eval_ids": {
+    "semantic-rag": "semantic-rag-multi_table_curated_layer-f30559cc",
+    "vkg": "vkg-ontology_curated_layer-8b3529dc"
+  },
+  "kmean_a": {
+    "label": "semantic-rag",
+    "mean_scores": {
+      "Builtin.GoalSuccessRate": 0.69,
+      "FinalAnswerFaithfulness": 0.81,
+      "SqlGrounded": 1.0,
+      "ToolCallOrdering": 1.0
+    },
+    "std_scores": {
+      "Builtin.GoalSuccessRate": 0.0,
+      "FinalAnswerFaithfulness": 0.0,
+      "SqlGrounded": 0.0,
+      "ToolCallOrdering": 0.0
+    },
+    "agent_perf_mean": {
+      "avg_wall_clock_s": 19.2533,
+      "input_tokens": 233393.0,
+      "output_tokens": 7277.0,
+      "total_tokens": 679192.6667,
+      "agent_total_tokens": 679192.6667
+    },
+    "per_scenario_goal_mean": {
+      "gt-row-05": 1.0,
+      "gt-row-04": 0.0,
+      "gt-row-02": 1.0,
+      "gt-row-01": 0.0,
+      "gt-row-15": 1.0,
+      "gt-row-03": 1.0,
+      "mt-no-spurious-clarify": 1.0,
+      "mt-simulated-party-count": 1.0,
+      "gt-row-00": 0.0,
+      "gt-row-14": 1.0,
+      "gt-row-07": 1.0,
+      "gt-row-06": 1.0,
+      "gt-row-13": 1.0,
+      "mt-parties-clarify": 0.0,
+      "mt-stable-options": 0.0,
+      "gt-row-08": 1.0
+    },
+    "eval_id": "semantic-rag-multi_table_curated_layer-f30559cc",
+    "eval_k": 3,
+    "source_file": "metadata_query_kmean_eval_20260617_001519.json"
+  },
+  "kmean_b": {
+    "label": "vkg",
+    "mean_scores": {
+      "Builtin.GoalSuccessRate": 0.5,
+      "FinalAnswerFaithfulness": 0.5,
+      "SqlGrounded": 0.8367,
+      "ToolCallOrdering": 0.8333
+    },
+    "std_scores": {
+      "Builtin.GoalSuccessRate": 0.0,
+      "FinalAnswerFaithfulness": 0.049,
+      "SqlGrounded": 0.0613,
+      "ToolCallOrdering": 0.0793
+    },
+    "agent_perf_mean": {
+      "avg_wall_clock_s": 19.8067,
+      "input_tokens": 316458.0,
+      "output_tokens": 7851.3333,
+      "total_tokens": 750742.3333,
+      "agent_total_tokens": 750742.3333
+    },
+    "per_scenario_goal_mean": {
+      "gt-row-07": 0.0,
+      "gt-row-14": 1.0,
+      "gt-row-03": 0.0,
+      "gt-row-15": 1.0,
+      "gt-row-02": 0.3333,
+      "gt-row-00": 0.0,
+      "gt-row-13": 1.0,
+      "gt-row-04": 0.0,
+      "mt-simulated-party-count": 1.0,
+      "gt-row-08": 0.0,
+      "gt-row-06": 1.0,
+      "gt-row-01": 0.0,
+      "gt-row-05": 1.0,
+      "mt-no-spurious-clarify": 1.0,
+      "mt-stable-options": 0.6667,
+      "mt-parties-clarify": 0.0
+    },
+    "eval_id": "vkg-ontology_curated_layer-8b3529dc",
+    "eval_k": 3,
+    "source_file": "ontology_query_kmean_eval_20260617_000317.json"
+  },
+  "comparison": [
+    {
+      "path": "semantic-rag",
+      "eval_k": 3,
+      "Builtin.GoalSuccessRate": 0.69,
+      "FinalAnswerFaithfulness": 0.81,
+      "SqlGrounded": 1.0,
+      "ToolCallOrdering": 1.0,
+      "avg_latency_s": 19.2533,
+      "agent_total_tokens": 679192.6667
+    },
+    {
+      "path": "vkg",
+      "eval_k": 3,
+      "Builtin.GoalSuccessRate": 0.5,
+      "FinalAnswerFaithfulness": 0.5,
+      "SqlGrounded": 0.8367,
+      "ToolCallOrdering": 0.8333,
+      "avg_latency_s": 19.8067,
+      "agent_total_tokens": 750742.3333
+    }
+  ]
+}

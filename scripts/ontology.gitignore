@@ -1,0 +1,12 @@
+# Ignore downloaded ontology sources (large files)
+ontology-sources/
+
+# Ignore converted markdown docs (generated files)
+ontology-docs/
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore logs
+*.log

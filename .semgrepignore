@@ -1,0 +1,32 @@
+# Semgrep path exclusions
+#
+# frontend/src: ~80 jsx-not-internationalized findings excluded — this is a demo application
+# and i18n is explicitly out of scope. react-props-spreading in test setup is intentional RTL usage.
+frontend/src/
+
+# cdk-outputs-lambda.json: Cognito UserPoolClientId and CloudFront header value trigger generic-api-key
+# false positives — same values suppressed in .checkov.yaml and .gitleaksignore
+cdk/cdk-outputs-lambda.json
+
+# tests/: unit + integration tests. Semgrep findings here (string-concat-in-list in
+# fixtures, useless-inner-function in test doubles, hardcoded-tmp-path) are test-only
+# and carry no production risk. Bandit excludes tests/ via pyproject.toml for the same reason.
+tests/
+
+# notebooks/: Jupyter eval/demo notebooks — not deployed runtime code. The flagged
+# "token" lines are runtime-minted M2M tokens / variable assignments, not literals.
+notebooks/
+
+# cowork/: local developer MCP onboarding scripts + an EXAMPLE env file (config.env.example).
+# unquoted-variable-expansion-in-command is in operator-run setup scripts (values are
+# operator-provided, not untrusted); the example file ships placeholders, not secrets.
+cowork/
+
+# Dockerfiles: `dockerfile-source-not-pinned` fires on AWS-managed base images
+# (public.ecr.aws/lambda/*) which AWS pins + patches; pinning to a digest would block
+# those security updates. Accepted across all Lambda image Dockerfiles.
+**/Dockerfile
+
+# frontend/package.json: `package-dependencies-check` on pinned demo dependencies —
+# dependency CVEs are tracked separately via Dependabot (see GitHub security tab).
+frontend/package.json

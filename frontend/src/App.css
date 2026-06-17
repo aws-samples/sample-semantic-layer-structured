@@ -1,0 +1,67 @@
+/* Increase the width of the TopNavigation identity section to prevent title truncation */
+[class*="awsui_identity"] {
+  max-width: 400px !important;
+  min-width: 300px !important;
+}
+
+/* Target the identity link text specifically */
+[class*="awsui_identity"] a {
+  max-width: 400px !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+/* Ensure the title text doesn't get truncated */
+[class*="awsui_title"] {
+  max-width: none !important;
+  overflow: visible !important;
+}
+
+/* Hide the archive (trash) button on chat-session links until the row is
+   hovered or focused — keeps the sidebar uncluttered while still leaving the
+   action one mouse-move away. We watch the nearest <li> so the rule survives
+   Cloudscape class-name minification (the awsui_link selector was brittle and
+   stopped matching after a recent design-system bump, leaving the icon
+   permanently invisible). */
+.chat-archive-btn,
+.chat-clear-all-btn {
+  opacity: 0;
+  transition: opacity 0.12s ease-in-out;
+  pointer-events: none;
+}
+li:hover > .chat-archive-btn,
+li:hover .chat-archive-btn,
+li:focus-within .chat-archive-btn,
+.chat-archive-btn:hover,
+.chat-archive-btn:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* "Clear all" trash icon lives in the Session History link-group header's
+   `info` slot — hidden until that header row (its <li>) is hovered/focused,
+   so it shows only on hover and only the icon (no text, shown once). */
+li:hover > .chat-clear-all-btn,
+li:hover .chat-clear-all-btn,
+li:focus-within .chat-clear-all-btn,
+.chat-clear-all-btn:hover,
+.chat-clear-all-btn:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Select Semantic Layer Type — whole-card-clickable selection. The card body
+   click is wired in SelectSemanticLayerType.jsx; these styles give the hover +
+   selected affordance so users see the entire card is a click target. */
+.layer-type-card {
+  transition:
+    box-shadow 0.12s ease-in-out,
+    border-color 0.12s ease-in-out;
+}
+.layer-type-card:hover {
+  box-shadow: 0 1px 8px rgba(0, 7, 22, 0.12);
+}
+.layer-type-card--selected {
+  outline: 2px solid #0972d3; /* Cloudscape selected-blue */
+  outline-offset: -2px;
+}

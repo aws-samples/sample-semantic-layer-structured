@@ -1,0 +1,953 @@
+{
+  "agent_id": "semantic_layer_dev_ontology_query-HKGVpkE6XK",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:runtime/semantic_layer_dev_ontology_query-HKGVpkE6XK",
+  "eval_id": "vkg-ontology_curated_layer-8b3529dc",
+  "eval_k": 3,
+  "kmean_file": "ontology_query_kmean_eval_20260617_000317.json",
+  "batch_evaluation_id": "ontquery_gt_batch_r3_8fe6c5c8-5f16c4c6cc",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:batch-evaluate/ontquery_gt_batch_r3_8fe6c5c8-5f16c4c6cc",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "FinalAnswerFaithfulness_3a3be4af-wWAuBoGbFL",
+    "SqlGrounded_3a3be4af-e1uxpK6wkT",
+    "ToolCallOrdering_3a3be4af-GSqchbFFl6"
+  ],
+  "custom_evaluators": {
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_3a3be4af-wWAuBoGbFL",
+    "SqlGrounded": "SqlGrounded_3a3be4af-e1uxpK6wkT",
+    "ToolCallOrdering": "ToolCallOrdering_3a3be4af-GSqchbFFl6"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "ToolCallOrdering_3a3be4af-GSqchbFFl6",
+      "AvgScore": "0.750",
+      "Evaluated": 16,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": "0.500",
+      "Evaluated": 16,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "SqlGrounded_3a3be4af-e1uxpK6wkT",
+      "AvgScore": "0.880",
+      "Evaluated": 16,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "FinalAnswerFaithfulness_3a3be4af-wWAuBoGbFL",
+      "AvgScore": "0.500",
+      "Evaluated": 16,
+      "Failed": 0
+    }
+  ],
+  "per_query_events": [
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation consists of a single turn where the user asks 'What can I ask about this semantic layer?' The agent responds with a descriptive advisory answer explaining what business questions can be answered by the semantic layer. No SQL was executed at any point in this conversation. The tool_execution_history is empty, and there are no SQL queries in the session context. Since no SQL was exe"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer requires: a description of the kinds of questions answerable from the layer's tables (parties, policies, holdings, coverage, riders, financial activity) and the governed metrics available, with no specific data values returned.\n\nThe agent's final answer is a comprehensive natural-language advisory response that:\n1. Describes questions answerable across all major topic areas: Pa"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The success assertion requires a description of the kinds of questions answerable from the layer's tables and the governed metrics available, with no specific data values returned. The agent's response comprehensively describes what can be asked about the semantic layer, organized by topic areas (Parties & Contacts, Policies & Holdings, Coverages & Riders, etc.). It explains the types of business "
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows a user asking 'What can I ask about this semantic layer?' and the agent responding with a comprehensive advisory answer describing the capabilities of the semantic layer. This is a metadata/advisory question, not a data query. The agent did not execute any SQL \u2014 there is no executed SQL in the context, no tool calls were made, and no SPARQL/SQL was generated or run. The a"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent was asked about payout schedules, policyholder names, payout frequency, and projected next-payout amounts. The ontology slice provided does not contain a PayoutSchedule class, payout_frequency property, next_payout_amount property, or Party name fields (first_name, last_name, full_name). The agent correctly identified these as missing and returned a SliceSufficiency result with sufficien"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The success assertion describes a specific expected answer about 5 policies with payout schedules, including policyholder names, payout frequencies, and amounts. However, the agent's final response indicates the slice is insufficient and lists missing elements including PayoutSchedule entity and Party name fields. The agent never provided the detailed answer described in the assertion - it only id"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows: (1) An ontology slice was retrieved and provided as the first user_prompt content - it contains a large RDF/Turtle ontology slice with many classes and properties. (2) The agent then ran SliceSufficiency checks (twice) and determined the slice was insufficient (missing PayoutSchedule, Party name fields, etc.). (3) No SQL was ever executed in this session - the tool_execu"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The conversation shows the agent responded with a SliceSufficiency call indicating the ontology slice was insufficient (missing PayoutSchedule, Party name fields). The agent's final answer in the session context is the JSON: {\"sufficient\":false,\"missing\":[\"http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/PayoutSchedule\",\"http://curated-layer-ontology-20260"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The agent only responded with an intent classification (data_query with 0.95 confidence) but did not execute any tools or provide an actual answer to the user's question. The success assertion requires the agent to return the 4 parties with their market values ranked correctly (Scott Neil Davis at $651,373.05, Thomas Jill Davis at $317,902.53, Blake Katelyn Myers at $312,549.21, and Jared Xavier P"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context contains only one turn. The agent received a user query and responded with a JSON intent classification (`{\"intent\": \"data_query\", \"confidence\": 0.95}`). No SQL was executed in this session \u2014 the tool_execution_history is empty and there is no SQL execution record anywhere in the context. Since no SQL was executed at all, there is no ordering violation to penalize. Per the scor"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context shows only one turn: a user prompt asking for top 10 parties by total holding market value, and an agent response that contains only a JSON intent classification (`{\"intent\": \"data_query\", \"confidence\": 0.95}`). There is no final-answer record span, no SPARQL/SQL query execution, and no natural-language answer with the actual data. The agent never provided the four parties, the"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "Examining the session context, the agent received a user query about top 10 parties by total holding market value. The agent's response was only a JSON intent classification: '{\"intent\": \"data_query\", \"confidence\": 0.95}'. There is no retrieved ontology context (no ontology slice with classes/properties/mappings) present in the conversation, and there is no executed SQL anywhere in the context (no"
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent performed a SliceSufficiency check and determined the ontology slice was insufficient \u2014 it flagged missing properties 'Party/party_type' and 'Party/party_type_description' that are needed to answer the question. The agent returned a 'sufficient: false' response and did NOT proceed to generate or execute any SQL. There is no executed SQL in the context. This is a grounded refusal \u2014 the ag"
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The success assertion requires the agent to identify the top 5 most common party types with human-readable descriptions. The agent's response indicates that the provided ontology slice is insufficient, specifically requesting 'party_type' and 'party_type_description' properties. The agent correctly identified that these properties are missing from the slice and called the SliceSufficiency tool to "
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows: (1) An ontology slice was retrieved and provided as the user_prompt content - it contains a large TTL/RDF ontology describing entities like Address, CarrierAppointment, Coverage, DistributionLevel, EmailAddress, GovtIdInfo, Party, etc. (2) The agent's response was a SliceSufficiency check that returned {sufficient: false, missing: ['Party/party_type', 'Party/party_type_d"
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session shows only one turn: the agent received the question about top 5 most common party types and their descriptions, then called SliceSufficiency with sufficient=false, indicating the ontology slice provided did not contain the necessary party_type and party_type_description properties. The agent's response was the SliceSufficiency tool call result \u2014 it never produced a final-answer record"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The agent was asked to describe common metrics that could be calculated with the data in the semantic layer. The success assertion requires a description of computable metrics (not actual numeric results) and reference to governed metrics defined for the layer. The agent correctly stated upfront that 'no governed metrics are formally defined yet' and then provided a comprehensive, well-organized d"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation consists of a single turn where the user asks about common metrics computable from the data. The agent responds with a descriptive advisory answer about what metrics could be calculated. Critically, no SQL was executed at any point in this conversation - the tool_execution_history is empty, and the agent's response contains no SQL queries, only natural language descriptions of pos"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session shows a user asking about common metrics that could be calculated with the data. The agent responded with a detailed advisory answer describing various metrics across multiple domains. Looking at the session context, there are no tool calls executed, no SQL queries generated, and no ontology slice retrieved. The agent provided a purely descriptive/advisory response about what metrics C"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer requires: a description of computable metrics and governed metrics for the layer, covering counts/totals/trends over policies, parties, holdings, and coverage; must describe what is computable, not return specific numeric results.\n\nThe agent's final answer (the natural-language response in the conversation) does exactly this:\n1. It explicitly notes no governed metrics are forma"
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states: 'The query returned 5 coverage products (fewer than the requested 10): Accidental Death, Base Life, Child Rider, Spouse Rider, and Term Rider.' The expected answer states: 'The coverage_product table contains 5 active products in total, listed alphabetically by name: Accidental Death, Base Life, Child Rider, Spouse Rider, and Term Rider.' Both answers agree on the "
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The success assertion states that the final answer should match: 'The coverage_product table contains 5 active products in total, listed alphabetically by name: Accidental Death, Base Life, Child Rider, Spouse Rider, and Term Rider.' The agent's response states: 'The query returned 5 coverage products (fewer than the requested 10): Accidental Death, Base Life, Child Rider, Spouse Rider, and Term R"
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "Looking at the session context, I need to identify: (a) the retrieved ontology context/slice, and (b) the executed SQL. The context shows a conversation with tool execution history containing only a SliceSufficiency validation call. There is no explicit ontology slice (classes/properties with mapsToTable/mapsToColumn) shown in the context, and no executed SQL query (no sqlQuery, executed_sql, or P"
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context shows the tool execution history contains only a 'SliceSufficiency' tool call, which validates that the ontology slice was sufficient. However, there is no evidence of a prior ontology fetch step (graph phase) that would have retrieved the ontology slice before SQL execution. The prescribed flow requires: (1) fetch ontology, (2) assemble/disambiguate slice, (3) generate SPARQL/"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session shows only one turn: the agent received a question about total market value of active holdings grouped by party, and its response was a SliceSufficiency tool call indicating the ontology slice was insufficient (missing Holding and Party classes). The agent never produced a final-answer record with natural language results. The conversation ends with the agent requesting more ontology s"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent returned a SliceSufficiency tool call with sufficient=false, indicating the ontology slice provided was insufficient to answer the question (missing the Holding and Party classes). No SQL was executed \u2014 the agent refused to proceed and asked for clarification/additional ontology context rather than running ungrounded SQL. This constitutes a grounded refusal, so the grounding invariant wa"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The success assertion expects the agent to provide a detailed answer about active holdings grouped by party, including specific party IDs, holding counts, and total market values ($317,902.53 for PARTY000012, $90,066.59 for PARTY000013, totaling $407,969.12). However, the agent's response only indicates that the provided ontology slice is insufficient and lists missing entities (Holding and Party)"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows: (1) An ontology slice was retrieved and provided as the first user_prompt content \u2014 a large Turtle/RDF ontology covering Address, AdminCode, CarrierAppointment, Coverage, DistributionLevel, EmailAddress, and other entities. (2) The agent's response was a SliceSufficiency check that returned 'sufficient: false' with missing entities (Holding and Party). (3) No SQL was eve"
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected final answer is 'There are 15 parties.' The agent's final natural-language response states 'There are **15** parties in the curated layer.' This is factually consistent with the expected answer \u2014 it correctly reports the count of 15 parties. The key number (15) and entity (parties) match exactly. The additional phrase 'in the curated layer' is consistent with the question context and "
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "Looking at the session context, the user_prompt already contains the note 'The query has already run. Result columns: [v1], Result rows: [[15]]', indicating that SQL execution occurred before this turn was presented to the agent. The tool_execution_history shows only a SliceSufficiency call, with no evidence of an ontology fetch (graph phase) or ontology slice assembly preceding the SQL execution."
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The success assertions require: (1) the agent executed a COUNT query against the party table and returned a numeric count, (2) if a clarifying question was asked, the user selected 'party' and the agent proceeded, and (3) the final answer matches 'There are 15 parties.' \n\nFrom the conversation record: The query has already run with result showing '15'. The agent's final response states 'There are "
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows a conversation where the agent answered a question about how many parties exist in the curated layer, returning '15'. However, examining the full context: there is no retrieved ontology slice (no classes/properties with mapsToTable/mapsToColumn) visible in the session context, and there is no executed SQL query surfaced in the context (no Phase 5 output, no reasoning.sqlQ"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The agent was asked to explain what the coverage table represents. The success assertion requires a natural-language explanation of the coverage table and its role in the schema, grounded in the layer's metadata, with no row counts or specific values returned. The agent's response provides a comprehensive explanation of the coverage table, describing what it captures (benefit types, insured partie"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows a user asking about what the Coverage table represents. The agent responded with a descriptive, business-language explanation of the Coverage table. There is no SQL executed in this conversation \u2014 the agent's response is purely advisory/descriptive text explaining the table's meaning, connected entities, and business use cases. No tool calls were made, no SQL was generate"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation contains a single turn where the user asks 'Explain what the coverage table represents.' The agent responds with a descriptive answer about the Coverage table grounded in the schema context provided in the system prompt (the ontology/schema context is explicitly present in the user_prompt as SCHEMA CONTEXT). No SQL was executed at any point in this conversation - the tool_executio"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer requires: 'A natural-language explanation of the coverage table and its role in the schema, grounded in the layer's metadata. No row counts or specific values are returned.'\n\nThe agent's final answer is the response in 'agent_response', which provides:\n1. A natural-language explanation of what the Coverage table represents\n2. Details about what it captures (benefit types, insur"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows: (1) The ontology slice is present as the first element in the session context, provided as a comprehensive RDF/OWL ontology covering Party, Coverage, Rider, RiderParticipant, LifeParticipant, and other relevant classes. (2) The agent then produces a SPARQL query grounded in the ontology slice, using URIs from the ontology (e.g., referencing Rider, RiderParticipant, LifeP"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent produced SPARQL, not SQL. The context shows no executed SQL (no Phase 5 SQL output, no sqlQuery, no executed_sql field). The agent generated a SPARQL query as its response. Since the VKG pipeline translates SPARQL to SQL via Ontop and runs it on Athena, I need to check whether actual SQL was executed. There is no executed SQL present in the tool_execution_history or anywhere in the conte"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The agent's final answer in this session is a SPARQL query (the agent_response contains a raw SPARQL SELECT query). Per the instructions, I must not treat a SPARQL query as the final user-facing answer. The instructions say to look for a final-answer record span whose INPUT begins with 'Final-answer record for a deterministic graph turn'. No such span is present in the session context provided. Th"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The agent was asked to identify insured participants and their roles for each rider. The success assertion states that participants are identified via associated coverage records on the same policy holding, with roles indicated by coverage type (Base, Rider, Optional). The assertion provides specific examples of 10 results showing rider IDs, participant IDs, coverage roles, and demographic details"
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected final answer is 'There are 15 parties.' The agent's final natural-language response states 'There are **15** parties.' This matches the expected answer exactly in terms of the key number (15) and the conclusion (number of parties). The formatting difference (bold markdown) is irrelevant to factual correctness."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The conversation record shows the agent received a query result with the value '15' and reported 'There are **15** parties.' The success assertions require: (1) no clarifying question was asked - confirmed, the agent directly processed the result; (2) a COUNT query was executed against the party table on the first turn returning a numeric answer - the query result shows ['15'] which is numeric; (3"
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows a simple query asking 'How many parties are there?' with a result of 15. The agent responded with '**15** parties.' The tool execution history shows only a SliceSufficiency tool call, confirming the slice was deemed sufficient. However, there is no explicit ontology slice (classes/properties with mapsToTable/mapsToColumn) shown in the context, nor is there any executed SQ"
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows only one turn. The tool execution history contains a 'SliceSufficiency' tool call, which indicates the ontology slice was assessed for sufficiency (i.e., the slice was already assembled and validated before SQL execution). However, I need to check whether the ontology was actually fetched/retrieved before SQL ran. The session context shows the SQL query had already run (a"
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context shows only one turn. The tool execution history contains a single tool call: 'SliceSufficiency' with sufficient=True and no missing elements. There is no evidence of an ontology fetch (graph phase) or an ontology slice being retrieved before the SQL was executed. The SQL had already run before the agent responded, and the only tool call visible is the SliceSufficiency check \u2014 n"
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states 'There are **15** parties.' The expected answer states 'There are 15 active parties in the system (excluding soft-deleted records) in the normalized.party table.' Both agree on the key number: 15 parties. The expected answer adds qualifiers (active, excluding soft-deleted, in normalized.party table), but the agent's answer does not contradict these \u2014 it simply repor"
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The success assertion states that the final answer should match: 'There are 15 active parties in the system (excluding soft-deleted records) in the normalized.party table.' The agent's response was 'There are **15** parties.' The agent correctly identified the number as 15, which is the key factual element. While the agent's answer is less detailed (it doesn't mention 'active parties,' 'soft-delet"
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows a simple query asking 'How many parties are there?' with a result of 15. The agent responded with the answer. However, examining the full session context, there is no retrieved ontology slice (classes/properties with mapsToTable/mapsToColumn) visible in the conversation, and there is no executed SQL query surfaced in the context (no Phase 5 output, no reasoning.sqlQuery, "
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer states that the query returned 20 rows, with each row representing a policy holding where the insured party is also the policyholder, and provides specific examples (POL00000011\u2192PARTY000011, etc.). The agent's final answer states 'The query returned no rows, meaning no policies were found where the insured party is also the policyholder.' This directly contradicts the expected "
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The success assertion states that the query should return 20 rows showing policies where the insured party is also the policyholder, with specific examples provided. However, the conversation record clearly shows that the query returned 0 rows (\"Result rows (0 total; up to 20 shown): []\"). The agent correctly reported this result, stating \"no policies were found where the insured party is also the"
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context shows that SQL was already executed before this turn began (the user_prompt includes 'The query has already run. Result columns: [...]'). Looking at the tool_execution_history within this turn, we see two SliceSufficiency tool calls, which are part of the ontology slice disambiguation phase. However, the SQL had already executed before these tool calls appear in the session \u2014 t"
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "Looking at the session context, I need to determine: (a) whether there is a retrieved ontology context (ontology slice with mapsToTable/mapsToColumn), and (b) whether there is executed SQL.\n\nExamining the tool execution history: The agent made two SliceSufficiency tool calls, both with 'sufficient: False', indicating the ontology slice was deemed insufficient. The tool results only show 'Successfu"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session shows the agent produced a SPARQL query as its output. There is no 'Final-answer record' span with natural-language output visible in the conversation. The agent's response is a raw SPARQL query (SELECT ... WHERE ... GROUP BY ... ORDER BY ...), which per the instructions is an intermediate query artifact, not the user-facing final answer. No final-answer record span exists in the provi"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent produced SPARQL (not SQL), but in this VKG pipeline, the SPARQL is translated to SQL by Ontop and executed on Athena. The SPARQL references: 1) Class FinancialActivity \u2014 maps to table 'normalized.financial_activity' (present in ontology as ns1:mapsToTable). 2) Property FinancialActivity/transaction_date \u2014 maps to column 'financial_activity.transaction_date' (present). 3) Property Financi"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The agent generated a SPARQL query to retrieve financial activity amounts per month in 2024. The query filters for year 2024, excludes deleted records, groups by month (YYYY-MM format), and sums transaction amounts. However, the agent only provided the SPARQL query itself without executing it or presenting the actual results. The success assertion requires reporting the specific monthly totals: Ma"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context shows: (1) A large ontology slice is provided as the first element in the context, covering FinancialActivity and other entities with their properties and column mappings. (2) The agent's response is a SPARQL query (not SQL directly), but the question asks about ordering of ontology retrieval vs SQL execution. The tool execution history shows a SliceSufficiency check was perfor"
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected final answer is 'There are 15 parties.' The agent's final substantive answer (the last natural-language assistant message) states 'There is **1** political party in the database.' This contradicts the expected answer of 15 parties. The agent returned 1 instead of 15, and also incorrectly interpreted the query as being about 'political parties' rather than insurance parties. The final "
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The conversation record shows two separate user interactions, not a continuous conversation. In the first turn, the user asks 'How many are there?' and the agent immediately attempts to answer by querying Coverage records without asking for clarification. The agent's response states 'The question \"How many are there?\" is too vague without context. I'll interpret it as asking how many Coverage reco"
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "Looking at the session context:\n\nTurn 1: The user_prompt contains a large ontology slice (the full RDF/OWL context), followed by the question 'How many are there?' The agent responds with a SPARQL query grounded in the ontology slice. This is correct ordering - ontology slice present before query generation.\n\nTurn 2: The question is 'How many political parties are there?' The context shows the que"
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session shows two turns. In the second turn, the agent was asked 'How many political parties are there?' and the query result was already provided showing 1 result. The agent reported '1 political party.' However, I need to evaluate whether the executed SQL was grounded in the ontology context.\n\nLooking at the context: The SPARQL generated in turn 1 was for Coverage records. In turn 2, the que"
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "FinalAnswerFaithfulness_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected final answer (from the assertion beginning with 'The conversation's final answer matches:') is: 'There are 15 parties.' The last natural-language agent response in the conversation is: 'There are **15** parties.' This directly matches the expected answer - same number (15), same entity (parties), same conclusion. The agent correctly answered the question about how many parties there a"
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The agent successfully handled the ambiguous question 'How many are there?' by asking for clarification rather than guessing. When the user responded 'not sure', the agent continued seeking clarification instead of fabricating an answer. After the user clarified 'party', the agent executed a COUNT query against the Party class and returned the correct count of 15. The final answer 'There are **15*"
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "ToolCallOrdering_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "Looking at the session context chronologically:\n\n1. Turn 1: A large ontology slice is provided in the user_prompt, then the agent responds with a SPARQL query for Coverage count. The ontology slice precedes the query generation. This satisfies the ordering requirement.\n\n2. Turn 2: Another identical ontology slice is provided, then the agent again responds with a SPARQL query for Coverage count. On"
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "SqlGrounded_3a3be4af",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "Looking at the session context, I need to find the executed SQL. The conversation shows three turns:\n1. First two turns: the agent responded to 'How many are there?' with a SPARQL query (not SQL), and the response included explanatory text before the SPARQL - causing syntax errors in previous attempts.\n2. Third turn: The question is 'How many parties are there?' and the result shows [['15']] was r"
+    }
+  ],
+  "agent_runs": [
+    {
+      "scenario_session": "gt-row-02-606adae4-c4a7-4747-a792-2dd4c888cfc8",
+      "turn_idx": 0,
+      "message": "List the top 5 most common party types and their human-readable descriptions.",
+      "answer": "I found relevant ontology concepts but the data needed to answer this question isn't available in this semantic layer. Missing: http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/party_type, http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/party_type_description. This usually means the concept or property isn't modelled in the ontology, so the question can't be answered reliably here.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 20174,
+        "outputTokens": 305,
+        "totalTokens": 20479,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 13374,
+      "wall_clock_s": 16.91,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-03-56457692-51d4-4d29-9f5a-81f80f44ab70",
+      "turn_idx": 0,
+      "message": "What is the total market value of all active holdings, grouped by party?",
+      "answer": "Which interpretation of 'holding\u2026party' do you mean?",
+      "agent_sql": "",
+      "clarified": true,
+      "rows": [],
+      "usage": {
+        "inputTokens": 20095,
+        "outputTokens": 206,
+        "totalTokens": 20301,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 8412,
+      "wall_clock_s": 11.85,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-01-91eb4964-e6af-42bb-914c-0714038e2626",
+      "turn_idx": 0,
+      "message": "For each rider, who are the insured participants and what are their roles?",
+      "answer": "I couldn't translate your question into a SQL query for the data.",
+      "agent_sql": "SELECT \n  ?rider_id\n  ?rider_name\n  ?rider_type\n  ?participant_sk\n  ?issue_age\n  ?party_full_name\n  ?party_gender\n  ?underwriting_class\n  ?tobacco_premium_basis\nWHERE {\n  ?rider a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Rider> ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Rider/rider_id> ?rider_id ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Rider/is_deleted> ?_b0 .\n\n  OPTIONAL { ?rider <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Rider/rider_name> ?rider_name . }\n  OPTIONAL { ?rider <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Rider/rider_type> ?rider_type . }\n\n  ?riderParticipant a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/RiderParticipant> ;\n                    <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/RiderParticipant/is_deleted> ?_b1 ;\n                    <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/RiderParticipant/participant_sk> ?participant_sk .\n\n  OPTIONAL { ?riderParticipant <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/RiderParticipant/issue_age> ?issue_age . }\n\n  ?riderParticipant <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/RiderParticipant/hasHolding> ?holding .\n  ?rider <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Rider/hasHolding> ?holding .\n\n  ?lifeParticipant a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant> ;\n                   <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/participant_sk> ?participant_sk ;\n                   <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/is_deleted> ?_b2 .\n\n  OPTIONAL { ?lifeParticipant <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/underwriting_class> ?underwriting_class . }\n  OPTIONAL { ?lifeParticipant <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/tobacco_premium_basis> ?tobacco_premium_basis . }\n\n  ?lifeParticipant <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/hasParty> ?party .\n  ?party a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party> ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/is_deleted> ?_b3 .\n\n  OPTIONAL { ?party <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/full_name> ?party_full_name . }\n  OPTIONAL { ?party <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/gender> ?party_gender . }\n\n  FILTER(LCASE(STR(?_b0)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n  FILTER(LCASE(STR(?_b1)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n  FILTER(LCASE(STR(?_b2)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n  FILTER(LCASE(STR(?_b3)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n}\nORDER BY ?rider_id ?participant_sk",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 20221,
+        "outputTokens": 1767,
+        "totalTokens": 54616,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 30140,
+      "wall_clock_s": 32.75,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-05-a026cc19-d5ee-4264-bc6a-e54798cd0c0e",
+      "turn_idx": 0,
+      "message": "How many parties are there?",
+      "answer": "There are **15** parties.",
+      "agent_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?party a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party> .\n}",
+      "clarified": false,
+      "rows": [
+        {
+          "v0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 17200,
+        "outputTokens": 175,
+        "totalTokens": 31906,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 15017,
+      "wall_clock_s": 17.65,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-00-557cb2db-0057-461a-ad3f-3988f2a288e6",
+      "turn_idx": 0,
+      "message": "Show me policies where the insured party is also the policyholder.",
+      "answer": "The query returned no rows, meaning no policies were found where the insured party is also the policyholder \u2014 though this may reflect the current filter criteria or data structure rather than a definitive business fact.",
+      "agent_sql": "SELECT DISTINCT ?holdingId ?partyFullName\nWHERE {\n  ?lp a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant> ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/holding_id> ?holdingId ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/party_id> ?lpPartyId ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/LifeParticipant/is_deleted> ?_b0 .\n\n  ?cov a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Coverage> ;\n       <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Coverage/holding_id> ?holdingId ;\n       <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Coverage/party_id> ?covPartyId ;\n       <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Coverage/coverage_type> \"Base\" ;\n       <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Coverage/is_deleted> ?_b1 .\n\n  FILTER (?lpPartyId = ?covPartyId)\n\n  ?party a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party> ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/party_key> ?lpPartyId ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/full_name> ?partyFullName ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/is_deleted> ?_b2 .\n\n  FILTER(LCASE(STR(?_b0)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n  FILTER(LCASE(STR(?_b1)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n  FILTER(LCASE(STR(?_b2)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n}",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 41209,
+        "outputTokens": 2342,
+        "totalTokens": 88716,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 52268,
+      "wall_clock_s": 55.24,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-04-fcada91f-b77b-46b5-a9e9-694464ee351b",
+      "turn_idx": 0,
+      "message": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "answer": "I found relevant ontology concepts but the data needed to answer this question isn't available in this semantic layer. Missing: http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/PayoutSchedule, http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/full_name, http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/first_name, http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/last_name. This usually means the concept or property isn't modelled in the ontology, so the question can't be answered reliably here.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 40275,
+        "outputTokens": 1237,
+        "totalTokens": 41512,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 30260,
+      "wall_clock_s": 32.64,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-07-822963be-185e-4d86-baba-ec9684dd2dc2",
+      "turn_idx": 0,
+      "message": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "answer": "Could you clarify which interpretation you mean for: 'product', 'hold'?",
+      "agent_sql": "",
+      "clarified": true,
+      "rows": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": 3939,
+      "wall_clock_s": 6.98,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-06-5846361f-70da-4972-9a51-1a0c469ad832",
+      "turn_idx": 0,
+      "message": "List the top 10 coverage products by name.",
+      "answer": "The query returned 5 coverage products (fewer than the requested 10): Accidental Death, Base Life, Child Rider, Spouse Rider, and Term Rider.",
+      "agent_sql": "SELECT ?productName\nWHERE {\n  ?cp a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/CoverageProduct> ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/CoverageProduct/product_name> ?productName .\n}\nORDER BY ?productName\nLIMIT 10",
+      "clarified": false,
+      "rows": [
+        {
+          "COVERAGE_PRODUCT_ID1m100": "COVPROD9169",
+          "PRODUCT_NAME1m109": "Accidental Death"
+        },
+        {
+          "COVERAGE_PRODUCT_ID1m100": "COVPROD8898",
+          "PRODUCT_NAME1m109": "Base Life"
+        },
+        {
+          "COVERAGE_PRODUCT_ID1m100": "COVPROD1132",
+          "PRODUCT_NAME1m109": "Child Rider"
+        },
+        {
+          "COVERAGE_PRODUCT_ID1m100": "COVPROD2191",
+          "PRODUCT_NAME1m109": "Spouse Rider"
+        },
+        {
+          "COVERAGE_PRODUCT_ID1m100": "COVPROD8213",
+          "PRODUCT_NAME1m109": "Term Rider"
+        }
+      ],
+      "usage": {
+        "inputTokens": 20550,
+        "outputTokens": 277,
+        "totalTokens": 65103,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 15065,
+      "wall_clock_s": 17.67,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-08-c8ed81fc-a9da-4c93-91cb-c72b0b827e91",
+      "turn_idx": 0,
+      "message": "What was the total financial-activity amount per month in 2024?",
+      "answer": "I couldn't translate your question into a SQL query for the data.",
+      "agent_sql": "SELECT (SUBSTR(?transaction_date, 1, 7) AS ?month) (SUM(?transaction_amount) AS ?total_amount)\nWHERE {\n  ?fa a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/FinancialActivity> ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/FinancialActivity/transaction_date> ?transaction_date ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/FinancialActivity/transaction_amount> ?transaction_amount ;\n      <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/FinancialActivity/is_deleted> ?is_deleted .\n  FILTER(?is_deleted = false)\n  FILTER(SUBSTR(?transaction_date, 1, 4) = \"2024\")\n}\nGROUP BY (SUBSTR(?transaction_date, 1, 7))\nORDER BY (SUBSTR(?transaction_date, 1, 7))",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 19792,
+        "outputTokens": 558,
+        "totalTokens": 59639,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 15624,
+      "wall_clock_s": 18.2,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-parties-clarify-252432c3-f8db-4582-9fd8-9dda7a7442d9",
+      "turn_idx": 0,
+      "message": "How many are there?",
+      "answer": "I was unable to construct a valid SPARQL query for your question.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 19752,
+        "outputTokens": 389,
+        "totalTokens": 93387,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 16072,
+      "wall_clock_s": 18.75,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-no-spurious-clarify-95d69e07-7bbe-4236-b31d-f74f45ea4ef4",
+      "turn_idx": 0,
+      "message": "How many parties are there?",
+      "answer": "There are **15** parties.",
+      "agent_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?party a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party> .\n}",
+      "clarified": false,
+      "rows": [
+        {
+          "v0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 17200,
+        "outputTokens": 175,
+        "totalTokens": 31906,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 13430,
+      "wall_clock_s": 15.82,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-e0e8cab7-72c9-45d3-a0ff-afdfe2d61ca1",
+      "turn_idx": 0,
+      "message": "How many are there?",
+      "answer": "I was unable to construct a valid SPARQL query for your question.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 19752,
+        "outputTokens": 386,
+        "totalTokens": 93384,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 14749,
+      "wall_clock_s": 17.21,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-parties-clarify-252432c3-f8db-4582-9fd8-9dda7a7442d9",
+      "turn_idx": 1,
+      "message": "party",
+      "answer": "There is **1** political party in the database.",
+      "agent_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?r a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Relation> ;\n     <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Relation/is_deleted> ?_b0 .\n  FILTER(0 = 1)\n\n  FILTER(LCASE(STR(?_b0)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n}",
+      "clarified": false,
+      "rows": [
+        {
+          "uselessVariable": "1"
+        }
+      ],
+      "usage": {
+        "inputTokens": 17203,
+        "outputTokens": 344,
+        "totalTokens": 32079,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 16327,
+      "wall_clock_s": 18.08,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-simulated-party-count-01726ba7-8e72-4bc4-9e4b-2a0912424c4c",
+      "turn_idx": 0,
+      "message": "I need to know how many parties exist in the curated layer.",
+      "answer": "There are **15** parties in the curated layer.",
+      "agent_sql": "SELECT (COUNT(?party) AS ?n)\nWHERE {\n  ?party a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party> ;\n         <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party/is_deleted> ?_b0 .\n\n  FILTER(LCASE(STR(?_b0)) IN (\"false\", \"0\", \"f\", \"no\", \"n\"))\n}",
+      "clarified": false,
+      "rows": [
+        {
+          "v1": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 19887,
+        "outputTokens": 355,
+        "totalTokens": 37179,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 17077,
+      "wall_clock_s": 19.54,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-e0e8cab7-72c9-45d3-a0ff-afdfe2d61ca1",
+      "turn_idx": 1,
+      "message": "not sure",
+      "answer": "I was unable to construct a valid SPARQL query for your question.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {
+        "inputTokens": 19752,
+        "outputTokens": 498,
+        "totalTokens": 93496,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 19066,
+      "wall_clock_s": 21.25,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-13-baefcb09-6b25-486a-8c91-2feff6ae11f7",
+      "turn_idx": 0,
+      "message": "What are some common metrics that could be calculated with this data?",
+      "answer": "# Common Metrics Computable from This Semantic Layer\n\nAlthough no governed metrics are formally defined yet, the schema is rich enough to support a wide range of business metrics across several domains. Here are the most meaningful ones:\n\n---\n\n## Policy & Portfolio Metrics\n- **Total policies in force** \u2014 count of active holdings\n- **Policies by product type** \u2014 distribution across term, whole life, universal life, annuity, etc.\n- **Total face amount / sum insured** \u2014 sum of coverage face amounts across active coverages\n- **Total account / market value** \u2014 sum of market or current value across active holdings\n- **Policies with substandard ratings** \u2014 count or share of policies carrying an extra-risk table rating\n\n---\n\n## Premium & Financial Activity Metrics\n- **Total premiums collected** \u2014 sum of financial activity transactions of type \"Premium\"\n- **Total withdrawals** \u2014 sum of withdrawal transactions\n- **Total fees charged** \u2014 sum of fee amounts across financial activity\n- **Net cash flow per policy** \u2014 premiums received minus withdrawals and fees over a period\n- **Subaccount transaction volume** \u2014 total money movement across variable investment subaccounts\n\n---\n\n## Policy Value & Statement Metrics\n- **Average ending account balance** \u2014 average of ending balances from the most recent policy statements\n- **Total cash / surrender value** \u2014 sum of cash value or surrender value from financial statements\n- **Total death benefit in force** \u2014 sum of death benefit amounts from statements or coverages\n- **Outstanding loan balance** \u2014 sum of loan balances from policy loan summaries\n\n---\n\n## Rider & Coverage Metrics\n- **Rider attachment rate** \u2014 share of policies that have at least one active rider\n- **Most common rider types** \u2014 frequency distribution of rider names/types\n- **Average annual premium per coverage** \u2014 mean of annual premium across active coverages\n\n---\n\n## Distribution & Producer Metrics\n- **Producers by customer segment** \u2014 count of parties per segment (High Net Worth, Retail, Corporate)\n- **Average commission rate by distribution level** \u2014 mean commission rate from carrier appointments\n- **Policies per financial advisor** \u2014 count of producer agreements per advisor ID\n\n---\n\n## Investment / Subaccount Metrics\n- **Fund allocation breakdown** \u2014 total current value and allocation percentage by fund across all policies\n- **Top funds by invested value** \u2014 ranking of funds by total current value held across subaccounts\n- **Average expense ratio of held funds** \u2014 weighted average of expense ratios across subaccount positions\n- **Fund performance comparison** \u2014 YTD, 1-year, and 5-year returns from the investment product catalog\n\n---\n\n## Customer / Party Metrics\n- **Customers by state** \u2014 count of parties by state code from addresses\n- **Smoker vs. non-smoker split** \u2014 distribution of insured lives by tobacco status\n- **Underwriting class distribution** \u2014 breakdown of insureds by Preferred Plus / Preferred / Standard\n- **Policies per customer** \u2014 count of holdings linked to each party\n\n---\n\n## Loan Metrics\n- **Policies with active loans** \u2014 count of holdings with a non-deleted loan record\n- **Overdue loan payments** \u2014 count or amount of loan activity records with an overdue payment status\n- **Average loan interest rate** \u2014 mean interest rate across active holding loans\n\n---\n\n> **Note:** These metrics are all *describable* from the schema but none are yet formally governed. Formalizing them as governed metrics would add consistent definitions, approved aggregation rules, and access controls.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {},
+      "runtime_ms": 0,
+      "wall_clock_s": 22.73,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-e0e8cab7-72c9-45d3-a0ff-afdfe2d61ca1",
+      "turn_idx": 2,
+      "message": "party",
+      "answer": "There are **15** parties.",
+      "agent_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?party a <http://curated-layer-ontology-20260614-175213/ontology/vkg-ontology_curated_layer-8b3529dc/Party> .\n}",
+      "clarified": false,
+      "rows": [
+        {
+          "v0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 17200,
+        "outputTokens": 175,
+        "totalTokens": 31906,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 15290,
+      "wall_clock_s": 17.1,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-14-3fcda81a-884c-4f6b-8655-e499e7a9f3f7",
+      "turn_idx": 0,
+      "message": "What can I ask about this semantic layer?",
+      "answer": "## What You Can Ask About This Semantic Layer\n\nThis layer covers **insurance policy administration** data modeled after the ACORD standard. Here is a guide to the business questions it can answer, organized by topic.\n\n---\n\n### \ud83d\udc64 Parties & Contacts\n- Who is a customer, insured, owner, payer, or producer?\n- What is a party's mailing address, email, or phone number?\n- Which customers live in a given state or country?\n- What is a party's date of birth, smoker status, or risk class?\n- What government IDs (SSN, TIN, passport) are on file for a party?\n- What bank account does a customer use for premium drafts?\n\n---\n\n### \ud83d\udccb Policies & Holdings\n- What policies/contracts are active?\n- What is the cash value, market value, or account value of a policy?\n- Is a policy a life insurance or annuity product?\n- What product is a policy written on, and what are that product's rates and eligibility rules?\n- Does a policy have any restrictions, holds, or liens?\n- Which policies have reinsurance arrangements?\n\n---\n\n### \ud83d\udee1\ufe0f Coverages & Riders\n- What coverages are on a policy (base, rider, optional)?\n- Who is insured and for how much (face amount / death benefit)?\n- What is the annual or modal premium for a coverage?\n- What riders are attached to a policy and are they active?\n- What does a rider cost and what benefit does it provide?\n- Who participates in a rider and at what issue age?\n\n---\n\n### \ud83e\uddec Underwriting & Risk\n- Who is the insured on a life policy and what is their underwriting class?\n- Is the insured a smoker or non-smoker?\n- Is a policy rated substandard, and what is the table rating or occupational class?\n- What is the insured's issue age and gender?\n\n---\n\n### \ud83d\udcb0 Financial Transactions & Statements\n- What premium payments, withdrawals, dividends, or claims have been posted to a policy?\n- What is the most recent policy statement and what does it show for account value, surrender value, and death benefit?\n- What loan transactions have occurred on a policy, and are any overdue?\n- What is the outstanding loan balance and interest rate on a policy?\n- What subaccount (fund-level) transactions have occurred on a variable policy?\n\n---\n\n### \ud83d\udcc8 Investments & Subaccounts\n- What investment funds is a variable policy allocated to?\n- How much is invested in each fund and what is the current value?\n- What are the fees, risk rating, and performance of available funds?\n- Which funds have a specific Morningstar rating or risk profile?\n\n---\n\n### \ud83e\udd1d Relationships & Beneficiaries\n- Who are the beneficiaries on a policy and what share does each receive?\n- Is a beneficiary primary or contingent?\n- Who is the trustee or spouse related to a party?\n\n---\n\n### \ud83c\udfe2 Distribution & Producers\n- Which producers are appointed to sell and at what commission rate?\n- What distribution hierarchy level or customer segment does a party belong to?\n- Who is the financial advisor assigned to a customer?\n- Does a producer have an active license record?\n\n---\n\n### \ud83d\udd0d Reference & Lookup\n- What does a given status, type, or method code mean?\n- What are all valid values for a code domain (e.g. coverage status, party type)?\n- What does a state or country code translate to?\n- Which products are currently active and what are their premium limits or issue-age ranges?\n\n---\n\n### \u26a0\ufe0f A Few Things to Note\n- **No pre-built numeric metrics** are defined yet in this layer \u2014 aggregations (totals, counts, averages) are *describable* but not pre-computed.\n- All tables use a **soft-delete pattern** \u2014 active records require filtering out deleted/inactive rows.\n- Several date and code columns are stored as **strings**, not native date or numeric types, which may affect how comparisons are expressed.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {},
+      "runtime_ms": 0,
+      "wall_clock_s": 25.16,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-15-07104946-ce68-40b9-a9c6-5bc7580ae147",
+      "turn_idx": 0,
+      "message": "Explain what the coverage table represents.",
+      "answer": "## Coverage Table\n\nThe **Coverage** table represents the specific insurance benefits attached to a policy \u2014 essentially, *what a policy actually insures and for how much*.\n\n---\n\n### What It Captures\n\nEach row describes one coverage on a policy, including:\n\n- **What type of benefit it is** \u2014 Base coverage (the primary benefit), a Rider (add-on), or Optional benefit\n- **Who is insured** \u2014 the party (person) covered under that benefit\n- **How much they are insured for** \u2014 the face amount (death benefit / sum insured)\n- **What it costs** \u2014 the annual or modal premium\n- **Whether it is active** \u2014 coverage status (e.g. Active, Lapsed, Terminated)\n- **Underwriting attributes** \u2014 the risk class and other underwriting details applied to that benefit\n\n---\n\n### How It Connects to Other Data\n\n| Related Concept | How to Reach It |\n|---|---|\n| The policy it belongs to | Link to the **Holding** table |\n| The insured person's identity | Link to the **Party** table |\n| The product definition | Link to **CoverageProduct** for the benefit name and category |\n| Add-on riders | Link to the **Rider** table |\n| Life-specific insured details | Link to **LifeParticipant** |\n\n---\n\n### Typical Business Questions It Answers\n\n- *What coverages are on this policy, and are they active?*\n- *Who is insured under this policy and for what death benefit amount?*\n- *What is the premium for each coverage on a policy?*\n- *Is this coverage a base policy or a rider?*\n- *What underwriting class was assigned to this insured?*\n\n---\n\n### One Important Note\nA single policy can have **multiple coverage rows** \u2014 one for the base benefit and additional rows for each rider or optional benefit attached to that policy.",
+      "agent_sql": "",
+      "clarified": false,
+      "rows": [],
+      "usage": {},
+      "runtime_ms": 0,
+      "wall_clock_s": 15.0,
+      "invoke_error": null
+    }
+  ],
+  "agent_performance": {
+    "turns": 19,
+    "sessions": 16,
+    "avg_wall_clock_s": 21.08,
+    "input_tokens": 330262,
+    "output_tokens": 9189,
+    "total_tokens": 795609
+  }
+}

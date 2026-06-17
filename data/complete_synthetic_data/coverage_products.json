@@ -1,0 +1,72 @@
+[
+  {
+    "pk": "COVPRODUCT#COVPROD8898",
+    "sk": "METADATA",
+    "CoverageProductID": "COVPROD8898",
+    "CoverageProductCode": "COVPROD8898",
+    "CoverageProductName": "Base Life",
+    "CoverageCategory": "Death Benefit",
+    "Description": "Beautiful student turn forward on catch positive.",
+    "Status": "Active",
+    "EffectiveDate": "2020-03-05",
+    "CreatedDate": "2017-03-02",
+    "UpdatedDate": "2026-02-11",
+    "Deleted": false
+  },
+  {
+    "pk": "COVPRODUCT#COVPROD9169",
+    "sk": "METADATA",
+    "CoverageProductID": "COVPROD9169",
+    "CoverageProductCode": "COVPROD9169",
+    "CoverageProductName": "Accidental Death",
+    "CoverageCategory": "Death Benefit",
+    "Description": "Far until computer green live become much.",
+    "Status": "Active",
+    "EffectiveDate": "2016-10-02",
+    "CreatedDate": "2018-11-29",
+    "UpdatedDate": "2026-02-11",
+    "Deleted": false
+  },
+  {
+    "pk": "COVPRODUCT#COVPROD1132",
+    "sk": "METADATA",
+    "CoverageProductID": "COVPROD1132",
+    "CoverageProductCode": "COVPROD1132",
+    "CoverageProductName": "Child Rider",
+    "CoverageCategory": "Living Benefit",
+    "Description": "Commercial why material nor treat total.",
+    "Status": "Active",
+    "EffectiveDate": "2014-02-14",
+    "CreatedDate": "2020-07-06",
+    "UpdatedDate": "2026-02-11",
+    "Deleted": false
+  },
+  {
+    "pk": "COVPRODUCT#COVPROD2191",
+    "sk": "METADATA",
+    "CoverageProductID": "COVPROD2191",
+    "CoverageProductCode": "COVPROD2191",
+    "CoverageProductName": "Spouse Rider",
+    "CoverageCategory": "Death Benefit",
+    "Description": "Because decide after fast.",
+    "Status": "Active",
+    "EffectiveDate": "2014-07-15",
+    "CreatedDate": "2020-08-07",
+    "UpdatedDate": "2026-02-11",
+    "Deleted": false
+  },
+  {
+    "pk": "COVPRODUCT#COVPROD8213",
+    "sk": "METADATA",
+    "CoverageProductID": "COVPROD8213",
+    "CoverageProductCode": "COVPROD8213",
+    "CoverageProductName": "Term Rider",
+    "CoverageCategory": "Death Benefit",
+    "Description": "Could yard note individual sense value.",
+    "Status": "Active",
+    "EffectiveDate": "2013-08-04",
+    "CreatedDate": "2013-11-14",
+    "UpdatedDate": "2026-02-11",
+    "Deleted": false
+  }
+]

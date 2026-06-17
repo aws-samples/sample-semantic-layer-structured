@@ -1,0 +1,41 @@
+# Amazon Bedrock and Strands Framework
+strands-agents[otel]==1.41.0  # AI agent framework for tool orchestration
+bedrock-agentcore==1.11.0  # Bedrock AgentCore Runtime SDK (pin after first successful deploy)
+
+
+websockets==16.0
+
+# AWS SDK
+boto3==1.43.15  # AWS SDK for DynamoDB, S3, Bedrock
+botocore==1.43.15
+
+# MCP AWS IAM Authentication
+mcp-proxy-for-aws==1.1.6 # IAM authentication for AgentCore Gateway via MCP
+
+# OpenTelemetry for observability
+aws-opentelemetry-distro==0.17.1 
+
+# Data validation and serialization
+pydantic==2.12.5  # Data validation for models
+
+# Authentication and security
+PyJWT==2.12.1  # JWT token validation
+cryptography==46.0.6  # Cryptographic functions for JWT
+
+# HTTP client
+aiohttp==3.13.3  # Async HTTP client (required by smithy-http)
+requests==2.33.1  # HTTP requests for auth validation
+
+# Environment configuration
+python-dotenv==1.2.2  # Environment variable management
+
+# Token counting for agent context management
+tiktoken==0.12.0  # Token counting for Claude models
+
+# Apache Iceberg — S3 Tables metadata write-back (column doc strings, table descriptions)
+pyiceberg[s3tables]==0.11.1
+
+# Tier 2 progressive disclosure
+sqlglot==30.8.0       # SQL parse/validate (Phase 3 SQL gen + Tier 1 metric SQL parse)
+networkx==3.6.1       # Centrality-based slice truncation (Phase 2)
+rdflib==7.6.0         # TTL slice serialization for VKG Phase 2 output

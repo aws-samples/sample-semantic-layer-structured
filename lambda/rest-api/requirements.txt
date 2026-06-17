@@ -1,0 +1,45 @@
+# Web framework and API dependencies
+fastapi>=0.68.0  # REST API framework
+starlette>=0.14.2  # Web framework (FastAPI dependency)
+mangum>=0.17.0  # ASGI adapter for AWS Lambda - wraps FastAPI for Lambda compatibility
+
+# AWS dependencies
+boto3>=1.34.0  # AWS SDK for Glue, S3
+botocore>=1.34.0  # AWS core library
+
+# Data validation and serialization
+pydantic>=1.8.0  # Data validation for API requests/responses
+
+# Environment and configuration
+python-dotenv>=0.19.0  # Environment variable management
+
+# HTTP and API clients
+aiohttp>=3.8.0  # Async HTTP client
+sse-starlette>=2.1.3  # Server-Sent Events streaming responses for AG-UI chat
+requests>=2.33.1  # Synchronous HTTP client (required by mcp-proxy-for-aws)
+
+# MCP AWS IAM Authentication
+mcp-proxy-for-aws  # IAM authentication for AgentCore Gateway via MCP
+strands-agents>=1.6.0  # AI agent framework for MCP client
+
+# Authentication and security
+PyJWT>=2.12.1  # JWT token validation
+cryptography>=46.0.6  # Cryptographic functions for JWT
+
+# File upload support
+python-multipart  # File upload support in FastAPI
+
+# Document text extraction for uploaded reference files
+pypdf==6.9.2          # PDF text extraction (successor to PyPDF2)
+python-docx==1.2.0    # DOCX text extraction
+
+# Data processing
+pandas>=2.0.0  # Data manipulation for query results
+pyarrow>=14.0.0  # Parquet and Arrow format support for Athena results
+
+# Iceberg metadata enrichment — reads column doc-strings and table properties
+# from S3 Tables Iceberg metadata JSON (which Glue federation does not expose).
+pyiceberg[s3tables]>=0.8.1
+
+# Progressive disclosure — Tier 1 metric authoring
+sqlglot==30.8.0

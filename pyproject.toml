@@ -1,0 +1,11 @@
+[tool.bandit]
+# B311 is suppressed inline in generate_complete_synthetic_data.py via # nosec B311 comments
+# (per_file_ignores is not a valid Bandit key and is silently ignored)
+#
+# Exclude the test suite from Bandit. Test files legitimately contain patterns
+# Bandit flags but that carry no production risk: fake bearer tokens / passwords
+# (B105/B106 — e.g. 'tok-1', 'test'), temp-dir paths in test scratch (B108),
+# and subprocess calls that run `cdk synth` inside unit tests (B404/B603/B607).
+# Production code keeps Bandit enabled (with inline `# nosec <code>` where a
+# specific construct is reviewed-safe). Re-run: `bandit -c pyproject.toml -r .`
+exclude_dirs = ["tests", "venv", ".venv", "node_modules", "cdk.out"]

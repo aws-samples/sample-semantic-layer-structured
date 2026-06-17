@@ -1,0 +1,16 @@
+# Gitleaks ignore file - excludes false positive findings
+# Format: fingerprint from gitleaks report
+
+# False positive: README.md documentation placeholder tokens
+96decd88f69cb1976e7ea9d89fa9a90dadf99eeb:README.md:curl-auth-header:689
+357f37738cdb897f6a9ff040916871b178adcfd0:README.md:curl-auth-header:694
+
+# False positive: cowork/config.env.example is a non-secret EXAMPLE file. The flagged
+# value is a public Cognito OAuth CLIENT_ID (a public identifier, not a credential);
+# the file ships no real secret. Account-id/client-id are also now placeholdered.
+534bd18bd275e6f85548e8b4ea1d84b2555064c9:cowork/config.env.example:generic-api-key:14
+
+# False positive: notebooks/9_mcp_server_testing.ipynb was renamed to
+# 8_mcp_server_testing.ipynb; the flagged line is a variable assignment ("TOKEN ="),
+# not a literal secret — the token is minted at runtime via Cognito client_credentials.
+dcddb1837fe8280da0475ee4e41e3e80cc926223:notebooks/9_mcp_server_testing.ipynb:generic-api-key:88

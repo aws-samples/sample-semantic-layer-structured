@@ -1,0 +1,5 @@
+# Checkov configuration — suppress false positive findings
+skip-path:
+  - cdk/cdk-outputs-lambda.json
+  - cdk/cdk-outputs-agentcore.json
+  - cdk/cdk-outputs*.json

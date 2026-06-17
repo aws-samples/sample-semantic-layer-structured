@@ -1,0 +1,4 @@
+# Requirements for ontology conversion scripts
+rdflib>=7.0.0      # For RDF/OWL ontology parsing
+lxml>=4.9.0        # For XSD schema parsing (ACORD support)
+defusedxml>=0.7.1  # For XXE (XML External Entity) attack prevention

@@ -9,6 +9,11 @@ This project enables the implementation of two alternative semantic layer approa
 
 Both approaches share the same admin workflow up to the point of choosing the semantic layer type.
 
+> **📊 Background / concepts:** For the _why_ behind this project — the two failure modes of
+> agentic text-to-SQL (grounding vs. delivery), how a semantic layer + ontology and progressive
+> disclosure address them, and the tiered query path — see the companion presentation
+> [`assets/guides/semantic-layer.pdf`](assets/guides/semantic-layer.pdf).
+
 ### Key Capabilities
 
 - **Dual Semantic Layer Modes**: Choose VKG (Neptune-based ontology) or Semantic RAG (Bedrock KB-based metadata)
@@ -433,8 +438,18 @@ admin-uploaded reference documents into the Bedrock Knowledge Base
 
 ### Stack Architecture (up to 21 stacks)
 
-17 stacks always deploy; 4 are conditional on feature flags (`enableRealtimeReplication`,
-`enableBatchReplication` ×2, `enableOntologyAgents`).
+17 stacks deploy unconditionally; 4 are flag-gated. Three flags gate whole stacks (defaults are
+the values committed in [`cdk/cdk.json`](cdk/cdk.json) — flip a flag and that stack is added or
+dropped regardless of the default):
+
+- `enableRealtimeReplication` (default `false`) → 1 stack (`stream-processor`)
+- `enableBatchReplication` (default `true`) → 2 stacks (`zeroetl` + `normalized-views`)
+- `enableOntologyAgents` (default `true`) → 1 stack (`neptune`)
+
+The other deployment flags (`enableSemanticRag`, `enableAcordSampleData`, `enableOboPassthrough`)
+do **not** add or remove stacks — they toggle resources _inside_ always-deployed stacks (e.g.
+runtimes within `agentcore`, the synthetic-data loader within `dynamodb`). See
+[Deployment Modes](#deployment-modes) for what every flag does.
 
 ```
 1.  semantic-layer-networking
@@ -844,16 +859,20 @@ cdk --version
 
 ### Deployment Modes
 
-CDK context flags control optional capabilities. Pass via `-c flagName=true` on the
-`cdk deploy` / `cdk synth` command line, or set them in `cdk.json` under `"context"`:
+CDK context flags control optional capabilities. Pass them as `-c flagName=true` /
+`-c flagName=false` on the `cdk deploy` / `cdk synth` command line, or set them in `cdk.json`
+under `"context"`. **The defaults below are the values committed in
+[`cdk/cdk.json`](cdk/cdk.json), which is what a bare `cdk deploy` uses** — most flags default to
+`true`, so you _disable_ those with `=false` (as the capability matrix below shows), not enable
+them with `=true`:
 
 | Flag                        | Default | Effect                                                                                                                                                                                                                                                                                     |
 | --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `enableOntologyAgents`      | `true`  | VKG mode: Neptune + ontology + ontology-query runtimes + Ontop translate Lambda                                                                                                                                                                                                            |
 | `enableSemanticRag`         | `true`  | Semantic-RAG mode: `semantic-rag` Bedrock KB + `metadata`, `metadata-query`, `query-suggestions` runtimes + `/metadata` FastAPI sub-app                                                                                                                                                    |
-| `enableAcordSampleData`     | `false` | Loads the 12 ACORD insurance tables with synthetic data on deploy                                                                                                                                                                                                                          |
-| `enableRealtimeReplication` | `true`  | DynamoDB Streams → S3 Tables (PyIceberg) CDC pipeline                                                                                                                                                                                                                                      |
-| `enableBatchReplication`    | `false` | Glue Zero-ETL integrations + normalized-views (alternative to realtime replication)                                                                                                                                                                                                        |
+| `enableAcordSampleData`     | `true`  | Loads the 12 ACORD insurance tables with synthetic data on deploy                                                                                                                                                                                                                          |
+| `enableRealtimeReplication` | `false` | DynamoDB Streams → S3 Tables (PyIceberg) CDC pipeline                                                                                                                                                                                                                                      |
+| `enableBatchReplication`    | `true`  | Glue Zero-ETL integrations + normalized-views (alternative to realtime replication)                                                                                                                                                                                                        |
 | `enableOboPassthrough`      | `false` | On-behalf-of (OBO) identity exchange: the REST API swaps the caller's Cognito JWT for short-lived STS creds via AgentCore Identity (fail-closed). Phase-0 rollout — wired + tested but agents do not yet consume the creds; enable only after per-group Lake Formation grants are in place |
 
 > The AG-UI multi-turn streaming chat is **always on** — it is the only natural-language query
@@ -862,23 +881,26 @@ CDK context flags control optional capabilities. Pass via `-c flagName=true` on 
 
 **Capability matrix:**
 
-| Mode                              | VKG admin | Semantic RAG admin | NL Query (VKG) | NL Query (Semantic RAG) | Sample data |
-| --------------------------------- | --------- | ------------------ | -------------- | ----------------------- | ----------- |
-| `cdk deploy --all` (default)      | ✅        | ✅                 | ✅             | ✅                      | ❌          |
-| `+ -c enableAcordSampleData=true` | ✅        | ✅                 | ✅             | ✅                      | ✅          |
-| `-c enableSemanticRag=false`      | ✅        | ❌                 | ✅             | ❌                      | ❌          |
-| `-c enableOntologyAgents=false`   | ❌        | ✅                 | ❌             | ✅                      | ❌          |
+| Mode                               | VKG admin | Semantic RAG admin | NL Query (VKG) | NL Query (Semantic RAG) | Sample data |
+| ---------------------------------- | --------- | ------------------ | -------------- | ----------------------- | ----------- |
+| `cdk deploy --all` (default)       | ✅        | ✅                 | ✅             | ✅                      | ✅          |
+| `+ -c enableAcordSampleData=false` | ✅        | ✅                 | ✅             | ✅                      | ❌          |
+| `-c enableSemanticRag=false`       | ✅        | ❌                 | ✅             | ❌                      | ✅          |
+| `-c enableOntologyAgents=false`    | ❌        | ✅                 | ❌             | ✅                      | ✅          |
 
-To load the synthetic ACORD sample data alongside the default (both layer types on):
+The default `cdk deploy --all` already loads the synthetic ACORD sample data (both layer types
+on). To deploy the schema without the synthetic rows:
 
 ```bash
-cdk deploy --all -c enableAcordSampleData=true
+cdk deploy --all -c enableAcordSampleData=false
 ```
 
 > ⚠️ **Mode opt-out:** both layer types are on by default. Pass `-c enableSemanticRag=false` to
 > drop the `semantic-rag` KB + metadata/metadata-query/query-suggestions runtimes, or
 > `-c enableOntologyAgents=false` to drop Neptune + the ontology runtimes. The synthetic ACORD
-> data loader is off by default — opt in with `-c enableAcordSampleData=true`.
+> data loader is **on by default** — opt out with `-c enableAcordSampleData=false`. Batch
+> replication (Zero-ETL + normalized views) is on by default; real-time CDC replication is off
+> (`-c enableRealtimeReplication=true` to enable it).
 >
 > ⚠️ **Frontend caveat:** React env vars (`REACT_APP_ENABLE_SEMANTIC_RAG`) are baked at build
 > time. Flipping a flag requires re-running `cdk deploy` so the frontend is rebuilt.

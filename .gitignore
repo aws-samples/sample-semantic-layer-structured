@@ -27,6 +27,7 @@ MANIFEST
 venv/
 venv
 .venv/
+.venv-eval/
 env/
 ENV/
 virtualenv/

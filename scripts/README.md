@@ -22,6 +22,10 @@ This directory contains scripts for managing the semantic layer project.
 
 - **sync-frontend-env.sh** - Syncs the frontend `.env` file with deployed CloudFormation stack values
 
+### Evaluation Scripts
+
+- **red-team-ci.sh** - On-demand runner for the adversarial red-team suite (`tests/eval/`). Runs the Strands Evals red team against both query agents and exits non-zero on any breach or degraded run. Runs in a dedicated `.venv-eval` and needs AWS Bedrock access; not wired into CI today. See [`../tests/eval/RED_TEAM_IMPLEMENTATION.md`](../tests/eval/RED_TEAM_IMPLEMENTATION.md).
+
 ## Directory Structure
 
 ```
@@ -35,7 +39,8 @@ scripts/
 ├── convert-ontologies.py               # Ontology converter
 ├── ontology-requirements.txt           # Python deps for ontology scripts
 ├── ONTOLOGY_SCRIPTS_README.md          # Ontology scripts documentation
-└── sync-frontend-env.sh                # Sync frontend .env with stack outputs
+├── sync-frontend-env.sh                # Sync frontend .env with stack outputs
+└── red-team-ci.sh                      # On-demand adversarial red-team runner
 ```
 
 ## Data Directory Structure

@@ -25,6 +25,7 @@ Both approaches share the same admin workflow up to the point of choosing the se
 - **User Feedback**: 👍/👎 ratings + comments per assistant turn, PII-redacted by Guardrails and stored in DynamoDB; surfaced in the admin Feedback tab
 - **Lessons Learned / Long-Term Memory**: Bedrock AgentCore Memory mines durable lessons from chat sessions (SemanticStrategy) and injects them as prior context into future queries; surfaced in the admin Lessons Learned tab
 - **Ground-Truth Evaluations**: Per-layer ground-truth datasets drive AgentCore on-demand + online evaluation runs (accuracy / latency / token metrics) surfaced in the admin Evaluations tab
+- **Adversarial Red-Teaming**: Automated guardrail red-team suite (Strands Evals, `CrescendoStrategy`) probing the query agents across 5 OWASP-aligned risk categories; run manually today — see [`tests/eval/RED_TEAM_IMPLEMENTATION.md`](tests/eval/RED_TEAM_IMPLEMENTATION.md)
 - **Two-Tier Query Path**: A Tier 1 **governed-metric lookup** first matches the question (Titan-v2 embedding + KNN, cosine ≥ 0.85) against maintained/published metrics and, on a clear match, runs that metric's pre-validated SQL on Athena — returning early. Otherwise it falls through to a Tier 2 deterministic Strands graph (topic router → disambiguation → slice builder → SQL/SPARQL generate+validate → grounding gate + bounded execution) with clarification loops
 - **Maintained Metrics (governed)**: curated metrics (name/description/synonyms + pre-validated SQL) stored in DynamoDB with a DRAFT → APPROVED → PUBLISHED lifecycle; published metrics are embedded for the Tier 1 lookup and authored via the `/metrics` API (gated by `METRICS_TABLE`)
 - **Ontology in Neptune**: Business concepts, relationships, and mappings stored as RDF/OWL
@@ -86,7 +87,7 @@ Both approaches share the same admin workflow up to the point of choosing the se
 ### Security & Observability
 
 - **Authentication**: Amazon Cognito (OAuth 2.0 + PKCE); CUSTOM_JWT authorizers on the MCP/chat gateways; M2M `client_credentials` for backend service-to-runtime calls
-- **AI Safety**: Amazon Bedrock Guardrails (INPUT/OUTPUT screening on queries; PII redaction on feedback + memory writes)
+- **AI Safety**: Amazon Bedrock Guardrails (INPUT/OUTPUT screening on queries; PII redaction on feedback + memory writes); adversarial red-team suite validating the guardrails under attack — see [`tests/eval/RED_TEAM_IMPLEMENTATION.md`](tests/eval/RED_TEAM_IMPLEMENTATION.md)
 - **Observability**: AWS OpenTelemetry Distro; AgentCore online + on-demand evaluation; CloudWatch custom chat metrics
 - **Secrets**: AWS Secrets Manager + Systems Manager Parameter Store
 - **Network**: Lake Formation permissions for S3 Tables access control

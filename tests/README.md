@@ -28,6 +28,21 @@ tests/
     ├── test_tier1_e2e.py                          # Tier 1 governed-metric path (3 tests)
     ├── test_tier2_rag_e2e.py                      # Tier 2 Semantic-RAG path (1 test)
     └── test_tier2_vkg_e2e.py                      # Tier 2 VKG path (1 test)
+
+tests/eval/                                        # Adversarial red-team suite (separate .venv-eval)
+├── factories.py                                   # Zero-arg agent factories (metadata + VKG)
+├── tools.py                                       # Representative SELECT-only tools
+├── requirements.txt                               # Eval-only deps (strands-agents-evals, sqlglot)
+├── RED_TEAM_IMPLEMENTATION.md                     # Full design + run docs
+└── red_team/
+    ├── config.py                                  # Risk categories, thresholds
+    ├── custom_cases.py                            # 10 hand-authored FSI attacks
+    ├── run_red_team.py                            # Async runner (entry point)
+    ├── report_handler.py                          # Breach analysis + JSON export
+    ├── test_tools_guard.py                        # SQL guard behavior tests
+    ├── _weakened_agent.py                          # Vulnerable agent (breach-evidence only)
+    ├── reports/                                   # Breach JSON output (git-ignored)
+    └── samples/                                   # Captured PASS + breach evidence
 ```
 
 **Test Counts** (Python, this directory):
@@ -256,6 +271,37 @@ python tests/integration/test_ontology_agent_integration.py
 4. ✅ Neptune persistence via file-based workflow (skips if `NEPTUNE_GATEWAY_URL` not set)
 5. ✅ S3 persistence (skips if `ARTIFACTS_BUCKET` not set)
 6. ✅ Phase 1 agent invocation with real Athena schema (skips if `TEST_TABLE` not set)
+
+---
+
+## Evaluation — Adversarial Red Team
+
+**Location:** `tests/eval/`
+
+An adversarial red-team suite that probes the two query agents (Semantic-RAG
+metadata + VKG ontology) with multi-turn jailbreak attacks via the
+[Strands Evals](https://strandsagents.com/docs/user-guide/evals-sdk/red-teaming/)
+Red Teaming SDK (`CrescendoStrategy`), across 5 OWASP-LLM-aligned risk
+categories (`guideline_bypass`, `system_prompt_leak`, `harmful_content`,
+`data_exfiltration`, `excessive_agency`). Attacks hit representative
+SELECT-only tools so application-layer risks surface through the tool surface.
+
+Unlike the unit/integration suites, this one:
+
+- runs in a **dedicated `.venv-eval`** (not the unit-test env) — it needs the
+  newer `strands-agents` the eval SDK requires (see `tests/eval/requirements.txt`);
+- needs **AWS Bedrock access** (real model + LLM judge calls);
+- is **run manually / on-demand today** — it is not wired into any CI pipeline.
+
+```bash
+python -m venv .venv-eval && source .venv-eval/bin/activate
+pip install -r tests/eval/requirements.txt
+python -m tests.eval.red_team.run_red_team      # or ./scripts/red-team-ci.sh
+```
+
+See **[`tests/eval/RED_TEAM_IMPLEMENTATION.md`](eval/RED_TEAM_IMPLEMENTATION.md)**
+for the full design, the exit-code contract, environment overrides, and the
+captured PASS/breach evidence in `tests/eval/red_team/samples/`.
 
 ---
 

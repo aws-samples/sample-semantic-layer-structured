@@ -115,7 +115,7 @@ Control — harmless for the browser login flow), and troubleshooting.
 
 ## Testing
 
-`notebooks/8_mcp_server_testing.ipynb` covers the full deployed stack:
+`notebooks/10_mcp_server_testing.ipynb` covers the full deployed stack:
 
 | Step   | What it tests                                                   |
 | ------ | --------------------------------------------------------------- |

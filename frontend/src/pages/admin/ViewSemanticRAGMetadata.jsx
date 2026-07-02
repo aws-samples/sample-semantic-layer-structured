@@ -28,6 +28,7 @@ import {
 import LessonsLearnedTab from "../../components/LessonsLearnedTab";
 import FeedbackTab from "../../components/FeedbackTab";
 import GovernedMetricsTab from "../../components/GovernedMetricsTab";
+import MonitoringTab from "../../components/MonitoringTab";
 import GroundTruthDataset from "./GroundTruthDataset";
 import Evaluations from "./Evaluations";
 
@@ -845,15 +846,23 @@ export default function ViewSemanticRAGMetadata() {
                   </Box>
                 ),
               },
+              {
+                label: "Monitoring",
+                id: "monitoring",
+                content: id ? (
+                  <MonitoringTab ontologyId={id} />
+                ) : (
+                  <Box
+                    color="text-status-inactive"
+                    padding="l"
+                    textAlign="center"
+                  >
+                    No semantic layer selected
+                  </Box>
+                ),
+              },
             ]}
           />
-
-          {status === "completed" && (
-            <Alert type="success" header="Semantic Metadata Ready">
-              Your metadata has been enriched and synced to the Knowledge Base.
-              You can now query your data using natural language.
-            </Alert>
-          )}
         </SpaceBetween>
       )}
     </SpaceBetween>

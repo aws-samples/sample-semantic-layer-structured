@@ -49,3 +49,4 @@ def test_min_candidates_floor_when_all_weak():
                        min_candidates=8)
     out = r.find_candidates(question="q", namespace="ns")
     assert out == [f"db.t{i}" for i in range(8)]
+

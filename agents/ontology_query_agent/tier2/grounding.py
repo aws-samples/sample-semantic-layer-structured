@@ -180,6 +180,136 @@ def extract_sparql_iris(sparql: str, *, prefixes: Optional[Dict[str, str]] = Non
     return {"predicates": predicates, "classes": classes, "triples": pairs}
 
 
+def _walk_filter_var_equalities(node: Any, out: List[Tuple[Any, Any]]) -> None:
+    """Collect ``FILTER(?a = ?b)`` variable-equality pairs from the algebra.
+
+    Only ``=`` between two VARIABLES counts as a join edge — a tautological
+    ``FILTER(?a = ?a)`` (same var) is skipped (it never connects anything; it is
+    exactly the no-op the gt-03 cartesian-product query used in place of a real
+    join). Variable-to-literal/constant comparisons are ignored (not joins).
+    """
+    if isinstance(node, CompValue):
+        if node.name == "Filter":
+            expr = node.get("expr")
+            if isinstance(expr, CompValue) and expr.get("op") == "=":
+                a, b = expr.get("expr"), expr.get("other")
+                an = getattr(a, "n3", lambda: None)() if hasattr(a, "n3") else None
+                bn = getattr(b, "n3", lambda: None)() if hasattr(b, "n3") else None
+                # rdflib variables stringify as "?x"; require two DISTINCT vars.
+                if (isinstance(an, str) and an.startswith("?")
+                        and isinstance(bn, str) and bn.startswith("?") and an != bn):
+                    out.append((a, b))
+        for value in node.values():
+            _walk_filter_var_equalities(value, out)
+    elif isinstance(node, (list, tuple)):
+        for value in node:
+            _walk_filter_var_equalities(value, out)
+
+
+def detect_disconnected_subjects(sparql: str, *, prefixes: Optional[Dict[str, str]] = None
+                                 ) -> Optional[bool]:
+    """True iff the query's class-typed subjects split into ≥2 connected components.
+
+    Catches the gt-03 cartesian-product shape: two class-typed subjects (e.g. a
+    ``Holding`` and a ``Coverage``) that are never actually joined — the bridge key
+    was left unbound and a tautological ``FILTER(?k = ?k)`` stood in for the join,
+    so Ontop emits a cross product. Connectivity is computed on the real rdflib
+    algebra (reusing :func:`_walk_bgp_triples`), NOT regex:
+
+      - Nodes: distinct subject terms that carry an ``rdf:type <Class>`` assertion.
+      - Edges: two subjects are connected if they SHARE a variable in any triple
+        position (a real join var), if a triple links them directly (subject of one
+        is object of another), or if a ``FILTER(?a = ?b)`` equates two DISTINCT
+        variables they bind. A tautological ``FILTER(?k = ?k)`` is NOT an edge.
+
+    WHITELISTED (returns False — never flagged):
+      - Fewer than 2 class-typed subjects (single-entity queries — the passing rows).
+      - All class-typed subjects share the SAME class (a self-join, e.g. gt-00) — a
+        legitimate same-class pattern, not a cross product.
+
+    Returns ``None`` (UNKNOWN → caller must NOT flag) on parse failure or a property
+    path, mirroring :func:`extract_sparql_iris`'s degrade contract — fail-soft, never
+    block a query we cannot analyze.
+
+    Args:
+        sparql: The (syntax-validated, desugared) SPARQL.
+        prefixes: ``{prefix: namespace}`` from the slice for PREFIX resolution.
+
+    Returns:
+        ``True`` (disconnected → cartesian risk), ``False`` (connected / whitelisted),
+        or ``None`` (unanalyzable → treat as not-flagged).
+    """
+    header = "\n".join(f"PREFIX {p}: <{ns}>" for p, ns in (prefixes or {}).items() if p)
+    query_text = f"{header}\n{sparql}" if header else sparql
+    try:
+        prepared = prepareQuery(query_text)
+    except Exception as exc:  # noqa: BLE001
+        logger.info("disconnect-check: parse failed (no flag): %s", exc)
+        return None
+
+    triples: List[Tuple[Any, Any, Any]] = []
+    _walk_bgp_triples(prepared.algebra, triples)
+    for _s, p, _o in triples:
+        if isinstance(p, Path):
+            return None  # property path — can't analyze; don't flag.
+
+    # Class-typed subjects + their class.
+    subject_class: Dict[Any, str] = {}
+    for s, p, o in triples:
+        if p == RDF.type and isinstance(o, URIRef):
+            subject_class[s] = str(o)
+    typed = list(subject_class)
+    if len(typed) < 2:
+        return False  # single-entity query — nothing to disconnect.
+    if len(set(subject_class.values())) < 2:
+        return False  # all same class → self-join, legitimate.
+
+    # Union-find over typed subjects; connect subjects that share any term, or are
+    # directly linked (subject of one appears as object of another's triple), or are
+    # tied by a FILTER(?a = ?b). Map every term → the typed subjects that "own" it
+    # (a term owns a subject if it appears in a triple whose subject is that typed
+    # subject, OR it IS that typed subject when it appears as an object elsewhere).
+    parent: Dict[Any, Any] = {t: t for t in typed}
+
+    def _find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def _union(a, b):
+        if a in parent and b in parent:
+            parent[_find(a)] = _find(b)
+
+    # term -> set of typed subjects whose triples mention that term (in any position)
+    term_owners: Dict[Any, set] = {}
+    for s, p, o in triples:
+        owner = s if s in subject_class else None
+        for term in (s, o):
+            if owner is not None:
+                term_owners.setdefault(term, set()).add(owner)
+        # a typed subject appearing as an OBJECT also ties to the owning subject
+        if o in subject_class and owner is not None:
+            _union(owner, o)
+    # shared term across two typed subjects → join edge
+    for owners in term_owners.values():
+        owners = [w for w in owners if w in parent]
+        for w in owners[1:]:
+            _union(owners[0], w)
+    # FILTER(?a = ?b) equalities link the subjects that bind those vars
+    eqs: List[Tuple[Any, Any]] = []
+    _walk_filter_var_equalities(prepared.algebra, eqs)
+    for a, b in eqs:
+        oa = term_owners.get(a, set())
+        ob = term_owners.get(b, set())
+        for wa in oa:
+            for wb in ob:
+                _union(wa, wb)
+
+    components = {_find(t) for t in typed}
+    return len(components) >= 2
+
+
 def check_grounding(*, sparql: str, slice_graph_or_text: Any) -> List[str]:
     """Return the IRIs in ``sparql`` that are not grounded in the slice.
 

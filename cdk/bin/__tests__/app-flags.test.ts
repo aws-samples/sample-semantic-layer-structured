@@ -1,68 +1,91 @@
 /**
- * Synth-time flag-matrix tests.
+ * Feature-flag matrix tests.
  *
- * The CDK app at `cdk/bin/app.ts` calls `app.synth()` as a top-level side effect, so
- * `require('../app')` inside Jest cannot safely be repeated. Instead, each test shells
- * out to `cdk synth` with a different `--context` combination and greps the resulting
- * cloud-assembly templates to assert which resources are present.
+ * These assert that the `enableSemanticRag` and `enableAcordSampleData` flags
+ * actually gate the resources they claim to. The two flags are wired as stack
+ * props (`BedrockKnowledgeBaseStack.enableSemanticRag`,
+ * `DynamoDBStack.loadSyntheticData`), so we instantiate each stack directly with
+ * both prop values and assert on the synthesized CloudFormation via
+ * `Template.fromStack` — the same hermetic pattern as chat-gateway.test.ts.
  *
- * This is slower than in-process synth (~30–60s per case on cold cache) but correctly
- * exercises the same code path operators run.
+ * Why not shell out to `cdk synth --context <flag>=false`?
+ *  - cdk.json hardcodes both flags to `true` in its `context` block, and a CLI
+ *    `--context` value does NOT override a key already present there — so every
+ *    `synth` produced identical output and the flag could never be toggled.
+ *  - `synth --all` also bundles Lambda/frontend source into the cloud assembly,
+ *    so grepping the output dir matched application source (e.g. "semantic-rag"
+ *    in a .jsx file), not CloudFormation resources.
+ *  - It synthesized ~20 stacks 4x, which OOM'd the Node heap in CI.
+ * In-process `Template.fromStack` on the single relevant stack avoids all three.
  */
 
-import { execFileSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as cdk from 'aws-cdk-lib';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import { Template } from 'aws-cdk-lib/assertions';
+import { DynamoDBStack } from '../../lib/stacks/backend/dynamodb-stack';
+import { BedrockKnowledgeBaseStack } from '../../lib/stacks/backend/bedrock-kb-stack';
 
-const CDK_DIR = path.resolve(__dirname, '..', '..');
+const ENV = { account: '123456789012', region: 'us-east-1' };
 
-function synthAll(contextOverrides: Record<string, string>): string {
-  // Use a unique --output dir so parallel runs don't stomp on each other.
-  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-synth-'));
-  try {
-    const args = ['cdk', 'synth', '--all', '--quiet', '--output', outDir];
-    for (const [k, v] of Object.entries(contextOverrides)) {
-      args.push('--context', `${k}=${v}`);
-    }
-
-    execFileSync('npx', args, {
-      cwd: CDK_DIR,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, CI: 'true' },
-    });
-
-    // Concatenate every synthesized template into one searchable blob.
-    const files = fs.readdirSync(outDir).filter((f) => f.endsWith('.template.json'));
-    return files.map((f) => fs.readFileSync(path.join(outDir, f), 'utf8')).join('\n'); // nosemgrep: path-join-resolve-traversal,detect-non-literal-fs-filename — CDK synth-time test reading its own output dir; f is from readdirSync, not user input
-  } finally {
-    fs.rmSync(outDir, { recursive: true, force: true });
-  }
+/** Synthesize the DynamoDB stack with a given loadSyntheticData flag. */
+function dynamoTemplate(loadSyntheticData: boolean): Template {
+  const app = new cdk.App();
+  const stack = new DynamoDBStack(app, `DynamoFlag${loadSyntheticData}`, {
+    env: ENV,
+    projectName: 'semantic-layer',
+    loadSyntheticData,
+  });
+  return Template.fromStack(stack);
 }
 
-describe('CDK flag matrix', () => {
-  it('default flags: no semantic-rag KB, no metadata runtime, no synthetic loader', () => {
-    const all = synthAll({});
-    expect(all).not.toMatch(/semantic-rag/i);
-    expect(all).not.toMatch(/MetadataRuntime/);
-    expect(all).not.toMatch(/QuerySuggestionsRuntime/);
-    expect(all).not.toMatch(/DynamoDBDataLoader/);
+/** Synthesize the Bedrock KB stack with a given enableSemanticRag flag. */
+function bedrockKbTemplate(enableSemanticRag: boolean): Template {
+  const app = new cdk.App();
+  // BedrockKnowledgeBaseStack needs an artifactsBucket; create one in a sibling
+  // stack so the cross-stack reference resolves at synth time.
+  const support = new cdk.Stack(app, `KbSupport${enableSemanticRag}`, { env: ENV });
+  // Test-only fixture bucket (never deployed); BLOCK_ALL keeps the security
+  // scanner happy and mirrors production bucket hygiene.
+  const artifactsBucket = new s3.Bucket(support, 'ArtifactsBucket', {
+    blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+  });
+  const stack = new BedrockKnowledgeBaseStack(app, `KbFlag${enableSemanticRag}`, {
+    env: ENV,
+    projectName: 'semantic-layer',
+    artifactsBucket,
+    enableSemanticRag,
+  });
+  return Template.fromStack(stack);
+}
+
+describe('enableSemanticRag flag', () => {
+  test('=true provisions the semantic-rag Knowledge Base', () => {
+    const tpl = bedrockKbTemplate(true);
+    // Two KnowledgeBases: the always-on ontology-patterns KB + the semantic-rag KB.
+    tpl.resourceCountIs('AWS::Bedrock::KnowledgeBase', 2);
   });
 
-  it('enableSemanticRag=true provisions the semantic-rag KB and metadata runtimes', () => {
-    const all = synthAll({ enableSemanticRag: 'true' });
-    expect(all).toMatch(/semantic-rag/i);
-    expect(all).toMatch(/MetadataRuntime/);
+  test('=false omits the semantic-rag KB but keeps the ontology-patterns KB', () => {
+    const tpl = bedrockKbTemplate(false);
+    // Only the ontology-patterns KB remains; semantic-rag KB + data source dropped.
+    tpl.resourceCountIs('AWS::Bedrock::KnowledgeBase', 1);
+  });
+});
+
+describe('enableAcordSampleData / loadSyntheticData flag', () => {
+  // Each DynamoDBDataLoader provisions a DataLoaderFunction Lambda; there are 12
+  // datasets, so 12 loader Lambdas appear only when synthetic loading is enabled.
+  const countLoaderFns = (tpl: Template): number =>
+    Object.entries(tpl.toJSON().Resources as Record<string, { Type: string }>).filter(
+      ([logicalId, r]) =>
+        r.Type === 'AWS::Lambda::Function' && logicalId.includes('LoaderDataLoaderFunction')
+    ).length;
+
+  test('=true provisions a synthetic-data loader per dataset', () => {
+    expect(countLoaderFns(dynamoTemplate(true))).toBe(12);
   });
 
-  it('enableAcordSampleData=true provisions the synthetic-data loader', () => {
-    const all = synthAll({ enableAcordSampleData: 'true' });
-    expect(all).toMatch(/DynamoDBDataLoader/);
-  });
-
-  it('both flags off: synthetic loader and metadata runtimes are both absent', () => {
-    const all = synthAll({});
-    expect(all).not.toMatch(/DynamoDBDataLoader/);
-    expect(all).not.toMatch(/MetadataRuntime/);
+  test('=false provisions no synthetic-data loaders', () => {
+    expect(countLoaderFns(dynamoTemplate(false))).toBe(0);
   });
 });

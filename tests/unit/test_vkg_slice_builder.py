@@ -75,3 +75,61 @@ def test_is_sufficient_consults_judge():
     )
     ok, missing = b.is_sufficient(slice_text="x", question="q?")
     assert ok is False and missing == ["ex:Z"]
+
+
+def test_flatten_slice_for_judge_projects_classes_props_comments():
+    """The judge view flattens Turtle into Class: [prop (range) — comment] blocks."""
+    from agents.ontology_query_agent.tier2.vkg_slice_builder import flatten_slice_for_judge
+    ttl = """
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+<http://ex/Party> a owl:Class ; rdfs:comment "A person or org." .
+<http://ex/Party/party_type> a owl:DatatypeProperty ;
+    rdfs:domain <http://ex/Party> ; rdfs:range <http://ex/string> ;
+    rdfs:comment "Readable category." .
+<http://ex/Holding> a owl:Class .
+<http://ex/Holding/hasParty> a owl:ObjectProperty ;
+    rdfs:domain <http://ex/Holding> ; rdfs:range <http://ex/Party> .
+"""
+    out = flatten_slice_for_judge(ttl)
+    # local names present (not full IRIs)
+    assert "Party" in out and "Holding" in out
+    assert "party_type" in out and "hasParty" in out
+    # comment + range surfaced
+    assert "Readable category." in out
+    assert "range: Party" in out  # object property range local name
+    # full IRIs are NOT in the judge view (generator keeps those, judge doesn't need them)
+    assert "http://ex/Party/party_type" not in out
+
+
+def test_flatten_slice_for_judge_bad_turtle_returns_empty():
+    """Unparseable input returns '' so the caller falls back to the raw slice."""
+    from agents.ontology_query_agent.tier2.vkg_slice_builder import flatten_slice_for_judge
+    assert flatten_slice_for_judge("not turtle {{{") == ""
+    assert flatten_slice_for_judge("") == ""
+
+
+def test_is_sufficient_feeds_flattened_view_to_judge():
+    """is_sufficient hands the judge the FLAT view, not the raw TTL."""
+    from agents.ontology_query_agent.tier2.vkg_slice_builder import VkgSliceBuilder
+    ttl = """
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+<http://ex/Party> a owl:Class ; rdfs:comment "who" .
+<http://ex/Party/name> a owl:DatatypeProperty ; rdfs:domain <http://ex/Party> .
+"""
+    seen = {}
+
+    def judge(payload):
+        seen["slice"] = payload["slice"]
+        return {"sufficient": True, "missing": []}
+
+    b = VkgSliceBuilder(neptune=None, judge_fn=judge,
+                        token_counter=lambda s: len(s) // 4, budget=12000, n_hops=2)
+    ok, missing = b.is_sufficient(slice_text=ttl, question="party names")
+    assert ok is True
+    # judge saw the flattened view (local-name block), not the @prefix Turtle
+    assert "@prefix" not in seen["slice"]
+    assert "Party" in seen["slice"] and "name" in seen["slice"]

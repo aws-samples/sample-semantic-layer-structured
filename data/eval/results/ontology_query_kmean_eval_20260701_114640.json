@@ -1,0 +1,584 @@
+{
+  "notebook": "6_ontology_query",
+  "arm_label": "vkg",
+  "agent": "ontology_query_agent",
+  "agent_id": "semantic_layer_dev_ontology_query-HKGVpkE6XK",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology_query-HKGVpkE6XK",
+  "eval_id": "vkg-ontology_curated_layer-3d1fde76",
+  "eval_k": 3,
+  "evaluator_ids": [
+    "GoalSuccess_945bd536-VjsoKqDtWq",
+    "FinalAnswerFaithfulness_945bd536-v5PmyP5Iqd",
+    "SqlGrounded_945bd536-PVILMn3oj9"
+  ],
+  "custom_evaluators": {
+    "GoalSuccess": "GoalSuccess_945bd536-VjsoKqDtWq",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_945bd536-v5PmyP5Iqd",
+    "SqlGrounded": "SqlGrounded_945bd536-PVILMn3oj9"
+  },
+  "mean_scores": {
+    "GoalSuccess": 0.71,
+    "FinalAnswerFaithfulness": 0.71,
+    "SqlGrounded": 1.0
+  },
+  "std_scores": {
+    "GoalSuccess": 0.0283,
+    "FinalAnswerFaithfulness": 0.0283,
+    "SqlGrounded": 0.0
+  },
+  "per_run_scores": [
+    {
+      "run": 1,
+      "batch_id": "ontquery_gt_batch_r1_0eed0567-c856e85f27",
+      "status": "COMPLETED",
+      "scores": {
+        "FinalAnswerFaithfulness": 0.69,
+        "GoalSuccess": 0.69,
+        "SqlGrounded": 1.0
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 47.66,
+        "input_tokens": 125600,
+        "output_tokens": 22150,
+        "total_tokens": 1259188
+      }
+    },
+    {
+      "run": 2,
+      "batch_id": "ontquery_gt_batch_r2_0b5beb39-5074b44831",
+      "status": "COMPLETED",
+      "scores": {
+        "SqlGrounded": 1.0,
+        "GoalSuccess": 0.75,
+        "FinalAnswerFaithfulness": 0.75
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 36.24,
+        "input_tokens": 124693,
+        "output_tokens": 18205,
+        "total_tokens": 1199495
+      }
+    },
+    {
+      "run": 3,
+      "batch_id": "ontquery_gt_batch_r3_9ebcb654-04ad91e886",
+      "status": "COMPLETED",
+      "scores": {
+        "SqlGrounded": 1.0,
+        "GoalSuccess": 0.69,
+        "FinalAnswerFaithfulness": 0.69
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 38.93,
+        "input_tokens": 125513,
+        "output_tokens": 21232,
+        "total_tokens": 1256444
+      }
+    }
+  ],
+  "agent_perf_mean": {
+    "avg_wall_clock_s": 40.9433,
+    "input_tokens": 125268.6667,
+    "output_tokens": 20529.0,
+    "total_tokens": 1238375.6667
+  },
+  "per_scenario_goal_mean": {
+    "gt-row-05": 1.0,
+    "gt-row-04": 0.0,
+    "mt-no-spurious-clarify": 1.0,
+    "gt-row-13": 1.0,
+    "gt-row-06": 1.0,
+    "gt-row-14": 1.0,
+    "mt-stable-options": 1.0,
+    "gt-row-07": 0.0,
+    "mt-simulated-party-count": 1.0,
+    "gt-row-08": 1.0,
+    "gt-row-15": 1.0,
+    "mt-parties-clarify": 1.0,
+    "gt-row-03": 0.0,
+    "gt-row-02": 1.0,
+    "gt-row-00": 0.3333,
+    "gt-row-01": 0.0
+  },
+  "per_scenario_agent": {
+    "gt-row-02": {
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 133269,
+      "avg_wall_clock_s": 38.96,
+      "generated_sql": "SELECT ?partyType (COUNT(?p) AS ?count)\nWHERE {\n  ?p a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> ;\n     <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party/party_type> ?partyType .\n}\nGROUP BY ?partyType\nORDER BY DESC(?count)\nLIMIT 5",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "PARTY_TYPE1m361": "Organization",
+          "v1": "7"
+        },
+        {
+          "PARTY_TYPE1m361": "Trust",
+          "v1": "5"
+        },
+        {
+          "PARTY_TYPE1m361": "Individual",
+          "v1": "3"
+        }
+      ],
+      "expected_sql": "SELECT p.party_type, COUNT(*) AS party_count\nFROM normalized.party p\nWHERE p.is_deleted = false\nGROUP BY p.party_type\nORDER BY party_count DESC\nLIMIT 5",
+      "expected_row_count": 3,
+      "expected_sample": [
+        {
+          "party_type": "Organization",
+          "party_count": 7
+        },
+        {
+          "party_type": "Trust",
+          "party_count": 5
+        },
+        {
+          "party_type": "Individual",
+          "party_count": 3
+        }
+      ]
+    },
+    "gt-row-00": {
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 169223,
+      "avg_wall_clock_s": 57.86,
+      "generated_sql": "SELECT DISTINCT ?holding_id WHERE {\n  ?lp1 a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant> ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/holding_id> ?holding_id ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/party_id> ?party_id ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/participant_sk> ?sk1 ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/is_deleted> ?del1 .\n  ?lp2 a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant> ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/holding_id> ?holding_id ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/party_id> ?party_id ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/participant_sk> ?sk2 ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/LifeParticipant/is_deleted> ?del2 .\n  FILTER(?sk1 != ?sk2)\n  FILTER(LCASE(STR(?del1)) = \"false\")\n  FILTER(LCASE(STR(?del2)) = \"false\")\n}\nORDER BY ?holding_id",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 0,
+      "result_sample": [],
+      "expected_sql": "SELECT DISTINCT h.holding_id, h.policy_id, lp.party_id AS insured_party_id\nFROM normalized.holding h\nJOIN normalized.life_participant lp \n  ON lp.holding_id = h.holding_id\nJOIN (\n  SELECT holding_id, party_id\n  FROM normalized.life_participant\n  WHERE is_deleted = false\n  GROUP BY holding_id, party_id\n  HAVING COUNT(DISTINCT participant_sk) > 1\n) dup \n  ON dup.holding_id = h.holding_id \n  AND dup.party_id = lp.party_id\nWHERE lp.is_deleted = false \n  AND h.is_deleted = false",
+      "expected_row_count": 20,
+      "expected_sample": [
+        {
+          "holding_id": "POLICY#POL00000011",
+          "policy_id": "POL00000011",
+          "insured_party_id": "PARTY000011"
+        },
+        {
+          "holding_id": "POLICY#POL00000010",
+          "policy_id": "POL00000010",
+          "insured_party_id": "PARTY000010"
+        },
+        {
+          "holding_id": "POLICY#POL00000012",
+          "policy_id": "POL00000012",
+          "insured_party_id": "PARTY000012"
+        }
+      ]
+    },
+    "gt-row-01": {
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 107674,
+      "avg_wall_clock_s": 89.42,
+      "generated_sql": "SELECT DISTINCT ?riderName ?fullName ?coverageType\nWHERE {\n  ?rider a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Rider> ;\n         <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Rider/rider_name> ?riderName ;\n         <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Rider/is_deleted> ?riderDeleted ;\n         <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Rider/hasRiderParticipant> ?rp .\n  FILTER(LCASE(STR(?riderDeleted)) = \"false\")\n\n  ?rp a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/RiderParticipant> ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/RiderParticipant/is_deleted> ?rpDeleted ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/RiderParticipant/hasHolding> ?holding .\n  FILTER(LCASE(STR(?rpDeleted)) = \"false\")\n\n  ?coverage a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage> ;\n            <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/hasHolding> ?holding ;\n            <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/hasParty> ?party ;\n            <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/coverage_type> ?coverageType ;\n            <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/is_deleted> ?covDeleted .\n  FILTER(LCASE(STR(?covDeleted)) = \"false\")\n\n  ?party a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> ;\n         <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party/full_name> ?fullName .\n}\nORDER BY ?riderName ?fullName",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 0,
+      "result_sample": [],
+      "expected_sql": "SELECT\n    r.rider_id,\n    r.rider_name,\n    r.rider_code,\n    r.rider_type,\n    r.rider_status,\n    r.holding_id,\n    c.coverage_id,\n    c.coverage_type   AS participant_role,\n    c.party_id,\n    COALESCE(NULLIF(p.full_name, ''), CONCAT(p.first_name, ' ', p.last_name)) AS participant_name,\n    p.party_type,\n    c.issue_age,\n    c.issue_gender,\n    c.underwriting_class\nFROM normalized.rider r\nJOIN normalized.coverage c\n    ON r.holding_id = c.holding_id\nLEFT JOIN normalized.party p\n    ON c.party_id = p.party_id\nWHERE r.is_deleted = false\n  AND c.is_deleted = false\nORDER BY r.rider_id, c.coverage_id\nLIMIT 10",
+      "expected_row_count": 10,
+      "expected_sample": [
+        {
+          "rider_id": "RIDER00258816",
+          "rider_name": "Accidental Death Benefit",
+          "rider_code": "RDR3763",
+          "rider_type": "Premium Waiver",
+          "rider_status": "Active",
+          "holding_id": "POLICY#POL00000006",
+          "coverage_id": "COV18812698",
+          "participant_role": "Rider",
+          "party_id": "PARTY000057",
+          "participant_name": "",
+          "party_type": "",
+          "issue_age": "56.0",
+          "issue_gender": "M",
+          "underwriting_class": "Preferred Plus"
+        },
+        {
+          "rider_id": "RIDER10927712",
+          "rider_name": "Child Term",
+          "rider_code": "RDR4592",
+          "rider_type": "Death Benefit",
+          "rider_status": "Lapsed",
+          "holding_id": "POLICY#POL00000007",
+          "coverage_id": "COV61516321",
+          "participant_role": "Rider",
+          "party_id": "PARTY000100",
+          "participant_name": "",
+          "party_type": "",
+          "issue_age": "56.0",
+          "issue_gender": "F",
+          "underwriting_class": "Preferred"
+        },
+        {
+          "rider_id": "RIDER24110835",
+          "rider_name": "Accidental Death Benefit",
+          "rider_code": "RDR8614",
+          "rider_type": "Premium Waiver",
+          "rider_status": "Inactive",
+          "holding_id": "POLICY#POL00000006",
+          "coverage_id": "COV18812698",
+          "participant_role": "Rider",
+          "party_id": "PARTY000057",
+          "participant_name": "",
+          "party_type": "",
+          "issue_age": "56.0",
+          "issue_gender": "M",
+          "underwriting_class": "Preferred Plus"
+        }
+      ]
+    },
+    "gt-row-05": {
+      "question": "How many parties are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 76750,
+      "avg_wall_clock_s": 41.16,
+      "generated_sql": "SELECT (COUNT(*) AS ?n) WHERE {\n  ?p a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "v0": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "gt-row-06": {
+      "question": "List the top 10 coverage products by name.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 122864,
+      "avg_wall_clock_s": 38.52,
+      "generated_sql": "SELECT ?product_name\nWHERE {\n  ?cp a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/CoverageProduct> ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/CoverageProduct/product_name> ?product_name .\n}\nORDER BY ?product_name\nLIMIT 10",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 5,
+      "result_sample": [
+        {
+          "COVERAGE_PRODUCT_ID1m101": "COVPROD9169",
+          "PRODUCT_NAME1m110": "Accidental Death"
+        },
+        {
+          "COVERAGE_PRODUCT_ID1m101": "COVPROD8898",
+          "PRODUCT_NAME1m110": "Base Life"
+        },
+        {
+          "COVERAGE_PRODUCT_ID1m101": "COVPROD1132",
+          "PRODUCT_NAME1m110": "Child Rider"
+        }
+      ],
+      "expected_sql": "SELECT product_name FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name ASC LIMIT 10",
+      "expected_row_count": 5,
+      "expected_sample": [
+        {
+          "product_name": "Accidental Death"
+        },
+        {
+          "product_name": "Base Life"
+        },
+        {
+          "product_name": "Child Rider"
+        }
+      ]
+    },
+    "gt-row-03": {
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 195880,
+      "avg_wall_clock_s": 93.64,
+      "generated_sql": "SELECT ?full_name (SUM(xsd:decimal(?currentvalue)) AS ?totalMarketValue)\nWHERE {\n  ?hs a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/HoldingSubaccount> ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/HoldingSubaccount/holding_id> ?holdingId ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/HoldingSubaccount/currentvalue> ?currentvalue ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/HoldingSubaccount/deleted> ?deleted .\n  FILTER(LCASE(STR(?deleted)) = \"false\")\n\n  ?cov a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage> ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/holding_id> ?holdingId ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/coverage_status> ?covStatus ;\n       <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Coverage/party_id> ?covPartyId .\n  FILTER(?covStatus = \"Active\")\n\n  ?party a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> ;\n         <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party/party_id> ?partyId ;\n         <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party/full_name> ?full_name .\n  BIND(CONCAT(\"PARTY#\", ?covPartyId) AS ?partyPrefixed)\n  FILTER(?partyPrefixed = ?partyId)\n}\nGROUP BY ?full_name",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 0,
+      "result_sample": [],
+      "expected_sql": "SELECT\n    p.party_id,\n    p.full_name AS party_name,\n    COUNT(DISTINCT h.holding_id) AS holding_count,\n    SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.coverage c\n    ON h.holding_id = c.holding_id\nJOIN normalized.party p\n    ON CONCAT('PARTY#', c.party_id) = p.party_id\nWHERE h.holding_status = 'Active'\n  AND h.is_deleted = false\n  AND c.is_deleted = false\n  AND p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "expected_row_count": 2,
+      "expected_sample": [
+        {
+          "party_id": "PARTY#PARTY000012",
+          "party_name": "Thomas Jill Davis",
+          "holding_count": "1",
+          "total_market_value": "317902.53"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "party_name": "Jared Xavier Parker",
+          "holding_count": "1",
+          "total_market_value": "90066.59"
+        }
+      ]
+    },
+    "gt-row-08": {
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 122406,
+      "avg_wall_clock_s": 35.24,
+      "generated_sql": "SELECT ?month (SUM(xsd:decimal(?amount)) AS ?totalAmount)\nWHERE {\n  ?fa a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/FinancialActivity> ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/FinancialActivity/transaction_date> ?date ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/FinancialActivity/transaction_amount> ?amount ;\n      <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/FinancialActivity/is_deleted> ?deleted .\n  FILTER(LCASE(STR(?deleted)) = \"false\")\n  FILTER(SUBSTR(STR(?date), 1, 4) = \"2024\")\n  BIND(SUBSTR(STR(?date), 1, 7) AS ?month)\n}\nGROUP BY ?month\nORDER BY ?month",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "sum1": "70895.********0000000000",
+          "v3": "2024-03"
+        },
+        {
+          "sum1": "20242.********0000000000",
+          "v3": "2024-05"
+        },
+        {
+          "sum1": "13991.********0000000000",
+          "v3": "2024-10"
+        }
+      ],
+      "expected_sql": "SELECT\n    SUBSTR(transaction_date, 1, 7) AS month,\n    COUNT(*) AS transaction_count,\n    SUM(CAST(transaction_amount AS DOUBLE)) AS total_transaction_amount\nFROM normalized.financial_activity\nWHERE SUBSTR(transaction_date, 1, 4) = '2024'\n  AND is_deleted = false\nGROUP BY SUBSTR(transaction_date, 1, 7)\nORDER BY month\nLIMIT 12",
+      "expected_row_count": 3,
+      "expected_sample": [
+        {
+          "month": "2024-03",
+          "transaction_count": "2",
+          "total_transaction_amount": "70895.29000000001"
+        },
+        {
+          "month": "2024-05",
+          "transaction_count": "1",
+          "total_transaction_amount": "20242.9"
+        },
+        {
+          "month": "2024-10",
+          "transaction_count": "1",
+          "total_transaction_amount": "13991.93"
+        }
+      ]
+    },
+    "mt-parties-clarify": {
+      "question": "How many are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 77247,
+      "avg_wall_clock_s": 32.67,
+      "generated_sql": "SELECT (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "v0": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "gt-row-07": {
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 35.59,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "SELECT\n    p.party_id,\n    p.full_name                                                        AS party_name,\n    SUM(h.market_value)                                                AS total_market_value,\n    ARRAY_JOIN(ARRAY_AGG(DISTINCT\n        CASE\n            WHEN hs.fundname IS NOT NULL THEN hs.fundname\n            WHEN pp.product_name IS NOT NULL THEN pp.product_name\n            ELSE 'N/A'\n        END\n    ), ', ')                                                           AS investment_products\nFROM normalized.party p\nJOIN normalized.coverage c\n    ON c.party_id = REPLACE(p.party_id, 'PARTY#', '')\n    AND c.is_deleted = false\nJOIN normalized.holding h\n    ON h.holding_id = c.holding_id\n    AND h.is_deleted = false\nLEFT JOIN normalized.holding_subaccount hs\n    ON hs.holding_id = h.holding_id\n    AND hs.deleted = false\nLEFT JOIN normalized.policy_product pp\n    ON pp.product_code = c.product_code\n    AND pp.is_deleted = false\nWHERE p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "expected_row_count": 4,
+      "expected_sample": [
+        {
+          "party_id": "PARTY#PARTY000014",
+          "party_name": "Scott Neil Davis",
+          "total_market_value": "651373.05",
+          "investment_products": "N/A, Universal Life"
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "party_name": "Thomas Jill Davis",
+          "total_market_value": "317902.53",
+          "investment_products": "20-Year Term Life"
+        },
+        {
+          "party_id": "PARTY#PARTY000007",
+          "party_name": "Blake Katelyn Myers",
+          "total_market_value": "312549.21",
+          "investment_products": "20-Year Term Life"
+        }
+      ]
+    },
+    "mt-stable-options": {
+      "question": "How many are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 76758,
+      "avg_wall_clock_s": 44.17,
+      "generated_sql": "SELECT (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "v0": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "mt-no-spurious-clarify": {
+      "question": "How many parties are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 77119,
+      "avg_wall_clock_s": 21.19,
+      "generated_sql": "SELECT (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "v0": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "mt-simulated-party-count": {
+      "question": "I need to know how many parties exist in the curated layer.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 79186,
+      "avg_wall_clock_s": 19.08,
+      "generated_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?p a <http://curated-layer-ontology-20260701-040122/ontology/vkg-ontology_curated_layer-3d1fde76/Party> .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "v0": "15"
+        }
+      ],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-13": {
+      "question": "What are some common metrics that could be calculated with this data?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 19.5,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-15": {
+      "question": "Explain what the coverage table represents.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 19.68,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-14": {
+      "question": "What can I ask about this semantic layer?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 24.02,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-04": {
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 167.25,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "SELECT\n    p.full_name                                         AS policyholder_name,\n    COALESCE(pp.premium_mode, c.product_code)           AS payout_frequency,\n    fa.transaction_amount                               AS projected_next_payout_amount,\n    fa.effective_date                                   AS payout_effective_date,\n    fa.activity_type                                    AS payout_type,\n    ad.holding_id                                       AS policy_id\nFROM normalized.annuity_detail ad\nJOIN normalized.coverage c\n    ON c.holding_id = ad.holding_id\n   AND c.is_deleted = false\nJOIN normalized.party p\n    ON p.party_id = CONCAT('PARTY#', c.party_id)\n   AND p.is_deleted = false\nLEFT JOIN normalized.policy_product pp\n    ON pp.product_code = c.product_code\n   AND pp.is_deleted = false\nLEFT JOIN normalized.financial_activity fa\n    ON fa.holding_id = ad.holding_id\n   AND fa.activity_type IN ('Withdrawal', 'Dividend', 'Claim')\n   AND fa.is_deleted = false\nWHERE ad.deleted = false\nORDER BY ad.holding_id, fa.effective_date DESC\nLIMIT 10",
+      "expected_row_count": 5,
+      "expected_sample": [
+        {
+          "policyholder_name": "Scott Neil Davis",
+          "payout_frequency": "VUL",
+          "projected_next_payout_amount": "35512.98",
+          "payout_effective_date": "2021-04-08",
+          "payout_type": "Dividend",
+          "policy_id": "POLICY#POL00000011"
+        },
+        {
+          "policyholder_name": "Thomas Jill Davis",
+          "payout_frequency": "Monthly",
+          "projected_next_payout_amount": "",
+          "payout_effective_date": "",
+          "payout_type": "",
+          "policy_id": "POLICY#POL00000013"
+        },
+        {
+          "policyholder_name": "Jared Xavier Parker",
+          "payout_frequency": "VUL",
+          "projected_next_payout_amount": "22974.07",
+          "payout_effective_date": "2024-03-31",
+          "payout_type": "Claim",
+          "policy_id": "POLICY#POL00000014"
+        }
+      ]
+    }
+  }
+}

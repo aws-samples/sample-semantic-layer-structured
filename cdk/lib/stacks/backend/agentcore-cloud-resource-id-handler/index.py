@@ -35,13 +35,12 @@ RESTORES — not merely preserves — that state, healing any prior drift:
 
 WHY THIS HANDLER OWNS THE AUTHORIZER: ``AWS::BedrockAgentCore::Runtime`` silently
 drops ``AuthorizerConfiguration`` on CREATE, so the JWT authorizer must be applied
-post-create via the control plane. This used to live in a SEPARATE custom resource
-(runtime-authorizer-handler) that fired only when allowedClients/headers changed.
-But a code-only container redeploy changes the image tag (this resource's fingerprint)
-WITHOUT changing the authorizer inputs — so THIS handler fired a full-replace that
-omitted the authorizer and wiped it, while the separate authorizer resource stayed
-dormant. Folding the authorizer into this one handler means a single full-replace
-re-sends EVERYTHING every time, so no field can be dropped. See
+post-create via the control plane. A code-only container redeploy changes the image
+tag (this resource's fingerprint) WITHOUT changing the authorizer inputs, so the
+authorizer MUST be owned by this same handler: folding it in means a single
+full-replace re-sends EVERYTHING every time and no field can be silently dropped.
+A separate authorizer resource keyed only on allowedClients/headers would stay
+dormant on such a redeploy and leave the authorizer unset. See
 docs/plans/2026-06-04-runtime-authorizer-wipe-design.md.
 
 Bundled with boto3>=1.43.21 (requirements.txt) so the ``authorizerConfiguration`` /

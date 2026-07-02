@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

@@ -23,7 +23,7 @@ from __future__ import annotations
 import logging
 import queue
 import uuid
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:  # avoid hard import at module load
     from .agui_emitter import AGUIEmitter

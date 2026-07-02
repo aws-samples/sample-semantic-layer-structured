@@ -1,9 +1,8 @@
 """MCP OAuth Proxy Lambda (semantic-layer).
 
 Sits between Claude Code / VS Code / Cursor and the semantic-layer MCP query
-gateway so those clients can connect with a browser-based Cognito OAuth login
-instead of SigV4. Ported from the agentcore_gateway reference proxy (transport-
-agnostic, pure stdlib + boto3) — only the gateway scope default differs.
+gateway so those clients can connect with a browser-based Cognito OAuth login.
+Transport-agnostic (pure stdlib + boto3).
 
 Auth architecture:
   Inbound  (client → proxy → gateway):

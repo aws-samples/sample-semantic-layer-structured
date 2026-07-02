@@ -24,14 +24,14 @@ def test_emitter_requires_turn_id() -> None:
 
 def test_run_started_event_carries_turn_id_and_agent() -> None:
     emitter = AGUIEmitter(turn_id='t-1')
-    emitter.run_started(agent='ontology_query', model='claude-sonnet-4-6')
+    emitter.run_started(agent='ontology_query', model='claude-sonnet-5')
     drained = emitter.drain()
     assert len(drained) == 1
     assert drained[0] == {
         'type': 'run_started',
         'turnId': 't-1',
         'agent': 'ontology_query',
-        'model': 'claude-sonnet-4-6',
+        'model': 'claude-sonnet-5',
     }
 
 

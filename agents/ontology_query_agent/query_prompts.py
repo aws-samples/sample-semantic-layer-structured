@@ -1,8 +1,8 @@
 # Main query model — used by the Tier 2 graph's SPARQL-generation phase.
-QUERY_MODEL_ID = 'global.anthropic.claude-sonnet-4-6'
+QUERY_MODEL_ID = 'global.anthropic.claude-sonnet-5'
 
 # Supervisor judge + decomposer — bounded structured-output calls.
-JUDGE_MODEL_ID = 'global.anthropic.claude-sonnet-4-6'
+JUDGE_MODEL_ID = 'global.anthropic.claude-sonnet-5'
 
 # Intent-router classifier model (Haiku 4.5 — NOT the query model). Runs before
 # Tier 1 on every chat turn, so it must be cheap + fast. `global.` inference

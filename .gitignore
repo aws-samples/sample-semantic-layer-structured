@@ -221,5 +221,9 @@ generated/
 .claude
 .claude/.git.broken-*/
 
+# understand-anything: generated knowledge-graph tool cache (not source)
+.understand-anything/
+
 # Local Claude project instructions (not shared)
 CLAUDE.md
+data/eval/results/.resume_*.json

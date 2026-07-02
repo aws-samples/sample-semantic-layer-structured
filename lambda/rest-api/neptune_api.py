@@ -6,9 +6,7 @@ This module provides REST endpoints for Neptune graph operations:
 - Get graph metadata
 """
 
-import os
 import logging
-import json
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from services.neptune_service import NeptuneService

@@ -3,8 +3,8 @@
 Three metrics, all under namespace ``SemanticLayer/Chat``:
 
   * ``chat.session.started``    — fires the first time a session id is
-                                  seen on POST /query/chat (i.e. session
-                                  was just created in DDB).
+                                  seen on a chat turn (i.e. session was just
+                                  created in DDB).
   * ``chat.turn.completed``     — fires when an assistant turn lands on
                                   DDB after run_finished.
   * ``chat.guardrail.blocked``  — fires when INPUT or OUTPUT guardrail

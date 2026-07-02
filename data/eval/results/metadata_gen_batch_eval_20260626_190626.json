@@ -1,0 +1,60 @@
+{
+  "agent_id": "semantic_layer_dev_metadata-SpwY3TDOAV",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:runtime/semantic_layer_dev_metadata-SpwY3TDOAV",
+  "batch_evaluation_id": "metadata_enrich_batch_17547fba-c812bd513d",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:batch-evaluate/metadata_enrich_batch_17547fba-c812bd513d",
+  "status": "FAILED",
+  "evaluator_summaries": [
+    {
+      "Evaluator": "Builtin.ToolParameterAccuracy",
+      "AvgScore": null,
+      "Evaluated": 0,
+      "Failed": 209
+    },
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": null,
+      "Evaluated": 0,
+      "Failed": 1
+    },
+    {
+      "Evaluator": "Builtin.ToolSelectionAccuracy",
+      "AvgScore": null,
+      "Evaluated": 0,
+      "Failed": 209
+    }
+  ],
+  "performance": {
+    "scenarios": 1,
+    "avg_enrich_seconds": 3024.3,
+    "total_enrich_seconds": 3024.3,
+    "input_tokens": 9878132,
+    "output_tokens": 491200,
+    "total_tokens": 10369332
+  },
+  "grounding": {
+    "guard_drop_identifiers": 12,
+    "guard_drop_tables": 10,
+    "docs_checked": 40,
+    "leaked_identifiers": 0
+  },
+  "scenario_runs": {
+    "multi_table_curated_layer": {
+      "case_id": "semantic-rag-multi_table_curated_layer-7e509128",
+      "session_id": "multi_table_curated_layer-e5e0ee5f-2056-4b7f-ac59-fdb8239b4573",
+      "status": "completed",
+      "num_tables": 40,
+      "summary": "Processed 40/40 tables.",
+      "enrich_seconds": 3024.3,
+      "input_tokens": 9878132,
+      "output_tokens": 491200,
+      "total_tokens": 10369332,
+      "invoke_start_ms": 1782511804901,
+      "invoke_end_ms": 1782514847886,
+      "guard_drop_events": 10,
+      "guard_drop_identifiers": 12,
+      "docs_checked": 40,
+      "leaked_identifiers": 0
+    }
+  }
+}

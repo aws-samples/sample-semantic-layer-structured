@@ -5,10 +5,8 @@ Generates data for all 12 tables with all columns from data dictionary
 
 import json
 import random  # non-cryptographic randomness — intentional for synthetic data generation
-import uuid
 from datetime import datetime, timedelta
 from faker import Faker
-from decimal import Decimal
 
 fake = Faker()
 

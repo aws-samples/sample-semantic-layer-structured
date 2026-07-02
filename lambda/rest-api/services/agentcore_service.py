@@ -15,7 +15,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any
 
 
 def _require_https(url: str) -> str:
@@ -53,9 +53,9 @@ _BROWSER_UA = (
 class AgentCoreService:
     """Service for invoking AgentCore Runtime agents.
 
-    The runtimes are JWT-inbound (no longer IAM/SigV4), so this service invokes
-    them over HTTPS with a Cognito machine-to-machine (client_credentials) Bearer
-    token rather than boto3 SigV4. All REST-originated calls are backend jobs
+    The runtimes are JWT-inbound, so this service invokes them over HTTPS with a
+    Cognito machine-to-machine (client_credentials) Bearer token. All
+    REST-originated calls are backend jobs
     (ontology/metadata/suggestions generation, metadata-query lookups) with no
     end-user token in hand, so they all use the M2M token. The per-user chat path
     does NOT go through this service — it streams through the chat gateway.

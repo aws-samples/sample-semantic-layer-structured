@@ -217,6 +217,148 @@ final class OntologyMappings {
     }
 
     /**
+     * The {@code rdfs:comment} text of a class or property, or {@code ""} when absent.
+     *
+     * <p>Comments are authored by the metadata/ontology agent and carry the
+     * layer-specific join/transform knowledge (e.g. a key-prefix transform) the OBDA
+     * generator reads at translate time — never hard-coded here.
+     *
+     * @param ontologyJson the full ontology document.
+     * @param iri          the class or property IRI (lives on {@code classes} or
+     *                     {@code properties}).
+     * @return the comment string, or {@code ""}.
+     */
+    static String commentFor(final Map<String, Object> ontologyJson, final String iri) {
+        for (final String sub : new String[] {"properties", "classes"}) {
+            final Map<String, Object> m = subMap(ontologyJson, sub);
+            final Object entry = m.get(iri);
+            if (entry instanceof Map) {
+                @SuppressWarnings("unchecked")
+                final Object c = ((Map<String, Object>) entry).get("comment");
+                if (c != null && !c.toString().isBlank()) {
+                    return c.toString();
+                }
+            }
+        }
+        return "";
+    }
+
+    // Matches a key-prefix transform documented in an FK property/PK comment, e.g.
+    // "join via CONCAT('PARTY#', child.party_id) = party.party_id". The first
+    // CONCAT string-literal argument is the prefix the UNPREFIXED FK value must gain
+    // to match the PREFIXED target subject. Single OR double quotes; the literal may
+    // contain any non-quote chars (e.g. 'PARTY#', 'POLICY#'). LAYER-AGNOSTIC: the
+    // prefix VALUE is read from the comment data, never hard-coded.
+    private static final java.util.regex.Pattern _CONCAT_PREFIX = java.util.regex.Pattern.compile(
+        "CONCAT\\s*\\(\\s*['\"]([^'\"]+)['\"]", java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Extract the FK key-prefix transform for an object property, or {@code ""}.
+     *
+     * <p>When a bridge/child FK stores an id UNPREFIXED but the target class's PK is
+     * PREFIXED (e.g. {@code coverage.party_id = 'PARTY000042'} vs
+     * {@code party.party_id = 'PARTY#PARTY000042'}), the ontology comment documents
+     * the join as {@code CONCAT('PARTY#', child.party_id) = party.party_id}. Without
+     * applying that prefix, the FK IRI template {@code <Party/{party_id}>} →
+     * {@code <Party/PARTY000042>} can never unify with the target subject
+     * {@code <Party/PARTY#PARTY000042>}, so Ontop reformulates the join to EMPTY (the
+     * gt-03/gt-04 failure). We parse the prefix literal from the property's comment
+     * (or the target PK's comment as a fallback) and return it so the OBDA template
+     * can bake it in: {@code <Party/PARTY#{party_id}>}.
+     *
+     * @param ontologyJson the full ontology document.
+     * @param propIri      the FK object-property IRI.
+     * @return the prefix literal (e.g. {@code "PARTY#"}), or {@code ""} when the
+     *         comment declares no such transform.
+     */
+    static String concatPrefixFor(final Map<String, Object> ontologyJson, final String propIri) {
+        // 1) The FK object property's own comment (some layers annotate it here).
+        String prefix = _firstConcatPrefix(commentFor(ontologyJson, propIri));
+        if (!prefix.isEmpty()) {
+            return prefix;
+        }
+        // 2) The SIBLING DATATYPE property mapping to the SAME column. The transform is
+        //    typically authored on the FK *column* property (e.g. `Coverage/party_id`
+        //    "JOIN ... CONCAT('PARTY#', coverage.party_id) = party.party_id"), NOT on
+        //    the object property (`Coverage/hasParty`, "Links Coverage to Party"). Find
+        //    a property mapped to the same dotted column and read its comment.
+        final String fkColumn = columnFor(ontologyJson, propIri);
+        if (fkColumn != null && !fkColumn.isBlank()) {
+            final Map<String, Object> mappings = mappingsOf(ontologyJson);
+            for (final String otherIri : mappings.keySet()) {
+                if (otherIri.equals(propIri)) {
+                    continue;
+                }
+                if (fkColumn.equals(columnFor(ontologyJson, otherIri))) {
+                    prefix = _firstConcatPrefix(commentFor(ontologyJson, otherIri));
+                    if (!prefix.isEmpty()) {
+                        return prefix;
+                    }
+                }
+            }
+        }
+        return "";
+    }
+
+    /** First {@code CONCAT('PREFIX', …)} literal in {@code comment}, or {@code ""}. */
+    private static String _firstConcatPrefix(final String comment) {
+        final java.util.regex.Matcher m = _CONCAT_PREFIX.matcher(comment == null ? "" : comment);
+        return m.find() ? m.group(1) : "";
+    }
+
+    /** OWL type IRI of an object/datatype property (the {@code owl:…Property}), or {@code null}. */
+    private static final String OWL_OBJECT_PROPERTY =
+        "http://www.w3.org/2002/07/owl#ObjectProperty";
+
+    /**
+     * True when {@code propIri} is an {@code owl:ObjectProperty} (an FK relationship
+     * between two classes) rather than an {@code owl:DatatypeProperty} (a column value).
+     *
+     * <p>Object properties must be emitted in the OBDA mapping with an IRI-template
+     * object that matches the referenced class's subject template, so Ontop can
+     * reformulate the join. Datatype properties are emitted as bare literals. The type
+     * lives on the {@code properties} sub-map's {@code type} field (set from the
+     * {@code rdf:type owl:…Property} triple by {@code tool_get_ontology_from_neptune}).
+     *
+     * @param ontologyJson the full ontology document.
+     * @param propIri      the property IRI.
+     * @return {@code true} iff the property is declared an {@code owl:ObjectProperty}.
+     */
+    static boolean isObjectProperty(final Map<String, Object> ontologyJson, final String propIri) {
+        final Map<String, Object> properties = propertiesOf(ontologyJson);
+        final Object entry = properties.get(propIri);
+        if (!(entry instanceof Map)) {
+            return false;
+        }
+        @SuppressWarnings("unchecked")
+        final Object type = ((Map<String, Object>) entry).get("type");
+        return OWL_OBJECT_PROPERTY.equals(type == null ? null : type.toString());
+    }
+
+    /**
+     * The {@code rdfs:range} target-class IRI of an object property, or {@code null}.
+     *
+     * <p>For an FK {@code owl:ObjectProperty} (e.g. {@code …/Coverage/hasHolding}) the
+     * range is the referenced class IRI (e.g. {@code …/Holding}). Captured on the
+     * {@code properties} sub-map's {@code range} field by
+     * {@code tool_get_ontology_from_neptune}.
+     *
+     * @param ontologyJson the full ontology document.
+     * @param propIri      the property IRI.
+     * @return the range target-class IRI, or {@code null} if absent.
+     */
+    static String rangeFor(final Map<String, Object> ontologyJson, final String propIri) {
+        final Map<String, Object> properties = propertiesOf(ontologyJson);
+        final Object entry = properties.get(propIri);
+        if (!(entry instanceof Map)) {
+            return null;
+        }
+        @SuppressWarnings("unchecked")
+        final Object range = ((Map<String, Object>) entry).get("range");
+        return range == null ? null : range.toString();
+    }
+
+    /**
      * Extract the bare (last-segment) name from a dotted mapping value.
      *
      * <p>Used for both a property's dotted {@code "table.column"} (yielding the bare

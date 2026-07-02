@@ -82,6 +82,12 @@ class RagTopicRouter:
         ignored — the router caches the last KB call's payload and serves
         chunks from there. Tables that didn't surface in Phase 1 simply
         come back missing from the dict.
+
+        NOTE: a ``fetch_fn`` fallback (targeted KB re-query for cache-miss ids) was
+        tried and reverted — chunks_for is also the bridge-discovery oracle, so
+        re-querying here made bridge discovery treat every judge-named table as a
+        fetchable bridge and exploded the slice. Any cache-miss fix must NOT live in
+        this method.
         """
         cached = self._last_structured.get('chunks_by_table', {}) or {}
         return {tid: cached[tid] for tid in table_ids if tid in cached}

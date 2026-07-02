@@ -1,0 +1,1412 @@
+{
+  "agent_id": "semantic_layer_dev_metadata_query-6aPZJf6eWO",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_metadata_query-6aPZJf6eWO",
+  "eval_id": "semantic-rag-multi_table_curated_layer-7e509128",
+  "eval_k": 3,
+  "kmean_file": "metadata_query_kmean_eval_20260701_105036.json",
+  "batch_evaluation_id": "query_gt_batch_r3_cc5691b4-3e866f984d",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/query_gt_batch_r3_cc5691b4-3e866f984d",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "GoalSuccess_847b3df5-0EcbCECnsF",
+    "FinalAnswerFaithfulness_847b3df5-4RJPHnAUIW",
+    "SqlGrounded_847b3df5-ANxPbNGHSa"
+  ],
+  "custom_evaluators": {
+    "GoalSuccess": "GoalSuccess_847b3df5-0EcbCECnsF",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_847b3df5-4RJPHnAUIW",
+    "SqlGrounded": "SqlGrounded_847b3df5-ANxPbNGHSa"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "FinalAnswerFaithfulness_847b3df5-4RJPHnAUIW",
+      "AvgScore": "0.750",
+      "Evaluated": 16,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "SqlGrounded_847b3df5-ANxPbNGHSa",
+      "AvgScore": "1.000",
+      "Evaluated": 16,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "GoalSuccess_847b3df5-0EcbCECnsF",
+      "AvgScore": "0.750",
+      "Evaluated": 16,
+      "Failed": 0
+    }
+  ],
+  "per_query_events": [
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer reports March 2024 $70,895.29, May 2024 $20,242.90, and October 2024 $13,991.93, matching exactly the expected answer's three months and totals. No contradictions or omissions of required data."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL selects transaction_date, transaction_amount, and is_deleted from normalized.financial_activity. All three columns (transaction_date, transaction_amount, is_deleted) plus the table normalized.financial_activity are present in the retrieved schema context. SUBSTR, SUM, CAST are SQL builtins, not schema elements. No hallucinated tables/columns/joins are used."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record reports total financial-activity amounts per month in 2024: $70,895.29 in March, $20,242.90 in May, and $13,991.93 in October, matching the SQL query results exactly. This matches the expected answer's three months and totals precisely. No clarification was needed, and the answer is substantive and correct."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent did not ask a clarifying question; it directly interpreted 'parties' as normalized.party table. It executed a COUNT query (SELECT COUNT(party_id) FROM normalized.party) on the first turn and returned a numeric answer (15). The final answer states 'The query returned a count of 15 parties', matching the expected answer 'There are 15 parties.' All three assertions are satisfied."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent executed a COUNT query on normalized.party and returned 15 parties, matching the expected final answer of 'There are 15 parties.' The answer is factually consistent with the ground truth."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL is `SELECT COUNT(party_id) FROM normalized.party`. The table normalized.party is referenced throughout the schema context as the join target (e.g., party.party_id) though not explicitly listed in the 'tables' array; it's clearly part of the allowed schema as the central party table referenced by all other tables' joins. The column party_id is explicitly documented as party.party_id in multiple join descriptions. Thus both the table and column are grounded in the retrieved schema context."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer lists 5 active coverage products: Accidental Death, Base Life, Spouse Rider, Term Rider, and Child Rider, alphabetically ordered, matching the expected answer's list and count exactly (same 5 names, same alphabetical ordering). The categories mentioned are consistent with the retrieved data and don't contradict the expected answer. This matches the ground truth in entities, count, and conclusion."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record's output reports 5 active coverage products, listed alphabetically: Accidental Death, Base Life, Spouse Rider, Term Rider (Death Benefit) and Child Rider (Living Benefit). This matches the expected answer stating there are 5 active products total, alphabetically: Accidental Death, Base Life, Child Rider, Spouse Rider, Term Rider. The set and count match exactly, satisfying the assertion despite minor ordering variance in the narrative text (the underlying data and count are correct)."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL: SELECT product_name, coverage_category FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name LIMIT 10. Checking against the retrieved schema context: table normalized.coverage_product exists, and columns product_name, coverage_category, is_deleted are all listed under normalized.coverage_product. No joins used. All identifiers are grounded in the schema slice. The agent's final answer also matches the returned rows accurately (5 rows returned, matching the LIMIT 10 truncated by actual data availability)."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call is present in the tool_execution_history; the agent only produced a descriptive advisory answer without executing any SQL. Per the grounding gate rules, absence of an execute_sql_query call means the agent degraded rather than running ungrounded SQL, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer describes the categories of questions answerable from the layer's tables\u2014policy/holding value, coverage & products, money movement, parties & relationships, distribution & producers, and reference lookups\u2014while explicitly noting no governed metrics exist yet and flagging thin/empty marker tables. It contains no invented numeric results and matches the expected answer's description of question types (parties, policies, holdings, coverage, riders, financial activity) and governed metrics availability. This aligns well with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's response describes the categories of questions answerable from the layer (policy/holding value, coverage, products, money movement, people/relationships, distribution/producers, reference lookups) and explicitly notes no governed metrics are defined yet, while flagging thin/empty tables. It contains no fabricated numeric results, stays in business language, and matches the expected answer's requirement of describing answerable question types and governed metrics without returning specific data values. This is a single-turn conversation (no prior turns indicated), and the final-answer content aligns with the assertion."
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final substantive answer states there are 15 party records, matching the expected answer 'There are 15 parties.' The count matches exactly, and the conversation correctly resolved ambiguity before answering."
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "Turn 1: user asked ambiguous 'How many are there?' and the agent asked a clarifying question - satisfies assertion 1. Turn 2: user said 'not sure', agent kept asking for clarification rather than guessing - satisfies assertion 2. Turn 3: user replied 'party', agent executed SQL COUNT(p.party_id) FROM normalized.party, got result 15, and returned 'there are 15 party records' - satisfies assertion 3. The final answer matches the expected 'There are 15 parties.' - satisfies assertion 4. All assertions are met by the reconstructed trajectory of final-answer records."
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL was: SELECT COUNT(p.party_id) FROM normalized.party p LIMIT 101. This references table normalized.party and column party_id. Although 'normalized.party' itself is not explicitly listed in the retrieved_schema_context's 'tables' array (which lists related tables like party_banking, address, etc.), the party table and its party_id column are extensively referenced throughout the schema context as the join target (e.g., 'JOIN party p ON party_banking.party_id = p.party_id', 'GROUP BY p.party_id', etc.), confirming party.party_id is a known, valid column within the allowed schema slice. The SQL only uses COUNT (builtin) and no other unlisted tables/columns/joins. Thus the executed SQL is grounded in the retrieved schema context."
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent executed a COUNT query against normalized.party (SELECT COUNT(party_id) FROM normalized.party), which returned 15. The final-answer record's output states 'there are 15 parties in the normalized.party table,' matching the expected final answer of 15 parties. No clarification was needed since the question was unambiguous, and none was asked. All assertions are satisfied."
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent executed COUNT(party_id) FROM normalized.party, got result 15, and reported 'there are 15 parties in the normalized.party table.' This matches the expected final answer of 'There are 15 parties.' The number and entity match exactly."
+    },
+    {
+      "scenario_id": "mt-simulated-party-count",
+      "question": "I need to know how many parties exist in the curated layer.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL is `SELECT COUNT(party_id) FROM normalized.party LIMIT 101`. The retrieved schema context lists normalized.party as a table (referenced repeatedly in joins, e.g., party.party_id) and party_id is used consistently across multiple tables' descriptions as the column joining to normalized.party (e.g., 'JOIN party p ON ... = p.party_id'). Although normalized.party itself isn't explicitly enumerated in the 'columns' array with party_id, the joins section confirms party_id is a valid column on normalized.party. COUNT and LIMIT are SQL builtins, not schema elements. Thus all referenced identifiers (table normalized.party, column party_id) are grounded in the retrieved schema context."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer reports PARTY#PARTY000013 with $90,066.59 and PARTY#PARTY000012 with $317,902.53, matching the expected figures exactly. The agent did not include party names or the combined total, but the key numbers and entities (party IDs and their market values) are consistent with the expected answer. This is a minor omission of detail rather than a factual contradiction."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL uses normalized.holding (h.holding_id, h.market_value, h.is_deleted, h.holding_status), normalized.coverage (c.holding_id, c.party_id), and normalized.party (p.party_id), joined via c.holding_id = h.holding_id and CONCAT('PARTY#', c.party_id) = p.party_id. All these tables and columns are present in the retrieved schema context, and the joins match the documented join patterns (holding-coverage-party bridge). The final answer's numbers match the tool result rows exactly. No hallucinated schema elements are present."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record reports the correct numeric values: PARTY#PARTY000013 = $90,066.59 and PARTY#PARTY000012 = $317,902.53, matching the expected result's amounts exactly. The agent does not include the party full names (Thomas Jill Davis, Jared Xavier Parker) or the combined total ($407,969.12), but the core factual content \u2014 the two party IDs and their correct market values \u2014 matches the expected answer's key numbers and entities. The assertion requires the answer to be 'factually consistent with' the expected result in terms of key numbers/entities, which is satisfied here despite the omission of names and a summed total. No clarification was needed and none was inappropriately requested; the agent provided a substantive, correct answer."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer provides a detailed, data-backed result showing that insured participants and their roles can be derived via the coverage table (linking rider->policy->coverage->party), with roles indicated by coverage_type (Base/Optional/Rider). The agent's actual final answer instead declared the question unanswerable, claiming a missing role_code column, and refused to produce any results. This directly contradicts the expected answer, which shows the data was retrievable and a full answer was possible using the schema provided (coverage table joined via holding_id). The agent failed to find the correct join path and gave up, resulting in no substantive answer matching the expected output. Therefore this fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call is present in the context; the agent instead invoked SliceSufficiency and returned a degraded response stating the data needed isn't available. Since no SQL was executed, the grounding gate was upheld and there is no ungrounded SQL to fail on."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record shows the agent declaring the data insufficient (missing role_code column) and refusing to answer, rather than deriving the insured participants and their roles via the coverage_type on the associated coverage records as the expected answer does. The retrieved schema context even includes a query pattern explicitly showing 'Insured participants on each rider and their role' via coverage join, and the expected answer explains that roles are derived from coverage_type (Base/Optional/Rider) since rider_participant is empty. The agent failed to find or use this alternative path, instead giving a degraded 'can't answer' response that contradicts the required substantive answer with specific rider/participant/policy details. This does not satisfy the assertion requiring the final answer to match the detailed expected result."
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "Turn 1: user asked ambiguous 'How many are there?'; agent asked a clarifying question listing candidate entities including 'coverage' vs 'party'-like options. This satisfies the first assertion. Turn 2: user replied 'party'; agent resolved ambiguity, executed SELECT COUNT(party_id) FROM normalized.party, got 15, and returned 'The query returned a total count of 15 parties in the normalized.party table.' This satisfies the second and third assertions (no repeated identical clarification, correct COUNT executed). The final answer states 15 parties, matching the expected final answer 'There are 15 parties.' All assertions are satisfied by the reconstructed trajectory."
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL is: SELECT COUNT(party_id) FROM normalized.party LIMIT 101. The table normalized.party is referenced throughout the retrieved schema context (e.g., as join target 'party p ON ...party_id = p.party_id' repeatedly, and explicitly named in acord_paths and query_patterns). The column party_id is also referenced repeatedly as a column on normalized.party (e.g., 'party.party_id', 'p.party_id'). Although normalized.party is not explicitly listed in the 'tables' array (which lists other tables joined to party), it is clearly part of the schema slice as the join target for all listed tables, and party_id is consistently documented as its column. No hallucinated identifiers are present."
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent first asked a clarifying question for the ambiguous query, then after the user replied 'party', it executed a COUNT query on normalized.party and returned 15 parties, matching the expected final answer of 15 parties."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call appears in the tool_execution_history (empty list). The agent only produced a descriptive advisory answer without writing or executing any SQL, consistent with the hard rule to never write SQL. Since no SQL was executed, the grounding gate was upheld by not running ungrounded SQL - this is a degraded/descriptive-only run, which passes per the instructions."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer provides a thorough, business-language explanation of the coverage table: grain (one coverage per row), what it represents (benefit on a policy), key concepts (participant role, product, face amount, premiums, cash/surrender value, status, underwriting attributes), its role as the bridge between holding and party, example questions it can answer, and caveats about filters and lack of governed metrics. It does not invent numeric results or row counts, staying grounded in the schema metadata. This matches the expected answer's requirement of a natural-language explanation of the coverage table and its schema role without specific values."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's response is a natural-language explanation of the coverage table: its grain (one row per benefit), what it represents (who is covered, role/capacity, product, amounts, premiums, status, underwriting attributes), its structural role as the bridge between holding and party, example questions it can answer, and caveats about no governed metrics. It contains no SQL, no computed numeric results, and no row counts or specific values\u2014only descriptive/business language grounded in the provided schema context. This matches the expected final answer description exactly."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call is present in the tool_execution_history; the agent only provided a descriptive advisory answer without executing any SQL. This means the agent degraded rather than running ungrounded SQL, satisfying the grounding invariant."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer describes computable metrics (AUM, returns, fees, premiums, payouts, cash flow, holding values, allocations, coverage/rider totals, loan rates, advisor/commission counts) grounded in the schema, and explicitly states no governed metrics are defined yet for the layer. This matches the expected answer's requirement to describe what is computable and note the governed metrics status, without inventing any numeric results. It aligns well with the expected answer's intent."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer describes computable metrics across investment products, cash flow, holdings, coverage, riders, loans, and distribution \u2014 noting that no governed metrics are currently defined for this layer, consistent with the schema context. It does not compute or invent any numeric results, and stays in business language describing what is computable. This aligns with the expected answer's requirement to describe computable metrics and governed metrics (or lack thereof) without returning specific numeric results. No clarification was needed since the question was a general advisory query, not ambiguous. The response satisfies the assertion."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call is present in the tool execution history; only SliceSufficiency calls were made, indicating the agent's grounding gate refused to run SQL it deemed ungrounded (party.party_type/party_id not confirmed present in the retrieved slice's party table columns). Since no SQL was executed, the grounding invariant was upheld by degrading rather than running ungrounded SQL."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer states that party.party_type and party.party_id are usable and provides concrete counts (Organization 7, Trust 5, Individual 3, 15 total). The agent's final response instead declared the data unavailable, claiming normalized.party.party_type and normalized.party.party_id are missing from the schema, and refused to answer. This directly contradicts the expected answer, which relies on exactly those columns being available. The agent never produced the requested top-5 party type breakdown or any numbers, so it fails to match the expected final answer."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record shows the agent declined to answer, claiming normalized.party.party_type and normalized.party.party_id were 'missing' from the schema, despite the retrieved_schema_context explicitly listing joins and query patterns referencing normalized.party (e.g., 'party.party_type is the readable label (GROUP BY this)', 'JOIN party p ON distribution_level.party_id = p.party_id', 'Count licensed parties by category: SELECT p.party_type, COUNT(*)...'). The agent should have been able to run a simple query like SELECT party_type, COUNT(*) FROM party GROUP BY party_type ORDER BY COUNT(*) DESC LIMIT 5, which aligns with the expected answer (Organization 7, Trust 5, Individual 3, total 15). Instead it produced a degraded 'can't answer' response, never delivering the substantive answer required by the assertion. This violates the rule that a required substantive answer must be reached, and the final answer does not match the expected result at all."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer lists the same 4 parties with matching market values and ranking: Scott Neil Davis ~$651,373, Thomas Jill Davis ~$317,903, Blake Katelyn Myers ~$312,549, Jared Xavier Parker ~$90,067, in descending order. This matches the expected answer exactly on the key numbers and ranking. The investment product names are empty/N/A, which per the assertion is acceptable and should not cause failure. Thus the final answer is factually consistent with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record reports the same 4 parties with matching market values and ranking: Scott Neil Davis ($651,373.05), Thomas Jill Davis ($317,902.53), Blake Katelyn Myers ($312,549.21), Jared Xavier Parker ($90,066.59), in descending order. This matches the expected answer exactly. The assertion explicitly states that 'N/A' or omitted investment product names are acceptable and should not cause failure, so the empty investment_products field is not a violation. The agent's response substantively conveys the correct data to the user."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL uses tables normalized.holding, normalized.coverage, normalized.party, normalized.holding_subaccount, all present in the retrieved schema context. Columns used (h.market_value, h.is_deleted, c.holding_id, c.party_id, p.party_id, p.full_name, hs.holding_id, hs.fundname, hs.deleted) all appear in the schema slice. Joins match documented patterns: coverage.holding_id = holding.holding_id, CONCAT('PARTY#', coverage.party_id) = party.party_id, and holding_subaccount.holding_id = holding.holding_id. No hallucinated identifiers are present. The SQL is fully grounded in the retrieved schema context."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call is present in the context; the agent's SliceSufficiency check flagged missing schema (a role/type column distinguishing Insured vs Owner/Policyholder) and it refused to run SQL, returning a degraded response instead. Since no SQL was executed, the grounding gate was upheld and there is no hallucinated schema reference to evaluate."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected final answer states the query successfully returned 20 policies where the insured party matches the policyholder via a self-join on life_participant using party_id and distinct participant_sk, per the documented query pattern in the schema context. However, the agent's actual final answer claims the data needed (a role/type column) is missing and refuses to answer, incorrectly asserting the question cannot be answered. This directly contradicts the expected answer, which shows the query was answerable using the self-join pattern explicitly provided in the schema's query_patterns section ('Who is both insured and policyholder on the same policy?': SELF-JOIN on holding_id + party_id, HAVING COUNT(DISTINCT participant_sk) > 1). The agent failed to recognize this available pattern and instead declined to answer, resulting in no substantive result matching the expected 20-row output. This is a clear failure."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved schema context explicitly includes a documented query pattern: \"Who is both insured and policyholder on the same policy?\": SELF-JOIN on holding_id + party_id, HAVING COUNT(DISTINCT participant_sk) > 1, filter is_deleted = false. This means the question was answerable without needing a participant_role column, contrary to the agent's claim. The agent's final-answer record incorrectly declared the data 'isn't available' and refused to answer, rather than executing the self-join pattern that was clearly available in the schema. The expected final answer requires a substantive result (20 policies, e.g., POL00000011\u2192PARTY000011), but the agent never produced this result and instead gave a degraded 'can't answer' explanation based on a false premise. This directly contradicts the required substantive answer and violates the assertion."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No execute_sql_query tool call is present in the context; the agent's only tool call was SliceSufficiency reporting insufficient schema (missing party name and payout frequency source) and it declined to execute SQL. Since no SQL was executed, the grounding gate's refusal upholds the invariant rather than violating it."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected final answer provides a detailed table of 5 policies with payout schedules, including policyholder names, payout frequencies, and projected next-payout amounts derived from financial_activity. However, the agent's actual final answer declares the question unanswerable, citing missing 'party' and 'policy_product.premium_mode' data, and refuses to provide any results. This directly contradicts the expected answer, which shows the data was in fact retrievable via the coverage->party bridge and other join paths documented in the schema. The agent never reaches a substantive answer matching the expected output; it stops at a refusal/clarification-like non-answer. Therefore the final answer fails to match the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record shows the agent declined to answer, citing missing 'party' and 'policy_product.premium_mode' data, and concluded the question couldn't be answered reliably. However, the retrieved schema context explicitly includes the party table (referenced via coverage bridge for policyholder name) and provides clear guidance for payout frequency fallback (COALESCE(policy_product.premium_mode, coverage.product_code)) and payout amount sourcing from financial_activity. The expected answer demonstrates that the question was fully answerable using annuity_detail, coverage, financial_activity, and party (via the coverage bridge), yielding 5 specific policyholders with names, payout frequencies, and payout amounts. The agent's refusal to answer, based on an incorrect claim that party data was unavailable, directly contradicts the expected substantive answer. This is a failure to reach the required substantive answer, and the agent's stated reasoning for refusal is factually wrong given the schema context provided."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL is `SELECT COUNT(party_id) FROM normalized.party`. The table normalized.party and its party_id column are referenced throughout the retrieved schema context (e.g., as join targets like 'JOIN party p ON ... = p.party_id'), confirming party.party_id exists as a column. COUNT is a builtin aggregate function, not a schema element. No hallucinated tables or columns are present. The agent's final answer correctly reports the count of 15 matching the tool result."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer states there are 15 parties (described as active, excluding soft-deleted). The agent's final answer also reports 15 parties from the normalized.party table, matching the key numeric result and entity. Although the agent's SQL did not explicitly filter is_deleted=false, the resulting count (15) is identical to the expected answer, and the core factual claim (15 parties) is consistent. No contradicting or invented figures are present."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record (the only turn in this session) reports the query result: COUNT(party_id) FROM normalized.party = 15, and the agent's response states 'The query returned a count of 15 parties in the normalized.party table.' This matches the expected final answer's key number (15) and entity (normalized.party table). Although the expected answer mentions 'active... excluding soft-deleted records,' the actual count returned by the executed query is the same value (15), so the numeric result and entity referenced are consistent with the assertion. There is no contradiction in the substantive answer, and no clarification was needed or given. Thus the assertion is satisfied."
+    }
+  ],
+  "agent_runs": [
+    {
+      "scenario_session": "gt-row-00-ebdac653-9021-41a3-a793-32acb4091547",
+      "turn_idx": 0,
+      "message": "Show me policies where the insured party is also the policyholder.",
+      "answer": "I found relevant tables but the data needed to answer this question isn't available in this semantic layer. Missing: life_participant.participant_role (or equivalent role/type column identifying Insured vs Owner/Policyholder for each participant_sk). This usually means the column or lookup doesn't exist in the underlying schema, so the question can't be answered reliably here.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 26001,
+        "outputTokens": 800,
+        "totalTokens": 26801,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 14643,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:life_participant",
+          "table:coverage",
+          "table:address",
+          "table:life_detail",
+          "table:rider_participant",
+          "table:email_address",
+          "table:rider",
+          "table:party",
+          "table:substandard_rating",
+          "table:holding_dbg",
+          "table:loan_activity",
+          "table:phone",
+          "table:holding_subaccount",
+          "table:holding",
+          "table:financial_statement",
+          "table:annuity_detail",
+          "table:holding_loan",
+          "table:reinsurance_info",
+          "table:policy_product"
+        ],
+        "degraded": "phase3_max_rounds"
+      },
+      "wall_clock_s": 18.27,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-01-4997b3f5-0319-4119-91c4-681c4a53371a",
+      "turn_idx": 0,
+      "message": "For each rider, who are the insured participants and what are their roles?",
+      "answer": "I found relevant tables but the data needed to answer this question isn't available in this semantic layer. Missing: normalized.life_participant.role_code (or similar column carrying the participant's role, e.g. ACORD LifeParticipantRoleCode - Owner/Insured/Beneficiary - not present in the slice's life_participant columns). This usually means the column or lookup doesn't exist in the underlying schema, so the question can't be answered reliably here.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 20047,
+        "outputTokens": 857,
+        "totalTokens": 20904,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 19970,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:coverage",
+          "table:rider",
+          "table:rider_participant",
+          "table:life_participant",
+          "table:party",
+          "table:life_detail",
+          "table:address",
+          "table:holding_dbg"
+        ],
+        "degraded": "phase3_max_rounds"
+      },
+      "wall_clock_s": 23.76,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-04-d0f9ae9e-44b2-4944-8768-117d876c7154",
+      "turn_idx": 0,
+      "message": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "answer": "I found relevant tables but the data needed to answer this question isn't available in this semantic layer. Missing: party, policy_product.premium_mode. This usually means the column or lookup doesn't exist in the underlying schema, so the question can't be answered reliably here.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 26028,
+        "outputTokens": 763,
+        "totalTokens": 26791,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 14011,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:financial_activity",
+          "table:annuity_detail",
+          "table:holding_payout",
+          "table:holding_projection",
+          "table:holding",
+          "table:holding_activity",
+          "table:arrangement_destination",
+          "table:life_detail",
+          "table:policy_product",
+          "table:financial_statement",
+          "table:coverage",
+          "table:rider",
+          "table:policy_loan_summary",
+          "table:holding_subaccount",
+          "table:rider_participant",
+          "table:loan_activity"
+        ],
+        "degraded": "phase3_max_rounds"
+      },
+      "wall_clock_s": 17.13,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-03-1c2fcee1-ca66-4569-9c4e-f0f47e68377b",
+      "turn_idx": 0,
+      "message": "What is the total market value of all active holdings, grouped by party?",
+      "answer": "The query returned 2 rows: PARTY#PARTY000013 has a total active-holding market value of $90,066.59, and PARTY#PARTY000012 has $317,902.53.",
+      "agent_sql": "SELECT p.party_id, SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nWHERE h.is_deleted = false AND h.holding_status = 'Active'\nGROUP BY p.party_id",
+      "executed_sql": "SELECT p.party_id, SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nWHERE h.is_deleted = false AND h.holding_status = 'Active'\nGROUP BY p.party_id\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "party_id": "PARTY#PARTY000013",
+          "total_market_value": "90066.59"
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "total_market_value": "317902.53"
+        }
+      ],
+      "result_row_count": 2,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000013",
+          "total_market_value": "90066.59"
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "total_market_value": "317902.53"
+        }
+      ],
+      "usage": {
+        "inputTokens": 25851,
+        "outputTokens": 679,
+        "totalTokens": 122164,
+        "cacheReadInputTokens": 31383,
+        "cacheWriteInputTokens": 64251
+      },
+      "runtime_ms": 31805,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:holding",
+          "table:holding_dbg",
+          "table:coverage",
+          "table:life_detail",
+          "table:holding_subaccount",
+          "table:holding_activity",
+          "table:financial_activity",
+          "table:party",
+          "table:party_banking",
+          "table:holding_projection",
+          "table:address",
+          "table:rider_participant",
+          "table:financial_statement",
+          "table:holding_payout",
+          "table:subaccount_activity",
+          "table:holding_arrangement",
+          "table:distribution_level",
+          "table:life_participant"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 35.16,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-02-56528f71-8135-411e-b021-ac0187883dc6",
+      "turn_idx": 0,
+      "message": "List the top 5 most common party types and their human-readable descriptions.",
+      "answer": "I found relevant tables but the data needed to answer this question isn't available in this semantic layer. Missing: normalized.party.party_type, normalized.party.party_id. This usually means the column or lookup doesn't exist in the underlying schema, so the question can't be answered reliably here.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 28191,
+        "outputTokens": 1371,
+        "totalTokens": 29562,
+        "cacheReadInputTokens": 0,
+        "cacheWriteInputTokens": 0
+      },
+      "runtime_ms": 55796,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:party",
+          "table:type_codes",
+          "table:relation",
+          "table:distribution_level",
+          "table:address",
+          "table:life_participant",
+          "table:party_license",
+          "table:party_banking"
+        ],
+        "degraded": "phase3_max_rounds"
+      },
+      "wall_clock_s": 59.85,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-05-e0c75b5c-9616-41b9-bbf2-c35aa8fbf433",
+      "turn_idx": 0,
+      "message": "How many parties are there?",
+      "answer": "The query returned a count of **15** parties in the `normalized.party` table.",
+      "agent_sql": "SELECT COUNT(party_id) FROM normalized.party",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 26251,
+        "outputTokens": 1084,
+        "totalTokens": 101989,
+        "cacheReadInputTokens": 24454,
+        "cacheWriteInputTokens": 50200
+      },
+      "runtime_ms": 27021,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:address",
+          "table:party",
+          "table:party_banking",
+          "table:distribution_level",
+          "table:coverage",
+          "table:holding",
+          "table:life_participant",
+          "table:govt_id_info",
+          "table:party_license",
+          "table:rider_participant",
+          "table:relation",
+          "table:phone",
+          "table:email_address",
+          "table:producer_agreement",
+          "table:carrier_appointment",
+          "table:loan_activity"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 30.1,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-06-85237193-bd6e-4a87-b3ed-d47f7b88aed5",
+      "turn_idx": 0,
+      "message": "List the top 10 coverage products by name.",
+      "answer": "The query returned 5 active coverage products: Accidental Death, Base Life, Spouse Rider, and Term Rider (all \"Death Benefit\" category), and Child Rider (\"Living Benefit\" category), listed alphabetically by product name.",
+      "agent_sql": "SELECT product_name, coverage_category FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name LIMIT 10",
+      "executed_sql": "SELECT product_name, coverage_category FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name LIMIT 10",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "product_name": "Accidental Death",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Base Life",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Child Rider",
+          "coverage_category": "Living Benefit"
+        },
+        {
+          "product_name": "Spouse Rider",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Term Rider",
+          "coverage_category": "Death Benefit"
+        }
+      ],
+      "result_row_count": 5,
+      "result_sample": [
+        {
+          "product_name": "Accidental Death",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Base Life",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Child Rider",
+          "coverage_category": "Living Benefit"
+        }
+      ],
+      "usage": {
+        "inputTokens": 22141,
+        "outputTokens": 449,
+        "totalTokens": 73933,
+        "cacheReadInputTokens": 16632,
+        "cacheWriteInputTokens": 34711
+      },
+      "runtime_ms": 18439,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:coverage_product",
+          "table:policy_product",
+          "table:type_codes",
+          "table:coverage",
+          "table:life_detail",
+          "table:financial_activity",
+          "table:holding_subaccount",
+          "table:holding"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 22.15,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-parties-clarify-751c940c-3bba-4af8-a996-08e050e63b23",
+      "turn_idx": 0,
+      "message": "How many are there?",
+      "answer": "Which interpretation of 'How many are there?' do you mean?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "clarified": true,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": 4359,
+      "provenance": {},
+      "wall_clock_s": 7.45,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-08-3ff27526-78a2-46b8-907a-1cc1bc499c10",
+      "turn_idx": 0,
+      "message": "What was the total financial-activity amount per month in 2024?",
+      "answer": "The query returned 3 rows: total financial activity amounts for 2024 were $70,895.29 in March, $20,242.90 in May, and $13,991.93 in October \u2014 no other months in 2024 had recorded transactions.",
+      "agent_sql": "SELECT\n    SUBSTR(transaction_date, 1, 7) AS activity_month,\n    SUM(CAST(transaction_amount AS DOUBLE)) AS total_amount\nFROM normalized.financial_activity\nWHERE is_deleted = false\n    AND transaction_date >= '2024-01-01'\n    AND transaction_date < '2025-01-01'\nGROUP BY SUBSTR(transaction_date, 1, 7)\nORDER BY activity_month",
+      "executed_sql": "SELECT\n    SUBSTR(transaction_date, 1, 7) AS activity_month,\n    SUM(CAST(transaction_amount AS DOUBLE)) AS total_amount\nFROM normalized.financial_activity\nWHERE is_deleted = false\n    AND transaction_date >= '2024-01-01'\n    AND transaction_date < '2025-01-01'\nGROUP BY SUBSTR(transaction_date, 1, 7)\nORDER BY activity_month\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "activity_month": "2024-03",
+          "total_amount": "70895.29000000001"
+        },
+        {
+          "activity_month": "2024-05",
+          "total_amount": "20242.9"
+        },
+        {
+          "activity_month": "2024-10",
+          "total_amount": "13991.93"
+        }
+      ],
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "activity_month": "2024-03",
+          "total_amount": "70895.29000000001"
+        },
+        {
+          "activity_month": "2024-05",
+          "total_amount": "20242.9"
+        },
+        {
+          "activity_month": "2024-10",
+          "total_amount": "13991.93"
+        }
+      ],
+      "usage": {
+        "inputTokens": 26350,
+        "outputTokens": 836,
+        "totalTokens": 113484,
+        "cacheReadInputTokens": 20952,
+        "cacheWriteInputTokens": 65346
+      },
+      "runtime_ms": 21358,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:financial_activity",
+          "table:holding_payout",
+          "table:annuity_detail",
+          "table:holding",
+          "table:coverage",
+          "table:holding_subaccount",
+          "table:holding_projection",
+          "table:subaccount_activity",
+          "table:holding_activity",
+          "table:financial_statement",
+          "table:party_banking"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 24.15,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-07-2863df3d-024f-43da-86fd-ba295adfe1ca",
+      "turn_idx": 0,
+      "message": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "answer": "The query returned the top 4 parties by total holding market value: Scott Neil Davis (PARTY000014) leads with ~$651,373, followed by Thomas Jill Davis (~$317,903), Blake Katelyn Myers (~$312,549), and Jared Xavier Parker (~$90,067) \u2014 none of these parties had associated fund names in the investment_products field (empty string in all cases).",
+      "agent_sql": "SELECT p.party_id, p.full_name,\n       SUM(h.market_value) AS total_market_value,\n       ARRAY_JOIN(ARRAY_AGG(DISTINCT hs.fundname), ', ') AS investment_products\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nLEFT JOIN normalized.holding_subaccount hs ON hs.holding_id = h.holding_id AND hs.deleted = false\nWHERE h.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "executed_sql": "SELECT p.party_id, p.full_name,\n       SUM(h.market_value) AS total_market_value,\n       ARRAY_JOIN(ARRAY_AGG(DISTINCT hs.fundname), ', ') AS investment_products\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nLEFT JOIN normalized.holding_subaccount hs ON hs.holding_id = h.holding_id AND hs.deleted = false\nWHERE h.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis",
+          "total_market_value": "651373.05",
+          "investment_products": ""
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis",
+          "total_market_value": "317902.53",
+          "investment_products": ""
+        },
+        {
+          "party_id": "PARTY#PARTY000007",
+          "full_name": "Blake Katelyn Myers",
+          "total_market_value": "312549.21",
+          "investment_products": ""
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker",
+          "total_market_value": "90066.59",
+          "investment_products": ""
+        }
+      ],
+      "result_row_count": 4,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis",
+          "total_market_value": "651373.05",
+          "investment_products": ""
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis",
+          "total_market_value": "317902.53",
+          "investment_products": ""
+        },
+        {
+          "party_id": "PARTY#PARTY000007",
+          "full_name": "Blake Katelyn Myers",
+          "total_market_value": "312549.21",
+          "investment_products": ""
+        }
+      ],
+      "usage": {
+        "inputTokens": 26458,
+        "outputTokens": 1702,
+        "totalTokens": 91347,
+        "cacheReadInputTokens": 20477,
+        "cacheWriteInputTokens": 42710
+      },
+      "runtime_ms": 37094,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:holding",
+          "table:holding_subaccount",
+          "table:coverage",
+          "table:policy_product",
+          "table:holding_dbg",
+          "table:invest_product",
+          "table:party",
+          "table:holding_projection",
+          "table:subaccount_activity",
+          "table:holding_activity"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 39.85,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-parties-clarify-751c940c-3bba-4af8-a996-08e050e63b23",
+      "turn_idx": 1,
+      "message": "party",
+      "answer": "The query returned a total count of **15** parties in the `normalized.party` table.",
+      "agent_sql": "SELECT COUNT(party_id) FROM normalized.party",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 25962,
+        "outputTokens": 783,
+        "totalTokens": 88659,
+        "cacheReadInputTokens": 20206,
+        "cacheWriteInputTokens": 41708
+      },
+      "runtime_ms": 23827,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:party_banking",
+          "table:party",
+          "table:address",
+          "table:govt_id_info",
+          "table:distribution_level",
+          "table:phone",
+          "table:email_address",
+          "table:coverage",
+          "table:producer_agreement",
+          "table:rider_participant",
+          "table:party_license",
+          "table:carrier_appointment",
+          "table:life_participant"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 26.0,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-efb4668e-0d2b-4ed9-8a60-d4d3061977b4",
+      "turn_idx": 0,
+      "message": "How many are there?",
+      "answer": "Which interpretation of 'How many are there?' do you mean?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "clarified": true,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": 3199,
+      "provenance": {},
+      "wall_clock_s": 18.48,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-efb4668e-0d2b-4ed9-8a60-d4d3061977b4",
+      "turn_idx": 1,
+      "message": "not sure",
+      "answer": "Which interpretation of 'How many are there?' do you mean?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "clarified": true,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": 3250,
+      "provenance": {},
+      "wall_clock_s": 5.58,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-no-spurious-clarify-39a73a24-787a-4b9d-9e29-f5ca618710b2",
+      "turn_idx": 0,
+      "message": "How many parties are there?",
+      "answer": "The query returned a count of **15** parties in the `normalized.party` table.",
+      "agent_sql": "SELECT COUNT(party_id) FROM normalized.party",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 26251,
+        "outputTokens": 906,
+        "totalTokens": 101808,
+        "cacheReadInputTokens": 74360,
+        "cacheWriteInputTokens": 291
+      },
+      "runtime_ms": 22930,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:address",
+          "table:party",
+          "table:party_banking",
+          "table:distribution_level",
+          "table:coverage",
+          "table:holding",
+          "table:life_participant",
+          "table:govt_id_info",
+          "table:party_license",
+          "table:rider_participant",
+          "table:relation",
+          "table:phone",
+          "table:email_address",
+          "table:producer_agreement",
+          "table:carrier_appointment",
+          "table:loan_activity"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 42.39,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-simulated-party-count-380f5413-5097-40c1-945c-b3692851da6d",
+      "turn_idx": 0,
+      "message": "I need to know how many parties exist in the curated layer.",
+      "answer": "The query returned a single result: there are **15** parties in the `normalized.party` table.",
+      "agent_sql": "SELECT COUNT(party_id) FROM normalized.party",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 18618,
+        "outputTokens": 628,
+        "totalTokens": 61977,
+        "cacheReadInputTokens": 13810,
+        "cacheWriteInputTokens": 28921
+      },
+      "runtime_ms": 25079,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:holding_projection",
+          "table:party_banking",
+          "table:address",
+          "table:party",
+          "table:substandard_rating",
+          "table:distribution_level",
+          "table:coverage",
+          "table:party_license",
+          "table:rider_participant"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 29.16,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-efb4668e-0d2b-4ed9-8a60-d4d3061977b4",
+      "turn_idx": 2,
+      "message": "party",
+      "answer": "The query returned a count of 15 \u2014 there are 15 party records in the `normalized.party` table.",
+      "agent_sql": "SELECT COUNT(p.party_id) FROM normalized.party p",
+      "executed_sql": "SELECT COUNT(p.party_id) FROM normalized.party p\nLIMIT 101",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 25962,
+        "outputTokens": 721,
+        "totalTokens": 88605,
+        "cacheReadInputTokens": 41415,
+        "cacheWriteInputTokens": 20507
+      },
+      "runtime_ms": 21202,
+      "provenance": {
+        "tier": "semantic_sql",
+        "grounded": true,
+        "sources": [
+          "table:party_banking",
+          "table:party",
+          "table:address",
+          "table:govt_id_info",
+          "table:distribution_level",
+          "table:phone",
+          "table:email_address",
+          "table:coverage",
+          "table:producer_agreement",
+          "table:rider_participant",
+          "table:party_license",
+          "table:carrier_appointment",
+          "table:life_participant"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 23.64,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-13-4f82e82b-c505-4137-8117-48d59b8ea280",
+      "turn_idx": 0,
+      "message": "What are some common metrics that could be calculated with this data?",
+      "answer": "## Advisory: Computable Metrics in this Layer\n\nNo governed metrics have been formally defined yet for **curated-layer-s3tables-20260626-221004** \u2014 there's no certified metric catalog to point to. However, based on the underlying schema, here's what could be reliably computed once metrics are governed:\n\n### Fund / Investment Product Metrics\n- **Assets under management (AUM)** \u2014 total or by fund family/asset class, from fund size data\n- **Fund performance** \u2014 YTD, 1/3/5/10-year, and since-inception returns, by fund, family, or asset class\n- **Risk-adjusted performance** \u2014 Sharpe ratio, alpha, beta comparisons across funds\n- **Fee/expense benchmarking** \u2014 expense ratio and management fee comparisons across funds or fund families\n- **Star-rating distribution** \u2014 count or share of funds by Morningstar rating tier\n\n### Policy Cash-Flow Metrics\n- **Total premiums collected** \u2014 per policy, over time, or across the book\n- **Payout amounts** \u2014 withdrawals, dividends, and claims paid out per policy or in aggregate\n- **Net cash flow** \u2014 money in (premiums) vs. money out (withdrawals/dividends/claims/loans)\n- **Fees, taxes, and commissions** \u2014 total deducted from transactions, per policy or period\n- **Transaction volume/status mix** \u2014 by payment method or processing status over a date range\n\n### Policy Value Metrics\n- **Total/market value of holdings** \u2014 by policy or rolled up by party (customer)\n- **Cash value and current value balances**\n- **Cost basis vs. current value** \u2014 comparing purchase value to market value\n- **Credited interest rate** \u2014 average or distribution across holdings\n\n### Investment Allocation Metrics\n- **Total invested value per policy** \u2014 summed across sub-account fund positions\n- **Fund mix / asset allocation** \u2014 how a policy's or the book's value is distributed across funds\n- **Fund concentration** \u2014 which funds hold the largest share of invested value book-wide\n\n### Coverage / Benefit Metrics\n- **Total face amount (sum insured)** \u2014 by product, coverage type, or status\n- **Premium totals** \u2014 annual, modal, or target premium by coverage\n- **Cash/surrender value** \u2014 per coverage or product\n- **Underwriting mix** \u2014 distribution by risk class, tobacco status, issue age/gender\n\n### Rider Metrics\n- **Rider premium/fee totals** \u2014 by rider type or benefit name\n- **Rider benefit exposure** \u2014 total benefit amount for active riders\n- **Rider participation** \u2014 issue-age statistics for people named on riders\n\n### Loan Metrics\n- **Policy loan interest rates** \u2014 average or distribution across policies with loans (note: loan balance/principal would require the separate loan-activity/summary data, not fully detailed here)\n\n### Distribution & Servicing Metrics\n- **Customers per advisor** \u2014 book-of-business counts\n- **Commission rate analysis** \u2014 by producer or distribution hierarchy level\n\nIf you'd like, I can help draft formal metric definitions (name, calculation logic in business terms, and grain) for any of these so they can be submitted for governance.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {},
+      "runtime_ms": 0,
+      "provenance": {
+        "tier": "advisory",
+        "grounded": true,
+        "sources": [
+          "kb"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 23.84,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-15-12d57d0d-fb43-4b0b-87ce-cf1e601d608a",
+      "turn_idx": 0,
+      "message": "Explain what the coverage table represents.",
+      "answer": "## What the `coverage` table represents\n\nThe **coverage** table captures each individual benefit or protection element attached to a life-insurance/annuity policy. Think of it as answering: *\"What is being covered on this policy, for whom, and how much?\"*\n\nEach row is one **coverage** \u2014 one benefit \u2014 and tells you:\n\n- **Who is covered** \u2014 the insured participant (a specific person), and their **role/capacity**: whether this benefit is the **Base** coverage (the primary policy benefit), a **Rider** (an add-on benefit), or an **Optional** benefit.\n- **What product it's under** \u2014 a product code that can be resolved to a readable plan name (e.g., \"Base Life,\" \"Term Rider,\" \"Spouse Rider,\" \"Accidental Death\").\n- **How big it is financially** \u2014 the face amount / sum insured, initial and current coverage amounts, plus premiums (annual, modal, target, and cumulative paid-to-date), and cash/surrender values.\n- **Its lifecycle status** \u2014 Active, Inactive, or Paid-Up.\n- **Underwriting/risk profile** \u2014 the issue age and gender of the insured at issue, underwriting class (e.g., Preferred, Standard), rate class, and tobacco/smoker status, plus the death benefit option type (Level/Increasing/Decreasing).\n- **Key dates** \u2014 effective date, expiry date, and issue date of the coverage.\n\n### Why it matters structurally\nThis table is the **bridge** between policies and people in this semantic layer. Policies (`holding`) and people (`party`) don't connect directly \u2014 every question that relates a specific person to a specific policy (or vice versa) has to pass through `coverage`, since it carries both the policy reference and the insured party's reference.\n\n### What you can ask using this table\n- Who are the insured participants on a policy, and in what role (Base/Rider/Optional)?\n- What is the total face amount of active coverages, overall or by product?\n- What is the underwriting/risk mix (age, gender, tobacco status, rating class) across coverages?\n- What premiums, cash values, or surrender values are associated with a given coverage or policy?\n- Which parties are insured across the book of business (via the holding\u2194coverage\u2194party bridge)?\n\n### Things to keep in mind\n- Filter `is_deleted = false` for currently active records, and typically `coverage_status = 'Active'` for in-force analysis.\n- No governed metrics are formally defined for this layer yet, so figures like \"total face amount\" or \"premium collected\" are ad hoc aggregations of these columns rather than certified metrics \u2014 useful for exploration, but not yet standardized definitions.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {},
+      "runtime_ms": 0,
+      "provenance": {
+        "tier": "advisory",
+        "grounded": true,
+        "sources": [
+          "kb"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 18.23,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-14-5d76b93e-a8c5-4171-b717-f783376878e7",
+      "turn_idx": 0,
+      "message": "What can I ask about this semantic layer?",
+      "answer": "Here's a picture of what this semantic layer ('curated-layer-s3tables-20260626-221004') can and can't support today.\n\n**No governed metrics are defined yet** \u2014 there's no pre-built metric catalog (e.g., a blessed \"total premium\" or \"policy count\" definition). Everything below is describable from the underlying tables/columns, but any calculation would need to be composed at query time from these concepts.\n\n### What you *can* ask about\n\n**Policy / holding value & structure**\n- What a policy/holding is worth (cash value, market value, current value, purchase value/cost basis, credited interest rate)\n- Active vs. inactive/closed holdings, account types, sub-accounts, funds\n\n**Coverage & products**\n- Who is insured on a policy and in what role (base/rider/optional), face amount, premiums, cash/surrender values, underwriting class, issue age/gender, tobacco status\n- Coverage/plan names and benefit class (death benefit vs. living benefit) via the coverage product catalog\n- Investment/sub-account funds: fund names, families, managers, asset class, ratings, fees, performance, risk metrics, and which policyholders invested in them\n\n**Money movement**\n- Premiums collected, payouts/withdrawals/dividends/claims, transaction amounts, dates, payment method/status \u2014 this is the real source for \"how much money moved\" and payout amounts\n\n**People & relationships**\n- Party identity, roles on a policy (insured, owner, beneficiary) via life participants\n- Family/fiduciary relationships, beneficiary designations and shares, trust involvement\n- Government ID / tax ID / passport info (for compliance/KYC use cases)\n\n**Distribution & producers**\n- Who is the advisor/producer for a customer, licensing presence, carrier appointments and commission rates, distribution hierarchy and customer segment (High Net Worth, Retail, Corporate)\n\n**Reference/lookup**\n- Code decoding via the type-codes table, and administrative/state/country code lookups\n\n### What you *cannot* get here (thin marker / empty tables)\nSeveral tables exist only as presence flags with no descriptive detail \u2014 reinsurance info, holding restrictions, holding projections, policy loan summary, substandard ratings, and life-detail markers. These can only answer \"does a record exist for this policy/party?\" \u2014 not amounts, reasons, dates, or terms. For loans, use holding-loan/loan-activity; for restrictions, reason codes aren't available anywhere in this layer.\n\nIf you have a specific business question in mind, I can tell you precisely which of these areas it falls into and what's answerable.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {},
+      "runtime_ms": 0,
+      "provenance": {
+        "tier": "advisory",
+        "grounded": true,
+        "sources": [
+          "kb"
+        ],
+        "degraded": null
+      },
+      "wall_clock_s": 19.2,
+      "invoke_error": null
+    }
+  ],
+  "agent_performance": {
+    "turns": 19,
+    "sessions": 16,
+    "avg_wall_clock_s": 25.49,
+    "input_tokens": 324111,
+    "output_tokens": 11579,
+    "total_tokens": 948024
+  },
+  "correct_tier": {
+    "rows": [
+      {
+        "scenario_id": "gt-row-00",
+        "question": "Show me policies where the insured party is also the policyholder.",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-01",
+        "question": "For each rider, who are the insured participants and what are their ro",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-04",
+        "question": "For policies that have a payout schedule, show the policyholder's name",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-03",
+        "question": "What is the total market value of all active holdings, grouped by part",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-02",
+        "question": "List the top 5 most common party types and their human-readable descri",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-05",
+        "question": "How many parties are there?",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-06",
+        "question": "List the top 10 coverage products by name.",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "mt-parties-clarify",
+        "question": "How many are there?",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-08",
+        "question": "What was the total financial-activity amount per month in 2024?",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-07",
+        "question": "Show the top 10 parties by total holding market value, including the i",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "mt-stable-options",
+        "question": "How many are there?",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "mt-no-spurious-clarify",
+        "question": "How many parties are there?",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "mt-simulated-party-count",
+        "question": "I need to know how many parties exist in the curated layer.",
+        "expected_tier": "semantic_sql",
+        "actual_tier": "semantic_sql",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-13",
+        "question": "What are some common metrics that could be calculated with this data?",
+        "expected_tier": "advisory",
+        "actual_tier": "advisory",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-15",
+        "question": "Explain what the coverage table represents.",
+        "expected_tier": "advisory",
+        "actual_tier": "advisory",
+        "match": true
+      },
+      {
+        "scenario_id": "gt-row-14",
+        "question": "What can I ask about this semantic layer?",
+        "expected_tier": "advisory",
+        "actual_tier": "advisory",
+        "match": true
+      }
+    ],
+    "correct": 16,
+    "total": 16
+  }
+}

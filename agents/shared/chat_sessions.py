@@ -162,8 +162,16 @@ class ChatSessionService:
         ontology_id: str,
         mode: str,
         user_id: str,
+        source: str = 'chat',
     ) -> Dict[str, Any]:
         """Insert a new session row.
+
+        Args:
+            source: Transport that created this session — ``chat`` (AG-UI),
+                ``mcp`` (MCP tool call), or ``eval`` (notebook eval run). Lets the
+                admin Monitoring tab distinguish live chat from MCP/eval traffic.
+                Write-once: set at create, never changed by ``get_or_create`` on
+                an existing session.
 
         Raises:
             ValueError: if a session with the same id already exists.
@@ -178,6 +186,7 @@ class ChatSessionService:
             'ontologyId': ontology_id,
             'mode': mode,
             'userId': user_id or 'anonymous',
+            'source': source or 'chat',
             'messages': [],
             'createdAt': _now_iso(),
             'updatedAt': _now_iso(),
@@ -294,8 +303,14 @@ class ChatSessionService:
         ontology_id: str,
         mode: str,
         user_id: str,
+        source: str = 'chat',
     ) -> Dict[str, Any]:
         """Return an existing session or create one if it doesn't exist.
+
+        Args:
+            source: Transport tag forwarded to ``create_session`` ONLY on the
+                create branch. Write-once — an EXISTING session keeps its
+                original source (a reused sessionId is never relabeled).
 
         Raises:
             SessionOwnershipError: when the session exists but is owned by a
@@ -310,6 +325,7 @@ class ChatSessionService:
                 ontology_id=ontology_id,
                 mode=mode,
                 user_id=user_id,
+                source=source,
             )
 
     def append_turn(

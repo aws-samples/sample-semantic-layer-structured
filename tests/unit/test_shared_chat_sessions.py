@@ -52,6 +52,32 @@ def test_create_session_preserves_real_user_id():
     assert item['userId'] == 'cognito-sub-123'
 
 
+def test_create_session_persists_source():
+    """source distinguishes chat vs MCP vs eval traffic on the Monitoring tab."""
+    svc, table = _svc_with_table()
+    svc.create_session(session_id='s1', ontology_id='o1', mode='vkg',
+                       user_id='u', source='mcp')
+    item = table.put_item.call_args.kwargs['Item']
+    assert item['source'] == 'mcp'
+
+
+def test_create_session_source_defaults_to_chat():
+    svc, table = _svc_with_table()
+    svc.create_session(session_id='s2', ontology_id='o1', mode='vkg', user_id='u')
+    item = table.put_item.call_args.kwargs['Item']
+    assert item['source'] == 'chat'
+
+
+def test_get_or_create_forwards_source_on_create():
+    """get_or_create must thread source into the create branch (write-once)."""
+    svc, table = _svc_with_table()
+    table.get_item.return_value = {}  # not found → create branch
+    svc.get_or_create(session_id='s3', ontology_id='o1', mode='vkg',
+                      user_id='u', source='eval')
+    item = table.put_item.call_args.kwargs['Item']
+    assert item['source'] == 'eval'
+
+
 def test_append_assistant_includes_totals_and_thinking():
     svc, table = _svc_with_table()
     svc.append_turn(session_id='s1', role='assistant', text='ans', turn_id='t2',

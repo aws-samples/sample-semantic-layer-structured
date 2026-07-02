@@ -353,16 +353,59 @@ def test_phase3_insufficient_slice_short_circuits_to_degraded():
     assert "sliceTokens" in detail[0] and "missing" in detail[0]
 
 
-def test_unsupported_relationship_fast_fails_at_phase3b():
-    # "insured ... also the policyholder" compares two policy party-roles. The
-    # slice (real curated relation schema) carries no owner/policyholder role, so
-    # Phase 3b must degrade (relationship_unsupported) WITHOUT generating SQL.
+def test_b1_role_enumeration_does_not_fast_fail_gt00_at_phase3b():
+    # De-layered guard: the role vocabulary is parsed from the slice's own column
+    # enumeration. The B1-enriched `life_participant` slice declares BOTH
+    # Owner/Policyholder and Insured as policy party-roles, so gt-00 ("insured ...
+    # also the policyholder") references only roles the slice CAN represent →
+    # Phase 3b must NOT fast-fail; Phase 4 runs to build the self-join. This is the
+    # core sequencing guarantee of the design (§2 note / §5): once B1 lands,
+    # detect_unsupported_relationship stops firing for gt-00.
+    runs = {"gen": 0}
+    slice_obj = {
+        "tables": ["normalized.life_participant"],
+        "columns": [
+            {"table_id": "normalized.life_participant", "name": "participant_role",
+             "description": "Role of the party on the policy. Role values "
+                            "include: Owner (synonyms: Policyholder), Insured, "
+                            "Beneficiary. Each value is a distinct policy "
+                            "party-role."},
+            {"table_id": "normalized.life_participant", "name": "holding_id",
+             "description": "FK to holding. Self-join key (pair with party_id)."},
+            {"table_id": "normalized.life_participant", "name": "party_id",
+             "description": "FK to party."},
+        ],
+        "joins": [],
+    }
+
+    class _GenCounting:
+        def generate(self, *, slice_text, question, grounding_feedback=""):
+            runs["gen"] += 1
+            return "SELECT 1"
+
+    deps = PhaseDeps(
+        router=_Router(["normalized.life_participant"]),
+        builder=_Builder(json.dumps(slice_obj)),
+        generator=_GenCounting(),
+        run_execution=lambda *a, **_kw: {"columns": [], "rows": [], "answer": "0"},
+    )
+    ctx = tier2_rag_workflow(
+        question="Show me policies where the insured party is also the policyholder.",
+        namespace="ns", kb_id="kb", deps=deps)
+    assert ctx.degraded != "relationship_unsupported"
+    assert runs["gen"] == 1, "Phase 4 must run — gt-00 is answerable with B1"
+
+
+def test_no_role_enumeration_does_not_fast_fail_at_phase3b():
+    # When the slice declares NO policy party-role enumeration (the real curated
+    # `relation` schema carries only interpersonal Primary/Secondary roles), the
+    # de-layered guard is a no-op: absent supporting metadata it must NOT invent a
+    # domain-specific fast-fail. Phase 4 runs and the grounding gate is the
+    # backstop (design §4c).
     runs = {"gen": 0}
     slice_obj = {
         "tables": ["normalized.relation", "normalized.coverage"],
         "columns": [
-            {"table_id": "normalized.relation", "name": "party_id_1",
-             "description": "Originating party. FK to party."},
             {"table_id": "normalized.relation", "name": "relationship_role",
              "description": "Values: Primary, Secondary."},
             {"table_id": "normalized.coverage", "name": "party_id",
@@ -380,14 +423,13 @@ def test_unsupported_relationship_fast_fails_at_phase3b():
         router=_Router(["normalized.relation", "normalized.coverage"]),
         builder=_Builder(json.dumps(slice_obj)),
         generator=_GenCounting(),
-        run_execution=lambda *a, **_kw: {"rows": []},
+        run_execution=lambda *a, **_kw: {"columns": [], "rows": [], "answer": "0"},
     )
     ctx = tier2_rag_workflow(
         question="Show me policies where the insured party is also the policyholder.",
         namespace="ns", kb_id="kb", deps=deps)
-    assert ctx.degraded == "relationship_unsupported"
-    assert ctx.degraded_detail and "policyholder" in ctx.degraded_detail.lower()
-    assert runs["gen"] == 0, "Phase 4 must not run for an unsupported relationship"
+    assert ctx.degraded != "relationship_unsupported"
+    assert runs["gen"] == 1, "Phase 4 must run when no role enumeration is declared"
 
 
 class _JudgeBuilder:

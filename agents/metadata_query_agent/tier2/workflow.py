@@ -106,13 +106,22 @@ def _slice_presence_index(slice_text: str) -> Tuple[set, set]:
         if isinstance(tid, str) and tid:
             table_names.add(tid.rsplit(".", 1)[-1].strip().lower())
     qualified_columns: set = set()
+    bare_columns: set = set()
     for col in obj.get("columns", []) or []:
         if not isinstance(col, dict):
             continue
         tid = (col.get("table_id") or "").rsplit(".", 1)[-1].strip().lower()
         name = (col.get("name") or "").strip().lower()
+        if name:
+            bare_columns.add(name)
         if tid and name:
             qualified_columns.add(f"{tid}.{name}")
+    # bare_columns is folded into qualified_columns under a wildcard table sentinel
+    # so _missing_entry_present can fall back to a bare-name match when the judge
+    # mis-qualifies a present column with the wrong (or a fabricated) table. We keep
+    # the two-set return signature stable by smuggling bare names as "*.<col>".
+    for name in bare_columns:
+        qualified_columns.add(f"*.{name}")
     return table_names, qualified_columns
 
 
@@ -143,20 +152,26 @@ def _missing_entry_present(entry: str, table_names: set,
         return False
     parts = cleaned.split(".")
     if len(parts) >= 3:
-        # db.table.column → check the table.column tail against real columns.
+        # db.table.column → check the table.column tail against real columns, and
+        # fall back to a bare-column match (judge mis-qualified a present column
+        # with a wrong/fabricated table — e.g. it asks for party.party_type when
+        # party_type lives on the present party table under a different table_id).
         table, column = parts[-2], parts[-1]
-        return f"{table}.{column}" in qualified_columns
+        return (f"{table}.{column}" in qualified_columns
+                or f"*.{column}" in qualified_columns)
     if len(parts) == 2:
         # Ambiguous: either db.table OR table.column. Accept either reading —
-        # present if the bare table exists, or if it is a real table.column.
+        # present if the bare table exists, or it is a real qualified table.column.
+        # (No bare-column fallback here: a 2-part entry is more likely a db.table
+        # the slice genuinely lacks than a mis-qualified column.)
         first, second = parts[0], parts[1]
         return second in table_names or f"{first}.{second}" in qualified_columns
-    # Single bare token: a table name.
+    # Single bare token: a table name (the common case). A bare column is rare here
+    # and risky to accept (many tables share `id`/`status`), so keep it table-only.
     return cleaned in table_names
 
 
-# Re-exported for backwards compatibility: callers (main.py, tests) import
-# these names from this module.
+# Public names callers (main.py, tests) import from this module.
 __all__ = [
     "MAX_GROUNDING_ROUNDS",
     "MAX_NODE_EXECUTIONS",

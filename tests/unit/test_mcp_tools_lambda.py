@@ -127,7 +127,43 @@ def test_ontology_query_invokes_runtime_and_returns_struct(index, monkeypatch):
     inv.assert_called_once()
     kw = inv.call_args.kwargs
     assert kw['runtime_arn'].endswith('/q')
-    assert kw['payload'] == {'question': 'how many?', 'id': 'ont-1'}
+    # Chat-shaped payload so the runtime routes to _chat_stream (persists a
+    # chat-sessions row tagged source=mcp → Monitoring captures MCP traffic).
+    p = kw['payload']
+    assert p['message'] == 'how many?' and p['id'] == 'ont-1'
+    assert p['turnId'] and len(p['sessionId']) >= 33 and p['source'] == 'mcp'
+    assert p['mode'] == 'vkg'
+    assert 'userId' not in p  # userId is JWT-derived on the chat path, not payload-set
+
+
+def test_parse_sse_maps_totals_to_run_query_keys(index):
+    """_parse_sse normalizes chat SSE totals into the SAME dict keys _run_query
+    returns, so the tool bodies are unchanged. VERIFIED live keys: totals.sql =
+    SPARQL lineage, totals.executedSql = Athena SQL."""
+    body = ('data: {"type":"message_chunk","delta":"Hello "}\n\n'
+            'data: {"type":"message_chunk","delta":"world"}\n\n'
+            'data: {"type":"run_finished","totals":{"sql":"SELECT ?s WHERE{}",'
+            '"executedSql":"SELECT 1","rows":[{"a":1}],"provenance":{"tier":"vkg"},'
+            '"graphTraversal":"ex:H"}}\n\n')
+    out = index._parse_sse(body)
+    assert out['answer'] == 'Hello world'
+    assert out['sql_query'] == 'SELECT ?s WHERE{}'          # SPARQL lineage
+    assert out['reasoning']['sqlQuery'] == 'SELECT 1'       # Athena SQL
+    assert out['reasoning']['graphTraversal'] == 'ex:H'
+    assert out['results'] == [{'a': 1}]
+    assert out['error'] is None
+
+
+def test_parse_sse_surfaces_run_error(index):
+    out = index._parse_sse('data: {"type":"run_error","error":"boom"}\n\n')
+    assert out['error'] == 'boom' and out['answer'] == '' and out['sql_query'] == ''
+
+
+def test_parse_sse_no_run_finished_is_not_silent_success(index):
+    """Truncated/timed-out stream (no run_finished): must not look like a clean
+    empty answer — empty sql/results so the caller doesn't report false success."""
+    out = index._parse_sse('data: {"type":"message_chunk","delta":"partial"}\n\n')
+    assert out['sql_query'] == '' and out['results'] == []
 
 
 def test_metadata_query_returns_struct(index, monkeypatch):

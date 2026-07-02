@@ -301,7 +301,7 @@ set of candidates every turn and could never converge.
 
    On any `phase3_max_rounds` degrade the graph **short-circuits to the
    `degraded` terminal — it does NOT generate or execute SQL** against a slice
-   the judge rejected (that previously produced a misleading 0-row answer). The
+   the judge rejected (which would produce a misleading 0-row answer). The
    degrade message names the judge's unmet `missing` list so the user sees the
    genuine gap. The assembled slice + per-round judge verdicts
    (`judgeRoundsDetail`, including any `overrodeJudgeFalseNegative`) are emitted
@@ -320,13 +320,22 @@ A slice-level guard on the 3→4 edge. It does three things:
   present on >1 unconnected slice table) builds a `needs_clarification` payload
   (`clarification_source = "phase3b"`) and routes to the `clarify` terminal.
 - **Unsupported-relationship fast-fail** — when the question compares two
-  **distinct policy party-roles** (e.g. _insured_ vs _policyholder/owner_) but
-  the slice cannot represent one of them (the curated `relation` table is
-  party-to-party with interpersonal roles only — no per-policy Insured/Owner
-  role), the node sets `degraded = "relationship_unsupported"` and routes to the
-  `degraded` terminal with an honest message. This fast-fails **before** Phase 4
-  invents a role column the grounding gate would only reject — saving a wasted
-  generate + two grounding rounds.
+  **distinct entity roles** (e.g. _insured_ vs _policyholder/owner_) but the
+  slice cannot represent one of them, the node sets
+  `degraded = "relationship_unsupported"` and routes to the `degraded` terminal
+  with a **generated** (non-literal) message. The role vocabulary — which words
+  name a role, which are synonyms, and the evidence tokens — is **derived at
+  runtime** from the curated `columns[].description` role enumeration
+  (`Values: Owner (synonyms: Policyholder), Insured, …`), not hard-coded; see
+  `docs/plan/2026-06-26-delayer-slice-disambiguation-role-vocab-design.md`.
+
+  Because the vocabulary and the representability evidence are derived from the
+  **same** enumeration prose, any role the question can reference is necessarily
+  representable, so for a slice whose only role evidence is that enumeration the
+  guard does **not** fire — it degrades to a no-op when no enumeration is declared,
+  and (with the B1 `life_participant` enrichment) lets the canonical "insured is
+  also the policyholder" question proceed to the self-join instead of fast-failing.
+  The grounding gate remains the backstop for genuinely unmodellable comparisons.
 
 ### Phase 4 — Query generator + SQL syntax check (`RagQueryGenerator.generate`)
 

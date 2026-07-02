@@ -1,5 +1,5 @@
 import json
-import time
+
 import boto3
 
 
@@ -17,20 +17,93 @@ _BUILTIN_EVALUATORS = [
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Online evaluation config (Kind: 'config' — the default/legacy path)
+# TWO CUSTOM-RESOURCE STRATEGIES (they behave differently because of a lock)
 # ══════════════════════════════════════════════════════════════════════════════
-def _evaluator_list(props):
+# AgentCore has NO update API for either online-eval configs OR custom evaluators,
+# so any change is delete-then-recreate. Two service behaviours shape the design:
+#
+#   (A) NAME-RELEASE RACE (both kinds): after a delete call returns, the name
+#       stays reserved for an unbounded interval (observed 10s..minutes) before a
+#       create under that name stops failing with ConflictException.
+#
+#   (B) EVALUATOR LOCK (evaluators ONLY): an evaluator cannot be deleted while any
+#       active online-eval config still references it —
+#         ValidationException: "Cannot delete a locked evaluator. Please remove
+#         evaluator from all active online evaluation configurations before
+#         deleting". (Configs have no such lock.)
+#
+# A single delete-then-recreate strategy cannot serve both: deleting an evaluator
+# up front while a config still references it trips lock (B), the name never frees,
+# and a rollback can cascade into deleting the referencing configs. So the two
+# kinds use DIFFERENT strategies:
+#
+# ── EVALUATORS → CFN REPLACEMENT via content-hashed names (breaks the lock) ──────
+# The stack derives each evaluator's name as `<base>_<hash>` where the hash is
+# computed over the evaluator's mutable content (model, maxTokens, instructions).
+# A content change therefore changes the NAME, which makes CFN treat it as a
+# REPLACEMENT of a differently-named resource:
+#     1. CREATE the new-named evaluator (no conflict — different name);
+#     2. the config CR (which references the evaluator id via Fn::GetAtt) UPDATEs
+#        to point at the NEW id;
+#     3. only AFTER nothing references it does CFN issue DELETE for the OLD
+#        evaluator — which is now unlocked, so the delete succeeds.
+# There is thus never a same-name create (no race (A) for evaluators) and never a
+# delete-while-referenced (no lock (B)). The evaluator hooks below are create-only
+# on Create/Update and delete-by-id on Delete — no waiting, no same-name juggling.
+# Reuse-by-name on ConflictException is SAFE here precisely because same name ⟹
+# same content (an orphan from a prior deploy is byte-identical), so it cannot mask
+# a stale definition.
+#
+# ── CONFIGS → async waiter (handles race (A); no lock to worry about) ────────────
+# Configs keep FIXED names (nothing references a config's id, so there is no
+# replacement lever, and stable names keep the CfnOutputs/notebooks valid). An
+# Update is still delete-then-recreate under the same name, so it uses the CDK
+# provider's two hooks to ride out race (A):
+#   * on_event    — issues the config delete (Update/Delete) ONCE, returns.
+#   * is_complete — re-invoked by the provider's Step Functions poll loop
+#                   (queryInterval apart, up to totalTimeout, far beyond a single
+#                    Lambda's ceiling). Each poll attempts the create; a
+#                    ConflictException just means "name not free yet" → returns
+#                    IsComplete=False so the loop waits. No fixed cap, so the
+#                    recreate cannot time out prematurely and net-delete the config.
+#
+# CONFIG INVARIANT (why an Update never falls back to a name lookup): post-delete
+# the config name resolves to the corpse of the just-deleted config (or nothing),
+# so resolving it would leave the config net-deleted. Only the Create path reuses
+# an existing same-name config (idempotent re-deploy of an orphan).
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Online evaluation config (Kind: 'config' — the default path)
+# ══════════════════════════════════════════════════════════════════════════════
+def _evaluator_list(props: dict) -> list:
     """Build the evaluators[] list: the built-ins plus any extra custom IDs.
 
     Parameters:
-        props: the CloudFormation ResourceProperties. ``ExtraEvaluatorIds`` is an
-            optional JSON-encoded list of custom evaluator IDs (CDK passes tokens as
-            strings, so the list is serialized) to append to the built-ins.
+        props: the CloudFormation ResourceProperties.
+            ``ExtraEvaluatorIds`` is an optional JSON-encoded list of custom
+            evaluator IDs (CDK passes tokens as strings, so the list is
+            serialized) to append to the built-ins.
+            ``BuiltinEvaluatorIds`` is an optional JSON-encoded list of built-in
+            evaluator IDs that REPLACES the default ``_BUILTIN_EVALUATORS`` for
+            this config. The two query-agent configs pass ``["Builtin.Correctness"]``
+            here because their custom ``GoalSuccess`` judge replaces the
+            un-editable ``Builtin.GoalSuccessRate`` (which mis-grades the
+            deterministic-graph agents by treating an intermediate
+            intent-classification JSON span as the assistant's turn). When the
+            prop is absent the default built-in set is used, so the three
+            non-query configs (metadata, ontology, query_suggestions) are
+            unaffected.
 
     Returns:
         A list of ``{'evaluatorId': <id>}`` dicts for create_online_evaluation_config.
     """
-    evaluators = list(_BUILTIN_EVALUATORS)
+    raw_builtin = props.get('BuiltinEvaluatorIds')
+    if raw_builtin:
+        builtin_ids = json.loads(raw_builtin) if isinstance(raw_builtin, str) else raw_builtin
+        evaluators = [{'evaluatorId': bid} for bid in builtin_ids if bid]
+    else:
+        evaluators = list(_BUILTIN_EVALUATORS)
     raw_extra = props.get('ExtraEvaluatorIds')
     if raw_extra:
         # CDK serializes the ID list to a JSON string (CFN props are strings/lists of strings).
@@ -39,20 +112,15 @@ def _evaluator_list(props):
     return evaluators
 
 
-def _create_config(client, props):
-    """Create an online evaluation config, retrying through transient errors.
+def _create_config(client, props: dict) -> dict:
+    """Create an online evaluation config from CFN resource properties.
 
-    Two distinct transient conditions are retried here, both with backoff:
-      * IAM propagation delays right after the execution role is created
-        (surfaced as a 'permissions' AccessDenied-style message); and
-      * ``ConflictException`` because the config name is still reserved by an
-        in-flight asynchronous delete (the Update path deletes the old config
-        by id immediately before recreating under the SAME name). We MUST wait
-        for the name to free and then actually create — never fall back to
-        looking the name up, because on Update the name resolves to the corpse
-        of the just-deleted config (or to nothing), leaving the config deleted
-        and never recreated. That silent net-delete is exactly the failure this
-        retry loop exists to prevent.
+    Makes a single create attempt with no in-process retry loop — transient
+    ConflictException (name still held by an in-flight delete) and IAM-propagation
+    delays are handled by the ``is_complete`` poll loop, which re-invokes this via
+    the Step Functions waiter until it succeeds. The ConflictException therefore
+    propagates OUT of this function so the caller can distinguish "retry" from a
+    genuine failure.
 
     Parameters:
         client: a bedrock-agentcore-control boto3 client.
@@ -61,104 +129,138 @@ def _create_config(client, props):
     Returns:
         The create_online_evaluation_config API response (includes the id).
     """
-    last_err = None
-    # More attempts than the IAM-only loop: a delete can take ~10-20s to free
-    # the name, so we back off up to 2**6 = 64s on the final ConflictException retry.
-    for attempt in range(7):
-        try:
-            return client.create_online_evaluation_config(
-                onlineEvaluationConfigName=props['ConfigName'],
-                description=props.get('Description', ''),
-                rule={
-                    'samplingConfig': {'samplingPercentage': float(props['SamplingRate'])},
-                    'sessionConfig': {'sessionTimeoutMinutes': 15},
-                },
-                dataSourceConfig={
-                    'cloudWatchLogs': {
-                        'logGroupNames': [props['LogGroupName']],
-                        'serviceNames': [props['ServiceName']],
-                    }
-                },
-                evaluators=_evaluator_list(props),
-                evaluationExecutionRoleArn=props['ExecutionRoleArn'],
-                enableOnCreate=True,
-            )
-        except client.exceptions.ConflictException as e:
-            # Name still held by an in-flight delete — wait for it to free, then retry.
-            if attempt < 6:
-                time.sleep(2 ** attempt)
-                last_err = e
-                continue
-            raise
-        except Exception as e:
-            if 'permissions' in str(e).lower() and attempt < 6:
-                # IAM propagation delay — wait and retry
-                time.sleep(2 ** attempt)
-                last_err = e
-                continue
-            raise
-    raise last_err
+    return client.create_online_evaluation_config(
+        onlineEvaluationConfigName=props['ConfigName'],
+        description=props.get('Description', ''),
+        rule={
+            'samplingConfig': {'samplingPercentage': float(props['SamplingRate'])},
+            'sessionConfig': {'sessionTimeoutMinutes': 15},
+        },
+        dataSourceConfig={
+            'cloudWatchLogs': {
+                'logGroupNames': [props['LogGroupName']],
+                'serviceNames': [props['ServiceName']],
+            }
+        },
+        evaluators=_evaluator_list(props),
+        evaluationExecutionRoleArn=props['ExecutionRoleArn'],
+        enableOnCreate=True,
+    )
 
 
-def _config_id_by_name(client, config_name):
-    """Look up an existing online-eval config id by name (for ConflictException reuse)."""
+def _config_id_by_name(client, config_name: str):
+    """Look up an existing online-eval config id by name, or None if absent.
+
+    Used ONLY on the Create path to reuse an orphaned same-name config
+    idempotently. Never used on Update (see the module INVARIANT note).
+
+    Parameters:
+        client: a bedrock-agentcore-control boto3 client.
+        config_name: the online-eval config name to resolve.
+
+    Returns:
+        The matching onlineEvaluationConfigId, or None when no config has that name.
+    """
     configs = client.list_online_evaluation_configs()
     return next(
         (c['onlineEvaluationConfigId'] for c in configs.get('onlineEvaluationConfigs', [])
          if c['onlineEvaluationConfigName'] == config_name),
-        config_name,
+        None,
     )
 
 
-def _on_config_event(event, client):
-    """Handle Create/Update/Delete for an online evaluation config custom resource."""
-    request_type = event['RequestType']
-    props = event['ResourceProperties']
+def _delete_config(client, config_id: str) -> None:
+    """Best-effort delete of an online-eval config by id; swallows all errors.
 
-    if request_type == 'Create':
-        # On a genuine Create the name may already exist from a prior orphaned
-        # deploy — reuse that id idempotently. (Distinct from Update, where the
-        # name MUST be recreated, not reused; see _create_config.)
-        try:
-            response = _create_config(client, props)
-            config_id = response['onlineEvaluationConfigId']
-        except client.exceptions.ConflictException:
-            config_id = _config_id_by_name(client, props['ConfigName'])
-        return {'PhysicalResourceId': config_id, 'Data': {'ConfigId': config_id}}
+    A failed delete must not break the custom-resource request path — a missing
+    config is the desired end state, and a transient error is retried by the
+    waiter (Create/Update) or tolerated (Delete).
 
-    if request_type == 'Update':
-        # No update API exists — delete the old config and recreate with new properties.
-        # _create_config retries through the ConflictException raised while the name is
-        # still held by the in-flight delete, so it returns a genuinely NEW id. Returning
-        # that new PhysicalResourceId makes CFN issue a DELETE for the old id, handled
-        # silently below. We deliberately do NOT catch ConflictException here: falling
-        # back to a name lookup would resolve to the just-deleted config's id and leave
-        # the config net-deleted (the bug that took all five configs offline).
-        try:
-            client.delete_online_evaluation_config(
-                onlineEvaluationConfigId=event['PhysicalResourceId'],
-            )
-        except Exception:  # nosec B110 — best-effort cleanup/telemetry; failure must not break the request path
-            pass
-        response = _create_config(client, props)
-        config_id = response['onlineEvaluationConfigId']
-        return {'PhysicalResourceId': config_id, 'Data': {'ConfigId': config_id}}
+    Parameters:
+        client: a bedrock-agentcore-control boto3 client.
+        config_id: the onlineEvaluationConfigId to delete.
 
-    # Delete
+    Returns:
+        None.
+    """
     try:
-        client.delete_online_evaluation_config(
-            onlineEvaluationConfigId=event['PhysicalResourceId'],
-        )
-    except Exception:  # nosec B110 — best-effort cleanup/telemetry; failure must not break the request path
+        client.delete_online_evaluation_config(onlineEvaluationConfigId=config_id)
+    except Exception:  # nosec B110 — best-effort cleanup; failure must not break the request path
         pass
-    return {'PhysicalResourceId': event['PhysicalResourceId']}
+
+
+def _on_config_event(event: dict, client) -> dict:
+    """on_event hook for an online-eval config: issue the delete, defer create.
+
+    Create → no-op (the create happens in is_complete). Update/Delete → delete the
+    resource identified by the current PhysicalResourceId (always the service id).
+    Returns an empty dict so the framework keeps the existing PhysicalResourceId
+    (Delete requires it unchanged; Update's new id is set later by is_complete).
+
+    Parameters:
+        event: the CloudFormation custom-resource event.
+        client: a bedrock-agentcore-control boto3 client.
+
+    Returns:
+        An (empty) on_event result dict.
+    """
+    request_type = event['RequestType']
+    if request_type in ('Update', 'Delete'):
+        _delete_config(client, event['PhysicalResourceId'])
+    return {}
+
+
+def _is_complete_config_event(event: dict, client) -> dict:
+    """is_complete hook for an online-eval config (polled by the waiter).
+
+    Delete → complete immediately (on_event already issued the delete). Create/
+    Update → attempt the create; ConflictException (name still held by the
+    in-flight delete) or an IAM-propagation delay returns IsComplete=False so the
+    waiter retries. On Create only, a ConflictException whose name resolves to an
+    existing config reuses it idempotently (orphan re-deploy). On Update we NEVER
+    reuse by name (module INVARIANT) — we keep polling until the name frees and a
+    genuinely new config is created.
+
+    Parameters:
+        event: the resource event (on_event's return merged over the CFN request).
+        client: a bedrock-agentcore-control boto3 client.
+
+    Returns:
+        A dict with ``IsComplete``; when complete, also ``PhysicalResourceId`` and
+        ``Data.ConfigId`` carrying the live config id.
+    """
+    request_type = event['RequestType']
+    if request_type == 'Delete':
+        return {'IsComplete': True}
+
+    props = event['ResourceProperties']
+    try:
+        config_id = _create_config(client, props)['onlineEvaluationConfigId']
+        return {'IsComplete': True, 'PhysicalResourceId': config_id, 'Data': {'ConfigId': config_id}}
+    except client.exceptions.ConflictException:
+        if request_type == 'Create':
+            # Orphaned same-name config from a prior deploy — reuse its id idempotently.
+            existing = _config_id_by_name(client, props['ConfigName'])
+            if existing:
+                return {'IsComplete': True, 'PhysicalResourceId': existing, 'Data': {'ConfigId': existing}}
+        # Update (or Create with the name still mid-delete): wait for the name to free.
+        return {'IsComplete': False}
+    except Exception as e:
+        if 'permissions' in str(e).lower():
+            # IAM propagation delay right after role creation — let the waiter retry.
+            return {'IsComplete': False}
+        raise
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Custom LLM-as-Judge evaluator (Kind: 'evaluator')
 # ══════════════════════════════════════════════════════════════════════════════
-def _create_evaluator(client, props):
+def _create_evaluator(client, props: dict) -> dict:
     """Create a binary LLM-as-Judge evaluator from CFN resource properties.
+
+    Single attempt, no in-process retry — the ``is_complete`` waiter re-invokes
+    this until the name frees (see the module ASYNC note). ConflictException
+    propagates out so the caller can treat it as "retry".
 
     Parameters:
         client: a bedrock-agentcore-control boto3 client.
@@ -168,49 +270,45 @@ def _create_evaluator(client, props):
     Returns:
         The create_evaluator API response (includes ``evaluatorId``).
     """
-    # Retry through ConflictException: on the Update path the same-name evaluator
-    # is deleted immediately before this create, and the name stays reserved while
-    # that delete is in flight. We wait for it to free and create for real — never
-    # fall back to a name lookup, which would resolve to the just-deleted id and
-    # leave the evaluator net-deleted (same failure mode as the config path).
-    last_err = None
-    for attempt in range(7):
-        try:
-            return client.create_evaluator(
-                evaluatorName=props['EvaluatorName'],
-                description=props.get('Description', ''),
-                level=props['Level'],
-                evaluatorConfig={
-                    'llmAsAJudge': {
-                        'instructions': props['Instructions'],
-                        'ratingScale': {
-                            'numerical': [
-                                {'value': 0.0, 'label': 'fail',
-                                 'definition': 'Does not satisfy the criterion.'},
-                                {'value': 1.0, 'label': 'pass',
-                                 'definition': 'Fully satisfies the criterion.'},
-                            ]
-                        },
-                        'modelConfig': {
-                            'bedrockEvaluatorModelConfig': {
-                                'modelId': props['JudgeModelId'],
-                                'inferenceConfig': {'maxTokens': int(props.get('MaxTokens', 1024))},
-                            }
-                        },
+    return client.create_evaluator(
+        evaluatorName=props['EvaluatorName'],
+        description=props.get('Description', ''),
+        level=props['Level'],
+        evaluatorConfig={
+            'llmAsAJudge': {
+                'instructions': props['Instructions'],
+                'ratingScale': {
+                    'numerical': [
+                        {'value': 0.0, 'label': 'fail',
+                         'definition': 'Does not satisfy the criterion.'},
+                        {'value': 1.0, 'label': 'pass',
+                         'definition': 'Fully satisfies the criterion.'},
+                    ]
+                },
+                'modelConfig': {
+                    'bedrockEvaluatorModelConfig': {
+                        'modelId': props['JudgeModelId'],
+                        'inferenceConfig': {'maxTokens': int(props.get('MaxTokens', 1024))},
                     }
                 },
-            )
-        except client.exceptions.ConflictException as e:
-            if attempt < 6:
-                time.sleep(2 ** attempt)
-                last_err = e
-                continue
-            raise
-    raise last_err
+            }
+        },
+    )
 
 
-def _evaluator_id_by_name(client, evaluator_name):
-    """Find an existing evaluator id by name (paginated), or None if absent."""
+def _evaluator_id_by_name(client, evaluator_name: str):
+    """Find an existing evaluator id by name (paginated), or None if absent.
+
+    Used ONLY on the Create path to reuse an orphaned same-name evaluator. Never
+    used on Update (see the module INVARIANT note).
+
+    Parameters:
+        client: a bedrock-agentcore-control boto3 client.
+        evaluator_name: the evaluator name to resolve.
+
+    Returns:
+        The matching evaluatorId, or None when no evaluator has that name.
+    """
     next_token = None
     while True:
         kwargs = {'maxResults': 100}
@@ -225,48 +323,130 @@ def _evaluator_id_by_name(client, evaluator_name):
             return None
 
 
-def _on_evaluator_event(event, client):
-    """Handle Create/Update/Delete for a custom-evaluator custom resource."""
-    request_type = event['RequestType']
-    props = event['ResourceProperties']
-    name = props['EvaluatorName']
+def _delete_evaluator(client, evaluator_id: str) -> None:
+    """Best-effort delete of a custom evaluator by id; swallows all errors.
 
-    if request_type == 'Create':
-        try:
-            evaluator_id = _create_evaluator(client, props)['evaluatorId']
-        except client.exceptions.ConflictException:
-            # Same-name evaluator already exists — reuse it (idempotent re-deploy).
-            evaluator_id = _evaluator_id_by_name(client, name) or name
-        return {'PhysicalResourceId': evaluator_id, 'Data': {'EvaluatorId': evaluator_id}}
+    Parameters:
+        client: a bedrock-agentcore-control boto3 client.
+        evaluator_id: the evaluatorId to delete.
 
-    if request_type == 'Update':
-        # No UpdateEvaluator API — delete the old one and recreate. _create_evaluator
-        # retries through the ConflictException raised while the name is still held by
-        # the in-flight delete, so it returns a genuinely NEW id; the new PhysicalResourceId
-        # makes CFN issue a Delete for the old id (handled silently below). We deliberately
-        # do NOT catch ConflictException here — a name-lookup fallback would resolve to the
-        # just-deleted evaluator and leave it net-deleted.
-        try:
-            client.delete_evaluator(evaluatorId=event['PhysicalResourceId'])
-        except Exception:  # nosec B110 — best-effort cleanup/telemetry; failure must not break the request path
-            pass
-        evaluator_id = _create_evaluator(client, props)['evaluatorId']
-        return {'PhysicalResourceId': evaluator_id, 'Data': {'EvaluatorId': evaluator_id}}
-
-    # Delete
+    Returns:
+        None.
+    """
     try:
-        client.delete_evaluator(evaluatorId=event['PhysicalResourceId'])
-    except Exception:  # nosec B110 — best-effort cleanup/telemetry; failure must not break the request path
+        client.delete_evaluator(evaluatorId=evaluator_id)
+    except Exception:  # nosec B110 — best-effort cleanup; failure must not break the request path
         pass
-    return {'PhysicalResourceId': event['PhysicalResourceId']}
 
 
-def on_event(event, context):
-    """Custom-resource entrypoint. Dispatches on the ``Kind`` resource property:
-    'evaluator' → manage a custom LLM-as-Judge evaluator; anything else → online-eval config.
+def _on_evaluator_event(event: dict, client) -> dict:
+    """on_event hook for a custom evaluator (CFN-replacement strategy).
+
+    CRITICAL — unlike the config hook, this NEVER deletes on Update. Evaluator
+    names are content-hashed by the stack, so a content change yields a NEW name
+    and CFN performs a REPLACEMENT: the new-named evaluator is created (in
+    is_complete), the referencing config re-points to its id, and only then does
+    CFN issue a separate Delete for the OLD evaluator — which is unlocked by then.
+    Deleting the old evaluator here (while the config still references it) is
+    exactly what triggered the "Cannot delete a locked evaluator" ValidationException
+    and the 2026-07-01 config outage.
+
+    Only a genuine Delete request deletes; Create/Update defer to is_complete.
+
+    Parameters:
+        event: the CloudFormation custom-resource event.
+        client: a bedrock-agentcore-control boto3 client.
+
+    Returns:
+        An (empty) on_event result dict.
+    """
+    if event['RequestType'] == 'Delete':
+        _delete_evaluator(client, event['PhysicalResourceId'])
+    return {}
+
+
+def _is_complete_evaluator_event(event: dict, client) -> dict:
+    """is_complete hook for a custom evaluator (CFN-replacement strategy).
+
+    Delete → complete immediately (on_event issued the delete). Create/Update →
+    create the (content-hashed-name) evaluator and return its NEW id as the
+    PhysicalResourceId; the changed id is what drives CFN's replacement (config
+    re-points to the new id, then CFN deletes the old evaluator last). No waiting:
+    the name is unique per content, so there is no same-name release race here.
+
+    Reuse-by-name on ConflictException is SAFE for BOTH Create and Update here
+    (unlike configs): an existing evaluator with this exact name is byte-identical
+    (name ⟹ content), so reusing it cannot mask a stale definition. This tolerates
+    idempotent re-deploys, CFN is_complete retries, and rollback restores (which
+    re-create a specific prior-content name that may still exist).
+
+    An IAM-propagation error ('permissions' in the message) returns IsComplete=False
+    so the waiter retries rather than failing the deploy.
+
+    Parameters:
+        event: the resource event (on_event's return merged over the CFN request).
+        client: a bedrock-agentcore-control boto3 client.
+
+    Returns:
+        A dict with ``IsComplete``; when complete, also ``PhysicalResourceId`` and
+        ``Data.EvaluatorId`` carrying the live evaluator id.
+    """
+    request_type = event['RequestType']
+    if request_type == 'Delete':
+        return {'IsComplete': True}
+
+    props = event['ResourceProperties']
+    try:
+        evaluator_id = _create_evaluator(client, props)['evaluatorId']
+        return {'IsComplete': True, 'PhysicalResourceId': evaluator_id,
+                'Data': {'EvaluatorId': evaluator_id}}
+    except client.exceptions.ConflictException:
+        # Same name ⟹ same content, so reusing the existing id is always correct.
+        existing = _evaluator_id_by_name(client, props['EvaluatorName'])
+        if existing:
+            return {'IsComplete': True, 'PhysicalResourceId': existing,
+                    'Data': {'EvaluatorId': existing}}
+        # Name held by an in-flight delete of an identical-content orphan — wait.
+        return {'IsComplete': False}
+    except Exception as e:
+        if 'permissions' in str(e).lower():
+            return {'IsComplete': False}
+        raise
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Framework entrypoints — dispatched on the ``Kind`` resource property:
+#   'evaluator' → custom LLM-as-Judge evaluator; anything else → online-eval config.
+# ══════════════════════════════════════════════════════════════════════════════
+def on_event(event: dict, context) -> dict:
+    """CDK provider-framework on_event entrypoint (issues deletes, defers creates).
+
+    Parameters:
+        event: the CloudFormation custom-resource event.
+        context: the Lambda context (unused).
+
+    Returns:
+        The on_event result dict (empty — creates happen in is_complete).
     """
     client = boto3.client('bedrock-agentcore-control')
     kind = event.get('ResourceProperties', {}).get('Kind', 'config')
     if kind == 'evaluator':
         return _on_evaluator_event(event, client)
     return _on_config_event(event, client)
+
+
+def is_complete(event: dict, context) -> dict:
+    """CDK provider-framework is_complete entrypoint (polled until the create lands).
+
+    Parameters:
+        event: the resource event (on_event's return merged over the CFN request).
+        context: the Lambda context (unused).
+
+    Returns:
+        A dict with ``IsComplete`` and, when complete, ``PhysicalResourceId``/``Data``.
+    """
+    client = boto3.client('bedrock-agentcore-control')
+    kind = event.get('ResourceProperties', {}).get('Kind', 'config')
+    if kind == 'evaluator':
+        return _is_complete_evaluator_event(event, client)
+    return _is_complete_config_event(event, client)

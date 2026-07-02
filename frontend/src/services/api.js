@@ -3,9 +3,9 @@ import axios from "axios";
 const API_BASE_URL = process.env.REACT_APP_API_URL || "/api";
 
 // Base URL of the AgentCore chat Gateway (injected at build time). Streaming
-// chat goes directly through this gateway — it is the only chat transport (the
-// legacy /query/chat proxy was removed). Empty only pre-deploy / local dev,
-// where streaming chat is unavailable until the gateway URL is wired.
+// chat goes directly through this gateway — it is the only chat transport.
+// Empty only pre-deploy / local dev, where streaming chat is unavailable until
+// the gateway URL is wired.
 const CHAT_GATEWAY_URL = process.env.REACT_APP_CHAT_GATEWAY_URL || "";
 
 // Static map from chat mode to the Gateway target name. Target names are fixed
@@ -615,6 +615,24 @@ export const evaluationsAPI = {
   deleteRun: async (ontologyId, runId) => {
     return handleResponse(
       apiClient.delete(`/evaluations/${ontologyId}/${runId}`),
+    );
+  },
+};
+
+// ============================================================================
+// MONITORING API — per-layer production-signal breakdown (admin tab).
+// ============================================================================
+//
+// Backs the admin "Monitoring" tab. Aggregates LIVE query-agent traffic for one
+// semantic layer into the four resolution layers (metric / semantic / advisory
+// / agentic) plus the share of user turns that used correction language,
+// correlated with the lessons AgentCore Memory has extracted. Read-only; the
+// backend Scans the chat-sessions table (TTL-bounded) filtered by ontologyId.
+export const monitoringAPI = {
+  // Fetch the resolution + correction breakdown envelope for one layer.
+  get: async (ontologyId) => {
+    return handleResponse(
+      apiClient.get(`/monitoring/${encodeURIComponent(ontologyId)}`),
     );
   },
 };

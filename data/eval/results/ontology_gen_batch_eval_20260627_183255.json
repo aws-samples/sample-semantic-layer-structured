@@ -1,0 +1,101 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-iddx7A6C74",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:runtime/semantic_layer_dev_ontology-iddx7A6C74",
+  "batch_evaluation_id": "ontology_gen_batch_c4d1a7c2-8ab6b72941",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:batch-evaluate/ontology_gen_batch_c4d1a7c2-8ab6b72941",
+  "status": "FAILED",
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_981b192b-uExXolALwc"
+  ],
+  "custom_evaluators": {
+    "OntologyQuality": "OntologyQuality_981b192b-uExXolALwc"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": null,
+      "Evaluated": 0,
+      "Failed": 1
+    },
+    {
+      "Evaluator": "OntologyQuality_981b192b-uExXolALwc",
+      "AvgScore": null,
+      "Evaluated": 0,
+      "Failed": 1
+    }
+  ],
+  "per_scenario_events": [
+    {
+      "scenario_id": "ontology_curated_layer",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "ontology_curated_layer",
+      "evaluator": "OntologyQuality_981b192b",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    }
+  ],
+  "scenario_runs": {
+    "ontology_curated_layer": {
+      "case_id": "vkg-ontology_curated_layer-204b1478",
+      "session_id": "ontology_curated_layer-dac12838-2b9b-4c99-b7eb-61f16fd5e8b5",
+      "status": "processing",
+      "num_tables": 40,
+      "tables": [
+        "address",
+        "admin_codes",
+        "annuity_detail",
+        "arrangement_destination",
+        "arrangement_source",
+        "carrier_appointment",
+        "coverage",
+        "coverage_product",
+        "distribution_level",
+        "email_address",
+        "financial_activity",
+        "financial_statement",
+        "govt_id_info",
+        "holding",
+        "holding_activity",
+        "holding_arrangement",
+        "holding_dbg",
+        "holding_loan",
+        "holding_payout",
+        "holding_projection",
+        "holding_restriction",
+        "holding_subaccount",
+        "invest_product",
+        "life_detail",
+        "life_participant",
+        "loan_activity",
+        "party",
+        "party_banking",
+        "party_license",
+        "phone",
+        "policy_loan_summary",
+        "policy_product",
+        "producer_agreement",
+        "reinsurance_info",
+        "relation",
+        "rider",
+        "rider_participant",
+        "subaccount_activity",
+        "substandard_rating",
+        "type_codes"
+      ],
+      "summary": "status=processing",
+      "build_seconds": null
+    }
+  },
+  "performance": {
+    "scenarios": 1,
+    "avg_build_seconds": null,
+    "total_build_seconds": null
+  }
+}

@@ -41,6 +41,13 @@ import json
 from typing import Dict, List, Any, Optional
 from strands.types.exceptions import MaxTokensReachedException
 from .token_manager import count_tokens
+from .enum_shapes import (
+    MAX_ENUM_CARDINALITY,
+    extract_enum_candidates,
+    build_enum_shape_nquads,
+    is_enum,
+    is_enum_column,
+)
 from .prompt_builder import (
     build_namespace,
     build_phase1_system_prompt,
@@ -445,6 +452,156 @@ def get_single_table_schema(
     )
 
 
+def _resolve_catalog(
+    database_name: str, table_name: str, catalog_id: str
+) -> tuple[str, str, str]:
+    """
+    Resolve the effective (database, table, catalog) for an Athena query, auto-detecting
+    DynamoDB ARN-backed Glue-crawled tables and re-routing them via the DynamoDB connector.
+
+    For standard Glue catalogs (AWSDataCatalog or empty catalog_id), this looks up the table
+    in Glue and inspects its StorageDescriptor location. If the location is a DynamoDB ARN
+    (``arn:aws:dynamodb:...``), the query is re-routed to the DynamoDB connector catalog
+    (database ``default``, table = the DynamoDB table name, catalog = ``DYNAMODB_CONNECTOR_CATALOG``).
+    Any non-Glue / S3 Tables catalog is passed through unchanged.
+
+    Args:
+        database_name: Glue/Athena database name as provided in the table prompt.
+        table_name: Table name as provided in the table prompt.
+        catalog_id: Athena catalog identifier (e.g. 'AWSDataCatalog', 's3tablescatalog/<bucket>').
+
+    Returns:
+        Tuple of (effective_database, effective_table, effective_catalog) to use for the query.
+    """
+    effective_database = database_name
+    effective_table = table_name
+    effective_catalog = catalog_id
+
+    if not catalog_id or catalog_id in ("AWSDataCatalog", "AwsDataCatalog"):
+        try:
+            session = get_boto_session()
+            glue = session.client("glue")
+            glue_resp = glue.get_table(DatabaseName=database_name, Name=table_name)
+            location = glue_resp["Table"]["StorageDescriptor"].get("Location", "")
+            if location.startswith("arn:aws:dynamodb:"):
+                dynamo_table_name = location.split("/")[-1]
+                effective_database = "default"
+                effective_table = dynamo_table_name
+                effective_catalog = os.environ.get(
+                    "DYNAMODB_CONNECTOR_CATALOG", "dynamodb_catalog"
+                )
+                logger.info(
+                    f"DynamoDB ARN detected for {database_name}.{table_name} → "
+                    f"re-routing via {effective_catalog}/default/{dynamo_table_name}"
+                )
+        except Exception as glue_err:
+            logger.warning(
+                f"Glue lookup failed for {database_name}.{table_name}: {glue_err}"
+            )
+
+    return effective_database, effective_table, effective_catalog
+
+
+def _run_athena_query(query: str, database: str, catalog: str) -> dict:
+    """
+    Execute a SQL query on Athena, polling for completion, and parse the result rows.
+
+    Resolves the result output location (``ATHENA_OUTPUT_LOCATION`` env var, falling back to
+    ``s3://<ARTIFACTS_BUCKET>/athena-results/``) and workgroup (``ATHENA_WORKGROUP``, default
+    'primary'). Routes the query via ``catalog`` when it is not the default Glue catalog. Polls
+    for up to 60 seconds for the query to reach a terminal state.
+
+    Args:
+        query: The SQL query string to execute.
+        database: The database name to set in the Athena query execution context.
+        catalog: The Athena catalog name; added to the query context only when it is not the
+                 default Glue catalog ('AWSDataCatalog'/'AwsDataCatalog').
+
+    Returns:
+        dict with keys:
+          - success (bool): True only when the query SUCCEEDED.
+          - columns (list[str]): result column labels (empty on failure).
+          - rows (list[dict]): list of column-label -> VarCharValue dicts (empty on failure).
+          - error (str | None): error description on failure, else None.
+    """
+    import time
+
+    session = get_boto_session()
+    athena = session.client("athena")
+
+    output_location = os.environ.get("ATHENA_OUTPUT_LOCATION")
+    if not output_location:
+        bucket = os.environ.get("ARTIFACTS_BUCKET")
+        if not bucket:
+            return {
+                "success": False,
+                "columns": [],
+                "rows": [],
+                "error": "Neither ATHENA_OUTPUT_LOCATION nor ARTIFACTS_BUCKET is set",
+            }
+        output_location = f"s3://{bucket}/athena-results/"
+
+    workgroup = os.environ.get("ATHENA_WORKGROUP", "primary")
+
+    # Route the query via the effective catalog when it is not the default Glue catalog
+    query_context: Dict[str, str] = {"Database": database}
+    if catalog and catalog not in ("AWSDataCatalog", "AwsDataCatalog"):
+        query_context["Catalog"] = catalog
+
+    try:
+        response = athena.start_query_execution(
+            QueryString=query,
+            QueryExecutionContext=query_context,
+            ResultConfiguration={"OutputLocation": output_location},
+            WorkGroup=workgroup,
+        )
+        query_execution_id = response["QueryExecutionId"]
+        logger.info(f"Athena query started: {query_execution_id}")
+
+        # Poll for completion (max 60 s)
+        max_wait = 60
+        waited = 0
+        state = "RUNNING"
+        while waited < max_wait:
+            status = athena.get_query_execution(QueryExecutionId=query_execution_id)
+            state = status["QueryExecution"]["Status"]["State"]
+            if state in ("SUCCEEDED", "FAILED", "CANCELLED"):
+                break
+            time.sleep(2)  # nosemgrep: arbitrary-sleep - intentional Athena query status polling loop
+            waited += 2
+
+        if state != "SUCCEEDED":
+            reason = status["QueryExecution"]["Status"].get(
+                "StateChangeReason", "Unknown"
+            )
+            return {
+                "success": False,
+                "columns": [],
+                "rows": [],
+                "error": f"Query {state}: {reason}",
+            }
+
+        results = athena.get_query_results(QueryExecutionId=query_execution_id)
+        columns = [
+            col["Label"]
+            for col in results["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
+        ]
+
+        rows = []
+        for row in results["ResultSet"]["Rows"][1:]:  # skip header row
+            row_data = {
+                columns[i]: val.get("VarCharValue") for i, val in enumerate(row["Data"])
+            }
+            rows.append(row_data)
+
+        logger.info(f"Athena query returned {len(rows)} rows")
+        return {"success": True, "columns": columns, "rows": rows, "error": None}
+
+    except Exception as e:
+        logger.error(f"Error running Athena query: {e}")
+        return {"success": False, "columns": [], "rows": [], "error": str(e)}
+
+
 @tool
 def sample_table_data(
     database_name: str, table_name: str, catalog_id: str, sample_size: int = 10
@@ -478,119 +635,79 @@ def sample_table_data(
     Returns:
         JSON with column names, sample rows, and query metadata
     """
-    import time
-
-    session = get_boto_session()
-    athena = session.client("athena")
-
     sample_size = min(sample_size, 50)
 
-    output_location = os.environ.get("ATHENA_OUTPUT_LOCATION")
-    if not output_location:
-        bucket = os.environ.get("ARTIFACTS_BUCKET")
-        if not bucket:
-            return json.dumps(
-                {
-                    "success": False,
-                    "error": "Neither ATHENA_OUTPUT_LOCATION nor ARTIFACTS_BUCKET is set",
-                }
-            )
-        output_location = f"s3://{bucket}/athena-results/"
+    eff_db, eff_tbl, eff_cat = _resolve_catalog(database_name, table_name, catalog_id)
 
-    workgroup = os.environ.get("ATHENA_WORKGROUP", "primary")
+    query = f'SELECT * FROM "{eff_db}"."{eff_tbl}" LIMIT {sample_size}'  # nosec B608 - table/database names sourced from Glue catalog (trusted AWS service, not user input)
 
-    # Auto-detect DynamoDB ARN-backed tables (Glue-crawled) and re-route via connector
-    effective_database = database_name
-    effective_table = table_name
-    effective_catalog = catalog_id
+    res = _run_athena_query(query, eff_db, eff_cat)
+    if not res["success"]:
+        return json.dumps({"success": False, "error": res["error"]})
 
-    if not catalog_id or catalog_id in ("AWSDataCatalog", "AwsDataCatalog"):
+    return json.dumps(
+        {
+            "success": True,
+            "database_name": eff_db,
+            "table_name": eff_tbl,
+            "columns": res["columns"],
+            "sample_rows": res["rows"],
+        }
+    )
+
+
+def select_distinct_values(database: str, table: str, column: str, catalog: str) -> dict:
+    """Probe a column's distinct values with a cardinality cap (build-time enum discovery).
+
+    Runs SELECT <col>, COUNT(*) GROUP BY <col> ORDER BY count DESC LIMIT
+    MAX_ENUM_CARDINALITY+1, so a true enum returns within the cap while a
+    high-cardinality column trips the truncation flag. Reuses _resolve_catalog +
+    _run_athena_query (DynamoDB rerouting + polling).
+
+    Args:
+        database: Glue/Athena database name.
+        table: table name.
+        column: column to probe.
+        catalog: Athena catalog id.
+    Returns:
+        {"values": [str,...], "distinct_count": int, "truncated": bool,
+         "sample_rows": int, "error": str|None}. sample_rows is the total rows the
+        distinct was computed over (sum of per-value COUNT(*)), a lower bound when
+        the probe truncated.
+        Fail-soft: on probe failure, values=[] / distinct_count=0 / truncated=False
+        / sample_rows=0.
+    """
+    eff_db, eff_tbl, eff_cat = _resolve_catalog(database, table, catalog)
+    limit = MAX_ENUM_CARDINALITY + 1
+    query = (
+        f'SELECT "{column}" AS v, COUNT(*) AS c '  # nosec B608 - names from Glue catalog
+        f'FROM "{eff_db}"."{eff_tbl}" '
+        f'GROUP BY "{column}" ORDER BY c DESC LIMIT {limit}'
+    )
+    res = _run_athena_query(query, eff_db, eff_cat)
+    if not res.get("success"):
+        return {"values": [], "distinct_count": 0, "truncated": False,
+                "sample_rows": 0, "error": res.get("error")}
+    values = [r.get("v") for r in res["rows"] if r.get("v") is not None]
+
+    # sample_rows = total rows the distinct was computed over (sum of per-value
+    # COUNT(*) `c`), which feeds the distinct/total ratio signal in
+    # is_enum_column. Coerce each `c` to int, guarding non-numeric/NULL as 0. If
+    # the probe truncated (overflow row dropped), this is a lower bound — which
+    # only makes the ratio gate stricter, so it is safe.
+    sample_rows = 0
+    for r in res["rows"]:
         try:
-            glue = session.client("glue")
-            glue_resp = glue.get_table(DatabaseName=database_name, Name=table_name)
-            location = glue_resp["Table"]["StorageDescriptor"].get("Location", "")
-            if location.startswith("arn:aws:dynamodb:"):
-                dynamo_table_name = location.split("/")[-1]
-                effective_database = "default"
-                effective_table = dynamo_table_name
-                effective_catalog = os.environ.get(
-                    "DYNAMODB_CONNECTOR_CATALOG", "dynamodb_catalog"
-                )
-                logger.info(
-                    f"DynamoDB ARN detected for {database_name}.{table_name} → "
-                    f"re-routing via {effective_catalog}/default/{dynamo_table_name}"
-                )
-        except Exception as glue_err:
-            logger.warning(
-                f"Glue lookup failed for {database_name}.{table_name}: {glue_err}"
-            )
+            sample_rows += int(r.get("c") or 0)
+        except (TypeError, ValueError):
+            # Non-numeric count (should not happen for COUNT(*)) -> contribute 0.
+            continue
 
-    query = f'SELECT * FROM "{effective_database}"."{effective_table}" LIMIT {sample_size}'  # nosec B608 - table/database names sourced from Glue catalog (trusted AWS service, not user input)
-
-    # Use the effective catalog for query routing
-    query_context: Dict[str, str] = {"Database": effective_database}
-    if effective_catalog and effective_catalog not in ("AWSDataCatalog", "AwsDataCatalog"):
-        query_context["Catalog"] = effective_catalog
-
-    try:
-        response = athena.start_query_execution(
-            QueryString=query,
-            QueryExecutionContext=query_context,
-            ResultConfiguration={"OutputLocation": output_location},
-            WorkGroup=workgroup,
-        )
-        query_execution_id = response["QueryExecutionId"]
-        logger.info(
-            f"Athena sample query started: {query_execution_id} for {database_name}.{table_name}"
-        )
-
-        # Poll for completion (max 60 s)
-        max_wait = 60
-        waited = 0
-        state = "RUNNING"
-        while waited < max_wait:
-            status = athena.get_query_execution(QueryExecutionId=query_execution_id)
-            state = status["QueryExecution"]["Status"]["State"]
-            if state in ("SUCCEEDED", "FAILED", "CANCELLED"):
-                break
-            time.sleep(2)  # nosemgrep: arbitrary-sleep - intentional Athena query status polling loop
-            waited += 2
-
-        if state != "SUCCEEDED":
-            reason = status["QueryExecution"]["Status"].get(
-                "StateChangeReason", "Unknown"
-            )
-            return json.dumps({"success": False, "error": f"Query {state}: {reason}"})
-
-        results = athena.get_query_results(QueryExecutionId=query_execution_id)
-        columns = [
-            col["Label"]
-            for col in results["ResultSet"]["ResultSetMetadata"]["ColumnInfo"]
-        ]
-
-        rows = []
-        for row in results["ResultSet"]["Rows"][1:]:  # skip header row
-            row_data = {
-                columns[i]: val.get("VarCharValue") for i, val in enumerate(row["Data"])
-            }
-            rows.append(row_data)
-
-        logger.info(
-            f"Sample query returned {len(rows)} rows for {effective_database}.{effective_table}"
-        )
-        return json.dumps(
-            {
-                "success": True,
-                "database_name": effective_database,
-                "table_name": effective_table,
-                "columns": columns,
-                "sample_rows": rows,
-            }
-        )
-
-    except Exception as e:
-        logger.error(f"Error sampling {database_name}.{table_name}: {e}")
-        return json.dumps({"success": False, "error": str(e)})
+    truncated = len(values) > MAX_ENUM_CARDINALITY
+    if truncated:
+        values = values[:MAX_ENUM_CARDINALITY]
+    return {"values": values, "distinct_count": len(values),
+            "truncated": truncated, "sample_rows": sample_rows, "error": None}
 
 
 # ==============================================================================
@@ -1499,6 +1616,194 @@ def append_fk_triples(ontology_id: str, table_name: str, fk_nquads: str) -> str:
     return json.dumps(
         {"success": False, "error": f"No Phase 1 file found for table: {table_name}"}
     )
+
+
+def _read_phase1_nquads(ontology_id: str, table_name: str) -> str:
+    """
+    Return the current N-Quads block text for a table's Phase 1 file.
+
+    Locates the per-table Phase 1 markdown file the same way
+    ``persist_file_to_neptune`` does — globbing the temp directory
+    ``ontologies/{ontology_id}/phase1`` and matching the ``**Table:** <name>``
+    line — then extracts the content of the ```nquads`` fenced block.
+
+    Args:
+        ontology_id: Ontology identifier (used in the temp S3-mirror path).
+        table_name: Exact table name; must match the ``**Table:**`` field.
+
+    Returns:
+        The N-Quads block text (stripped), or "" if no matching file / block
+        is found. Never raises for a missing directory or file.
+    """
+    import tempfile
+    import re
+
+    local_dir = os.path.join(
+        tempfile.gettempdir(), "ontologies", ontology_id, "phase1"
+    )
+    if not os.path.isdir(local_dir):
+        return ""
+
+    for filename in sorted(os.listdir(local_dir)):
+        if not filename.endswith(".md"):
+            continue
+        path = os.path.join(local_dir, filename)
+        with open(path, "r", encoding="utf-8") as f:
+            raw = f.read()
+        match = re.search(r"\*\*Table:\*\* (.+)", raw)
+        found_name = match.group(1).strip() if match else ""
+        if found_name != table_name:
+            continue
+        nq_match = re.search(r"```nquads\n(.*?)```", raw, re.DOTALL)
+        return nq_match.group(1).strip() if nq_match else ""
+
+    return ""
+
+
+def append_enum_shape_nquads(ontology_id: str, table_name: str, nquads: str) -> str:
+    """
+    Append SHACL enum-shape N-Quads into a table's Phase 1 ```nquads`` block.
+
+    Thin wrapper that delegates to ``append_fk_triples`` — which already performs
+    the exact file-locate + fenced-block append + S3 sync we need. Defined as its
+    own function so the ``enum_shape_builder`` call site reads clearly and so tests
+    can patch it independently of the FK path.
+
+    Args:
+        ontology_id: Ontology identifier.
+        table_name: Exact table name; must match the ``**Table:**`` field.
+        nquads: The SHACL shape N-Quad lines to append.
+
+    Returns:
+        The JSON string returned by ``append_fk_triples``.
+    """
+    return append_fk_triples(ontology_id, table_name, nquads)
+
+
+@tool
+def enum_shape_builder(
+    ontology_id: str, table_name: str, database: str, catalog: str
+) -> str:
+    """
+    Probe a table's string columns, gate true enums, and append sh:in SHACL shapes.
+
+    For each datatype property in the table's Phase 1 N-Quads that maps to a column
+    (via ``vkg:mapsToColumn``), this tool probes the column's distinct values with a
+    cardinality cap, applies the enum gate (``is_enum``), and — for columns that pass
+    — builds a SHACL ``sh:in`` shape constraining the property's allowed values. All
+    accepted shapes are appended to the table's Phase 1 file in a single write.
+
+    ``database`` and ``catalog`` are required because the distinct-value probe runs an
+    Athena query, which needs the table's database and catalog (the N-Quads only carry
+    the column/table name). The Phase 1 build loop has these in scope per table.
+
+    This tool NEVER raises: per-column failures are logged as WARNINGs and skipped;
+    any outer failure is returned as ``{"success": False, "error": ...}``.
+
+    Args:
+        ontology_id: Ontology identifier (locates the Phase 1 file).
+        table_name: Exact table name; must match the ``**Table:**`` field.
+        database: Glue/Athena database name for the distinct-value probe.
+        catalog: Athena catalog id for the distinct-value probe.
+
+    Returns:
+        JSON string with: ``success`` (bool), ``columns_probed`` (int — number of enum
+        candidates considered), ``enums_found`` (int — candidates that passed the gate
+        and produced a non-empty shape), and ``shapes_written`` (int — shapes appended).
+    """
+    try:
+        nquads = _read_phase1_nquads(ontology_id, table_name)
+        if not nquads:
+            return json.dumps(
+                {
+                    "success": True,
+                    "columns_probed": 0,
+                    "enums_found": 0,
+                    "shapes_written": 0,
+                }
+            )
+
+        candidates = extract_enum_candidates(nquads)
+        shapes: List[str] = []
+
+        for candidate in candidates:
+            # Per-column isolation: a single probe/build failure must not abort
+            # the whole table's enum discovery.
+            try:
+                probe = select_distinct_values(
+                    database, candidate["table"], candidate["column"], catalog
+                )
+                # Two independent gates:
+                #  - passed_value_gate (is_enum): the VALUE SET looks enum-like
+                #    (small, short, untruncated).
+                #  - passed_col_gate (is_enum_column): the COLUMN is categorical
+                #    by name + distinct/total ratio (rejects name/id/free-text
+                #    columns that happen to have few sampled values).
+                # Both must pass before we emit a sh:in shape.
+                passed_value_gate = is_enum(
+                    probe["values"], truncated=probe["truncated"]
+                )
+                passed_col_gate = is_enum_column(
+                    candidate["column"],
+                    probe["values"],
+                    distinct_count=probe["distinct_count"],
+                    sample_rows=probe.get("sample_rows", 0),
+                )
+                if passed_value_gate and passed_col_gate:
+                    shape = build_enum_shape_nquads(
+                        class_iri=candidate["class_iri"],
+                        prop_iri=candidate["prop_iri"],
+                        values=probe["values"],
+                        graph=candidate["graph"],
+                    )
+                    # build_enum_shape_nquads returns "" to signal "skip" (e.g. a
+                    # value contains a quote, or values is empty) — don't count it.
+                    if shape:
+                        shapes.append(shape)
+                else:
+                    # Explain why this candidate was rejected so build logs are useful.
+                    # The precision gate is checked FIRST: a value set can pass
+                    # is_enum yet still be a name/near-unique column, and that is
+                    # the most informative reason to surface. After that, surface
+                    # the probe ERROR explicitly — an Athena failure (e.g.
+                    # CATALOG_NOT_FOUND on a federated catalog) otherwise looks
+                    # identical to a genuinely empty column, which masks infra/IAM
+                    # gaps behind a benign-looking "no distinct values" message.
+                    if not passed_col_gate:
+                        reason = "not categorical (name/ratio)"
+                    elif probe.get("error"):
+                        reason = f"probe error: {probe['error']}"
+                    elif probe["truncated"]:
+                        reason = "high cardinality (probe truncated)"
+                    elif not probe["values"]:
+                        reason = "empty / no distinct values"
+                    else:
+                        reason = f"not enum-like ({probe['distinct_count']} distinct)"
+                    logger.warning(
+                        f"[enum] Skipping {candidate['table']}.{candidate['column']}: {reason}"
+                    )
+            except Exception as col_err:
+                logger.warning(
+                    f"[enum] Failed probing {candidate['table']}.{candidate['column']}: {col_err}"
+                )
+                continue
+
+        shapes_written = 0
+        if shapes:
+            append_enum_shape_nquads(ontology_id, table_name, "\n".join(shapes))
+            shapes_written = len(shapes)
+
+        return json.dumps(
+            {
+                "success": True,
+                "columns_probed": len(candidates),
+                "enums_found": len(shapes),
+                "shapes_written": shapes_written,
+            }
+        )
+    except Exception as e:
+        logger.error(f"[enum] enum_shape_builder failed for {table_name}: {e}")
+        return json.dumps({"success": False, "error": str(e)})
 
 
 @tool
@@ -3056,6 +3361,30 @@ def invoke(payload, context):
                             "skipping table and continuing with next"
                         )
                         phase2_failures.append(f"{db}.{tbl}")
+
+                    # Deterministic SHACL enum-shape emission (no LLM): probe each
+                    # string column's distinct values and append sh:in constraints to
+                    # the table's N-Quads block before assembly. Fail-soft — a probe
+                    # failure never aborts the build (the table just carries no enum
+                    # shape). enum_shape_builder is intentionally NOT in any agent's
+                    # tool list; it must only ever be invoked deterministically here.
+                    try:
+                        enum_res = json.loads(
+                            enum_shape_builder(
+                                ontology_id=ontology_id,
+                                table_name=tbl,
+                                database=db,
+                                catalog=cat,
+                            )
+                        )
+                        logger.info(
+                            f"[EnumShapes] {db}.{tbl}: {enum_res.get('shapes_written', 0)} "
+                            f"shape(s) from {enum_res.get('enums_found', 0)} enum column(s)"
+                        )
+                    except Exception as enum_err:  # noqa: BLE001 — never abort the build
+                        logger.warning(
+                            f"[EnumShapes] {db}.{tbl} failed: {enum_err} — continuing"
+                        )
 
                 if phase2_failures:
                     logger.warning(

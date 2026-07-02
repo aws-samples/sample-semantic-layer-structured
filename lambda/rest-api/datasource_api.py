@@ -14,7 +14,7 @@ import logging
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from services.glue_service import GlueService
 

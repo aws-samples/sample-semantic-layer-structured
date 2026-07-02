@@ -17,7 +17,6 @@ WHY PyIceberg for table creation:
   wildcard permissions cover the new table, and Glue gets a valid entry.
 """
 
-import json
 import boto3
 import logging
 from typing import Any, Dict

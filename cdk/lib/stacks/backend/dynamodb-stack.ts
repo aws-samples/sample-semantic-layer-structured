@@ -181,9 +181,8 @@ export class DynamoDBStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.KEYS_ONLY,
     });
 
-    // Lessons-learned is no longer DDB-backed. Long-term records live in
-    // Bedrock AgentCore Memory (managed by ``agentcore-memory-stack.ts``);
-    // there is no ``lessons`` table in this stack.
+    // Lessons-learned records live in Bedrock AgentCore Memory (managed by
+    // ``agentcore-memory-stack.ts``); there is no ``lessons`` table in this stack.
 
     // Per-turn user feedback: 👍/👎 + comment for one assistant turn. The
     // partition key is the ontology so the admin tab can scope listing

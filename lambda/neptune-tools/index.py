@@ -240,6 +240,19 @@ def tool_get_ontology_from_neptune(ontology_id: str) -> str:
                         # but defensive). Park on properties.
                         ontology_info['properties'].setdefault(subject, {})[field] = obj
 
+                # rdfs:range — for an owl:ObjectProperty this is the TARGET class IRI
+                # of an FK relationship (e.g. Coverage/hasHolding range = .../Holding).
+                # The OBDA mapping generator needs it to emit the FK object as an IRI
+                # template matching the target class's subject template (so Ontop can
+                # reformulate the join), instead of a bare literal that never joins.
+                # Datatype properties also have a range (the xsd type); harmless to
+                # capture — the OBDA generator only consults range for ObjectProperty.
+                elif predicate == 'http://www.w3.org/2000/01/rdf-schema#range':
+                    if subject in ontology_info['properties']:
+                        ontology_info['properties'][subject]['range'] = obj
+                    else:
+                        ontology_info['properties'].setdefault(subject, {})['range'] = obj
+
                 # Curated business-context annotations the ontology_agent emits
                 # per owl:Class (businessPurpose / businessConcepts /
                 # acordSourcePath / referenceTables / commonQueryPatterns /

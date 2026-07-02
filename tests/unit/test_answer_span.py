@@ -19,23 +19,31 @@ class _FakeSpan:
 
 
 class _FakeTracer:
-    """Records the messages passed to start/end so tests can assert on them."""
+    """Records the messages passed to start/end so tests can assert on them.
+
+    Stubs ``start_agent_span`` / ``end_agent_span`` (the ``invoke_agent`` turn-span
+    pair the eval service recognizes) — emit_answer_span emits an ``invoke_agent``
+    span, NOT a ``chat`` model-invoke span, so a deterministic clarify turn is still a
+    recognized turn in the SESSION context. ``end_agent_span`` takes a ``response``
+    object whose ``str()`` is the answer text (mirrors the real Tracer).
+    """
 
     def __init__(self):
         self.started = None
         self.ended = None
 
-    def start_model_invoke_span(self, *, messages, model_id):
-        self.started = {"messages": messages, "model_id": model_id}
+    def start_agent_span(self, *, messages, agent_name, model_id=None, **kwargs):
+        self.started = {"messages": messages, "agent_name": agent_name, "model_id": model_id}
         return _FakeSpan()
 
-    def end_model_invoke_span(self, *, span, message, usage, metrics, stop_reason):
+    def end_agent_span(self, *, span, response=None, error=None):
+        # The real tracer records the assistant output via str(response); mirror that
+        # so tests can assert on the answer text the judge will see.
         self.ended = {
             "span": span,
-            "message": message,
-            "usage": usage,
-            "metrics": metrics,
-            "stop_reason": stop_reason,
+            "message": {"role": "assistant", "content": [{"text": str(response)}]},
+            "response": response,
+            "error": error,
         }
 
 
@@ -57,12 +65,13 @@ def test_emits_final_answer_as_output_message(monkeypatch):
                      answer="There are 15 parties.")
     # The user question is the input; the real answer is the assistant output.
     assert "How many parties are there?" in tracer.started["messages"][0]["content"][0]["text"]
-    assert tracer.started["model_id"] == "final_answer"
+    # Emitted as an invoke_agent turn span (agent_name carries the operation label).
+    assert tracer.started["agent_name"] == "answer:final_answer"
     out = tracer.ended["message"]
     assert out["role"] == "assistant"
     assert out["content"][0]["text"] == "There are 15 parties."
-    # Eval-only telemetry — zero token usage.
-    assert tracer.ended["usage"] == {"inputTokens": 0, "outputTokens": 0, "totalTokens": 0}
+    # Eval-only telemetry — the shim has no .metrics, so no token usage is attached.
+    assert not hasattr(tracer.ended["response"], "metrics")
 
 
 def test_clarification_options_folded_into_output(monkeypatch):
@@ -79,7 +88,7 @@ def test_clarification_options_folded_into_output(monkeypatch):
     assert "CLARIFICATION" in text
     assert "party (database: normalized)" in text
     assert "rider (database: normalized)" in text
-    assert tracer.started["model_id"] == "clarification"
+    assert tracer.started["agent_name"] == "answer:clarification"
 
 
 def test_no_op_on_empty_answer(monkeypatch):
@@ -130,8 +139,13 @@ def test_conversation_history_folded_into_input(monkeypatch):
     assert "user: How many are there?" in in_text
     assert "assistant: Which interpretation do you mean?" in in_text
     assert "user: party" in in_text
-    # final answer still the assistant output
-    assert tracer.ended["message"]["content"][0]["text"] == "There are 15 parties."
+    # The OUTPUT leads with the real answer (so answer-matching judges anchor on it)
+    # and then appends the trajectory recap (so the path judge sees the full
+    # multi-turn conversation even when only the OUTPUT reaches it).
+    out_text = tracer.ended["message"]["content"][0]["text"]
+    assert out_text.startswith("There are 15 parties.")
+    assert "[conversation_so_far]" in out_text
+    assert "user: How many are there?" in out_text
 
 
 def test_conversation_history_handles_segmented_content(monkeypatch):
@@ -145,7 +159,51 @@ def test_conversation_history_handles_segmented_content(monkeypatch):
     assert "user: hello world" in in_text
 
 
+def test_conversation_history_handles_ddb_text_key(monkeypatch):
+    """ChatSessionService.history_window returns messages keyed by ``text`` (not
+    ``content``); the span must render those, or the multi-turn history silently
+    drops and the SESSION judge sees only the final turn (regression: clarify
+    scenarios scored 0.0 because the history block was empty)."""
+    tracer = _install_fake_tracer(monkeypatch)
+    emit_answer_span(
+        question="How many are there? (for party)",
+        answer="There are 15 parties.",
+        conversation_history=[
+            {"role": "user", "text": "How many are there?", "turnId": "t0"},
+            {"role": "assistant", "text": "Which interpretation do you mean?", "turnId": "t1"},
+            {"role": "user", "text": "party", "turnId": "t2"},
+        ],
+    )
+    in_text = tracer.started["messages"][0]["content"][0]["text"]
+    assert "[conversation_so_far]" in in_text
+    assert "user: How many are there?" in in_text
+    assert "assistant: Which interpretation do you mean?" in in_text
+    assert "user: party" in in_text
+
+
 def test_no_history_block_when_history_absent(monkeypatch):
     tracer = _install_fake_tracer(monkeypatch)
     emit_answer_span(question="q", answer="a")
     assert "[conversation_so_far]" not in tracer.started["messages"][0]["content"][0]["text"]
+
+
+def test_retrieved_schema_folded_into_input(monkeypatch):
+    """The schema slice must travel on this turn span so SqlGrounded can verify the
+    executed SQL — the invoke_agent answer span now anchors {context} and displaces
+    the separate execute_sql_query tool span that used to carry the slice."""
+    tracer = _install_fake_tracer(monkeypatch)
+    emit_answer_span(
+        question="How many parties are there?",
+        answer="There are 15 parties.",
+        retrieved_schema='{"tables": ["normalized.party"], "columns": ["is_deleted"]}',
+    )
+    in_text = tracer.started["messages"][0]["content"][0]["text"]
+    assert "[retrieved_schema_context]" in in_text
+    assert "normalized.party" in in_text
+    assert "is_deleted" in in_text
+
+
+def test_no_schema_block_when_schema_absent(monkeypatch):
+    tracer = _install_fake_tracer(monkeypatch)
+    emit_answer_span(question="q", answer="a")
+    assert "[retrieved_schema_context]" not in tracer.started["messages"][0]["content"][0]["text"]

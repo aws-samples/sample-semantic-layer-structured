@@ -157,4 +157,14 @@ class OntologyMappingsTest {
         assertFalse(OntologyMappings.isKeyLikeSubject("name"));
         assertFalse(OntologyMappings.isKeyLikeSubject(null));
     }
+
+    @Test
+    void concatPrefixForParsesPrefixFromComment() {
+        var ont = TestFixtures.coveragePartyPrefixFkOntology();
+        assertEquals("PARTY#",
+            OntologyMappings.concatPrefixFor(ont, "http://x/Coverage/hasParty"));
+        // a property with no CONCAT in its comment yields empty
+        assertEquals("",
+            OntologyMappings.concatPrefixFor(ont, "http://x/Coverage/coverage_id"));
+    }
 }

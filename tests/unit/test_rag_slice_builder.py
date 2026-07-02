@@ -155,10 +155,13 @@ def test_fit_evicts_least_relevant_table_not_lowest_degree():
     (financial_activity, low degree, high relevance) was being evicted before
     peripheral hub tables. Eviction must walk candidates in reverse-relevance.
     """
-    # target = most-relevant (router rank 0), low column count; filler tables are
-    # less relevant. Tiny budget forces dropping one table's columns entirely.
+    # target = most-relevant (router rank 0), low column count; filler is the
+    # LEAST-relevant (rank > top-N anchors), so it is the eviction target. The
+    # middle padding tables sit between them to push filler past the anchor head.
     chunks = {
         "db.target": _md_with_cols("db.target", ["amount", "activity_date"]),
+        "db.pad1": _md_with_cols("db.pad1", ["a", "b"]),
+        "db.pad2": _md_with_cols("db.pad2", ["c", "d"]),
         "db.filler": _md_with_cols(
             "db.filler", [f"c{i}" for i in range(40)]),
     }
@@ -169,8 +172,9 @@ def test_fit_evicts_least_relevant_table_not_lowest_degree():
         judge_fn=lambda _: {"sufficient": True, "missing": []},
         token_counter=lambda s: len(s) // 4, budget=120,
     )
-    # Candidate order = relevance: target first, filler last.
-    slice_text = b.build(candidates=["db.target", "db.filler"], namespace="ns")
+    # Candidate order = relevance: target first, filler last (beyond the anchor head).
+    slice_text = b.build(
+        candidates=["db.target", "db.pad1", "db.pad2", "db.filler"], namespace="ns")
     payload = json.loads(slice_text)
     tables_with_cols = {c["table_id"] for c in payload["columns"]}
     # The most-relevant table keeps its columns; the least-relevant is evicted.
@@ -231,16 +235,56 @@ def test_slice_dict_tables_only_lists_fetched_ids():
 
 
 def test_fit_drops_columns_when_over_budget():
-    """Tiny budget forces column truncation; joins/tables stay intact."""
-    chunks = {"t": _md_customers()}
+    """Tiny budget forces truncation of a NON-anchor table; joins/tables stay intact.
+
+    The single-candidate case is covered by ``test_fit_never_evicts_anchor_table``:
+    the anchor (target) table's columns are protected from eviction. Here a tiny
+    budget with a fat low-relevance filler table must drop the FILLER's columns,
+    never the anchor's.
+    """
+    chunks = {
+        "anchor": _md_with_cols("anchor", ["amount", "activity_date"]),
+        "pad1": _md_with_cols("pad1", ["a", "b"]),
+        "pad2": _md_with_cols("pad2", ["c", "d"]),
+        "filler": _md_with_cols("filler", [f"c{i}" for i in range(60)]),
+    }
+    b = RagSliceBuilder(
+        chunks_lookup=lambda *, table_ids, namespace: {
+            t: chunks[t] for t in table_ids if t in chunks
+        },
+        judge_fn=lambda _: {"sufficient": True, "missing": []},
+        token_counter=lambda s: len(s),  # 1 token per char
+        budget=400,
+    )
+    # filler is rank 3 (beyond the top-N anchor head), so it is the eviction target.
+    slice_text = b.build(
+        candidates=["anchor", "pad1", "pad2", "filler"], namespace="ns")
+    payload = json.loads(slice_text)
+    tables_with_cols = {c["table_id"] for c in payload["columns"]}
+    # Anchor columns survive; the least-relevant filler is evicted to fit budget.
+    assert "anchor" in tables_with_cols
+    assert "filler" not in tables_with_cols
+
+
+def test_fit_never_evicts_anchor_table():
+    """Even with a single candidate over budget, the anchor keeps its columns.
+
+    Regression guard for the phase3_max_rounds false-reject: a verbose target-table
+    description pushed the slice over budget and the old _fit dropped the target's
+    columns, so the judge saw the question's own table as missing its columns and
+    degraded an answerable question. The anchor's columns must never be evicted.
+    """
+    chunks = {"t": _md_with_cols("t", ["party_type", "party_type_code"], desc_len=2000)}
     b = RagSliceBuilder(
         chunks_lookup=lambda *, table_ids, namespace: chunks,
         judge_fn=lambda _: {"sufficient": True, "missing": []},
         token_counter=lambda s: len(s),  # 1 token per char
-        budget=200,
+        budget=200,  # far below the fat description size
     )
     slice_text = b.build(candidates=["t"], namespace="ns")
     payload = json.loads(slice_text)
     assert payload["tables"] == ["t"]
-    # columns are dropped first to fit the tiny budget
-    assert payload["columns"] == [] or len(payload["columns"]) <= 1
+    # The anchor's columns are retained (names/types), even if descriptions are shed.
+    names = {c["name"] for c in payload["columns"]}
+    assert {"party_type", "party_type_code"} <= names
+

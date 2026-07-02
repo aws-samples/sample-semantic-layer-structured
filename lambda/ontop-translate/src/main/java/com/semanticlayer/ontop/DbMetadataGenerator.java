@@ -140,7 +140,14 @@ public class DbMetadataGenerator {
             final String column = OntologyMappings.columnFor(ontologyJson, propIri);
             final String bare = OntologyMappings.bareColumn(column);
             if (seen.add(bare)) {
-                columns.add(buildColumn(bare));
+                // Declare the column with its REAL SQL datatype derived from the
+                // property's xsd:range, NOT a blanket VARCHAR. A boolean column
+                // (is_deleted etc.) declared VARCHAR made Ontop emit lower(STR(col))
+                // over a physically-boolean Athena column → FUNCTION_NOT_FOUND /
+                // TYPE_MISMATCH (gt-08). Telling Ontop the column is BOOLEAN lets it
+                // translate a direct boolean comparison correctly. Object-property FK
+                // columns keep VARCHAR (their value is templated into an IRI).
+                columns.add(buildColumn(bare, sqlDatatypeFor(ontologyJson, propIri)));
             } else {
                 LOG.warning("Skipping duplicate column '" + bare + "' for class " + classIri
                     + " (property " + propIri + " maps to the same column as a prior property).");
@@ -181,12 +188,38 @@ public class DbMetadataGenerator {
      * @param name the BARE column name (no dotted prefix).
      * @return an ordered {@link Map} with {@code name}/{@code datatype}/{@code isNullable}.
      */
-    private Map<String, Object> buildColumn(final String name) {
+    private Map<String, Object> buildColumn(final String name, final String datatype) {
         final Map<String, Object> column = new LinkedHashMap<>();
         column.put("name", name);
-        column.put("datatype", DEFAULT_DATATYPE);
+        column.put("datatype", datatype == null || datatype.isBlank() ? DEFAULT_DATATYPE : datatype);
         column.put("isNullable", true);
         return column;
+    }
+
+    /**
+     * Map a property's {@code xsd:range} to the SQL datatype Ontop should believe the
+     * column has. Only BOOLEAN is promoted away from the {@code VARCHAR} default: a
+     * physically-boolean Athena column declared VARCHAR makes Ontop generate string
+     * functions (lower/STR) over a boolean, which Athena rejects (gt-08). Numeric/date
+     * casts are handled explicitly in the SPARQL (xsd:decimal etc.), so VARCHAR stays
+     * the safe default for everything else (Athena exposes most columns as strings at
+     * the JDBC layer). An {@code owl:ObjectProperty} keeps VARCHAR — its column value is
+     * templated into an IRI, never compared as a typed literal.
+     *
+     * @param ontologyJson the full ontology document.
+     * @param propIri      the property whose backing column type we are declaring.
+     * @return {@code "BOOLEAN"} for an {@code xsd:boolean}-ranged datatype property,
+     *         otherwise {@code "VARCHAR"}.
+     */
+    private String sqlDatatypeFor(final Map<String, Object> ontologyJson, final String propIri) {
+        if (OntologyMappings.isObjectProperty(ontologyJson, propIri)) {
+            return DEFAULT_DATATYPE;
+        }
+        final String range = OntologyMappings.rangeFor(ontologyJson, propIri);
+        if (range != null && range.endsWith("#boolean")) {
+            return "BOOLEAN";
+        }
+        return DEFAULT_DATATYPE;
     }
 
     /**

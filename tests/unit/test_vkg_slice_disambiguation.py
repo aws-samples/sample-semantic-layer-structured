@@ -67,9 +67,11 @@ def test_single_domain_predicate_not_ambiguous():
     assert res["items"] == []
 
 
-def test_two_class_paths_between_anchors_clarifies():
-    # Customer connects to Policy two ways: directly (hasPolicy) and via Agent
-    # (hasAgent + agentSells). Both anchors named in the question → clarify.
+def test_unique_shortest_path_resolves_not_clarifies():
+    # Shortest-path-wins (gt-03 fix): Customer connects to Policy two ways — a
+    # DIRECT edge (hasPolicy, 2 nodes) and a longer detour via Agent (hasAgent +
+    # agentSells, 3 nodes). The direct path is strictly shortest, so it is the
+    # intended join: resolve it, do NOT ask the user to disambiguate.
     ttl = _ttl(
         "ex:Customer a rdfs:Class . ex:Policy a rdfs:Class . ex:Agent a rdfs:Class . "
         "ex:hasPolicy rdfs:domain ex:Customer . ex:hasPolicy rdfs:range ex:Policy . "
@@ -77,10 +79,61 @@ def test_two_class_paths_between_anchors_clarifies():
         "ex:agentSells rdfs:domain ex:Agent . ex:agentSells rdfs:range ex:Policy ."
     )
     res = find_slice_ambiguities(question="customer policy", slice_graph=ttl)
-    assert res["ambiguous"] is True
-    # the class-path item lists >1 traversal
-    path_items = [i for i in res["items"] if "…" in i["term"]]
-    assert path_items and len(path_items[0]["matches"]) > 1
+    assert res["ambiguous"] is False, res["items"]
+    # The unique shortest path is recorded as a heuristic resolution
+    # (local names are lower-cased by _local_name).
+    assert res["resolved"].get("customer…policy") == "customer→policy"
+
+
+def test_tied_shortest_paths_resolve_deterministically_not_clarify():
+    # gt-03 fix: even a GENUINE tie (Customer reaches Policy via two equal-length
+    # bridges, via Agent and via Broker) must NOT escalate — a join-path choice is
+    # never surfaced to the user (the flat-KB metadata agent never asks). Pick one
+    # deterministically (lexicographically-smallest path) and record it; the
+    # generator + grounding gate own the final decision.
+    ttl = _ttl(
+        "ex:Customer a rdfs:Class . ex:Policy a rdfs:Class . "
+        "ex:Agent a rdfs:Class . ex:Broker a rdfs:Class . "
+        "ex:hasAgent rdfs:domain ex:Customer . ex:hasAgent rdfs:range ex:Agent . "
+        "ex:agentSells rdfs:domain ex:Agent . ex:agentSells rdfs:range ex:Policy . "
+        "ex:hasBroker rdfs:domain ex:Customer . ex:hasBroker rdfs:range ex:Broker . "
+        "ex:brokerSells rdfs:domain ex:Broker . ex:brokerSells rdfs:range ex:Policy ."
+    )
+    res = find_slice_ambiguities(question="customer policy", slice_graph=ttl)
+    assert res["ambiguous"] is False, res["items"]
+    # Path runs from anchor a (customer); lexicographically-smallest tie-break
+    # picks the agent bridge over the broker bridge.
+    assert res["resolved"].get("customer…policy") == "customer→agent→policy"
+
+
+def test_head_noun_term_collision_does_not_clarify():
+    # gt-07 fix: a term that NAMES a class — exactly OR as a name-component (head
+    # noun, e.g. 'product' → CoverageProduct) — is an entity reference, not an
+    # attribute choice. A predicate collision on such a term must NOT escalate.
+    # 'product' is NOT an inflection of 'coverageproduct' but IS a name-component,
+    # so _term_names_class (not _term_matches) is what makes this defer.
+    ttl = _ttl(
+        "ex:CoverageProduct a rdfs:Class . ex:Holding a rdfs:Class . "
+        "ex:productCode rdfs:domain ex:CoverageProduct . "
+        "ex:productCode rdfs:domain ex:Holding ."
+    )
+    res = find_slice_ambiguities(
+        question="coverage product names", slice_graph=ttl)
+    assert res["ambiguous"] is False, res["items"]
+
+
+def test_term_names_class_component_and_stem():
+    # Unit-level guard for the head-noun matcher: component + stem matches that
+    # plain inflection misses (the gt-07 root cause).
+    from agents.ontology_query_agent.tier2.slice_disambiguation import (
+        _term_names_class,
+    )
+    assert _term_names_class("product", "coverageproduct") is True   # component
+    assert _term_names_class("product", "policyproduct") is True     # component
+    assert _term_names_class("hold", "holding") is True              # stem prefix
+    assert _term_names_class("party", "party") is True               # exact
+    assert _term_names_class("id", "holding") is False               # too short
+    assert _term_names_class("market", "party") is False             # unrelated
 
 
 def test_single_class_path_resolves():

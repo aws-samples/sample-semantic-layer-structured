@@ -50,6 +50,94 @@ public class TestFixtures {
     }
 
     /**
+     * Two-class ontology with an FK {@code owl:ObjectProperty} and an
+     * {@code xsd:boolean} column — the shape that exercised the gt-03 (FK join
+     * reformulates to EMPTY) and gt-08 (boolean column → lower(boolean)) failures.
+     *
+     * <p>{@code Coverage} (table {@code normalized.coverage}) has:
+     * <ul>
+     *   <li>{@code coverage_id} (datatype, the *_id subject key);</li>
+     *   <li>{@code is_deleted} (datatype, {@code xsd:boolean});</li>
+     *   <li>{@code hasHolding} (object property, range {@code Holding}, mapped to
+     *       {@code coverage.holding_id}) — the FK.</li>
+     * </ul>
+     * {@code Holding} (table {@code normalized.holding}) has {@code holding_id}
+     * (datatype, *_id key) so its subject template is {@code <…/Holding/{holding_id}>},
+     * which the FK IRI template must match for the join to resolve.
+     *
+     * @return ontology JSON as a nested {@link Map}.
+     */
+    public static Map<String, Object> coverageHoldingFkOntology() {
+        return Map.of(
+            "classes", Map.of(
+                "http://x/Coverage", Map.of("label", "Coverage"),
+                "http://x/Holding", Map.of("label", "Holding")),
+            "properties", Map.of(
+                "http://x/Coverage/coverage_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty"),
+                "http://x/Coverage/is_deleted", Map.of(
+                    "type", "http://www.w3.org/2002/07/owl#DatatypeProperty",
+                    "range", "http://www.w3.org/2001/XMLSchema#boolean"),
+                "http://x/Coverage/hasHolding", Map.of(
+                    "type", "http://www.w3.org/2002/07/owl#ObjectProperty",
+                    "range", "http://x/Holding"),
+                "http://x/Holding/holding_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty")),
+            "mappings", Map.of(
+                "http://x/Coverage", Map.of("table", "normalized.coverage"),
+                "http://x/Coverage/coverage_id", Map.of("column", "coverage.coverage_id"),
+                "http://x/Coverage/is_deleted", Map.of("column", "coverage.is_deleted"),
+                "http://x/Coverage/hasHolding", Map.of("column", "coverage.holding_id"),
+                "http://x/Holding", Map.of("table", "normalized.holding"),
+                "http://x/Holding/holding_id", Map.of("column", "holding.holding_id")),
+            "databases", List.of(
+                Map.of("name", "normalized", "catalog", "AwsDataCatalog")));
+    }
+
+    /**
+     * Two-class ontology where the FK uses a KEY-PREFIX TRANSFORM (the gt-03/gt-04
+     * shape): {@code Coverage.party_id} stores an UNPREFIXED id ('P000042') but
+     * {@code Party.party_id} (the PK / subject key) is PREFIXED ('PARTY#P000042').
+     * The FK object property {@code Coverage/hasParty} carries an rdfs:comment
+     * documenting {@code CONCAT('PARTY#', coverage.party_id) = party.party_id}, which
+     * the OBDA generator must parse to bake the prefix into the FK IRI template.
+     *
+     * @return ontology JSON as a nested {@link Map}.
+     */
+    public static Map<String, Object> coveragePartyPrefixFkOntology() {
+        return Map.of(
+            "classes", Map.of(
+                "http://x/Coverage", Map.of("label", "Coverage"),
+                "http://x/Party", Map.of("label", "Party")),
+            "properties", Map.of(
+                "http://x/Coverage/coverage_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty"),
+                // The CONCAT transform is authored on the FK DATATYPE property (the
+                // realistic shape — the metadata agent annotates the column property,
+                // not the object property), which maps to the SAME coverage.party_id
+                // column as hasParty. concatPrefixFor must find it via the sibling.
+                "http://x/Coverage/party_id", Map.of(
+                    "type", "http://www.w3.org/2002/07/owl#DatatypeProperty",
+                    "comment", "Bridge FK to party, stored UNPREFIXED. JOIN party p ON "
+                        + "CONCAT('PARTY#', coverage.party_id) = p.party_id."),
+                "http://x/Coverage/hasParty", Map.of(
+                    "type", "http://www.w3.org/2002/07/owl#ObjectProperty",
+                    "range", "http://x/Party",
+                    "comment", "Links Coverage to Party via party_id"),
+                "http://x/Party/party_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty",
+                           "comment", "Canonical PK, PREFIXED (e.g. 'PARTY#P000042').")),
+            "mappings", Map.of(
+                "http://x/Coverage", Map.of("table", "normalized.coverage"),
+                "http://x/Coverage/coverage_id", Map.of("column", "coverage.coverage_id"),
+                "http://x/Coverage/party_id", Map.of("column", "coverage.party_id"),
+                "http://x/Coverage/hasParty", Map.of("column", "coverage.party_id"),
+                "http://x/Party", Map.of("table", "normalized.party"),
+                "http://x/Party/party_id", Map.of("column", "party.party_id")),
+            "databases", List.of(Map.of("name", "normalized", "catalog", "AwsDataCatalog")));
+    }
+
+    /**
      * Ontology mapped to a FEDERATED S3-Tables catalog (not the default
      * {@code AwsDataCatalog}). Single class {@code http://x/Event} → table
      * {@code "analytics.events"} with one column property

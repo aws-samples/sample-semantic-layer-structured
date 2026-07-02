@@ -13,6 +13,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import { ontologyAPI } from "../../services/api";
 
+// "Use Cases" descriptions vary from one line to many; clamp them to a fixed
+// number of lines (with an ellipsis) and reserve that height so every card is
+// the same size. LINE_HEIGHT_EM mirrors Cloudscape's body text line-height.
+const USE_CASES_MAX_LINES = 4;
+const USE_CASES_LINE_HEIGHT_EM = 1.4;
+
 export default function AdminDashboard({ user }) {
   const navigate = useNavigate();
   const [ontologies, setOntologies] = useState([]);
@@ -206,15 +212,32 @@ export default function AdminDashboard({ user }) {
                 {
                   id: "use-cases",
                   header: "Use Cases",
-                  content: (item) =>
-                    item.useCasesDescription || "No use cases specified",
+                  content: (item) => (
+                    // Clamp to a fixed number of lines so long descriptions are
+                    // abbreviated with an ellipsis, and reserve that height (minHeight)
+                    // so short descriptions occupy the same space — keeping every card
+                    // the same size regardless of text length. Full text on hover.
+                    <div
+                      title={item.useCasesDescription || undefined}
+                      style={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: USE_CASES_MAX_LINES,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        minHeight: `${USE_CASES_MAX_LINES * USE_CASES_LINE_HEIGHT_EM}em`,
+                        lineHeight: `${USE_CASES_LINE_HEIGHT_EM}em`,
+                      }}
+                    >
+                      {item.useCasesDescription || "No use cases specified"}
+                    </div>
+                  ),
                 },
                 {
                   id: "updated",
                   header: "Last Updated",
                   content: (item) =>
                     item.updatedAt
-                      ? new Date(item.updatedAt).toLocaleDateString()
+                      ? new Date(item.updatedAt).toLocaleString()
                       : "Unknown",
                 },
                 {

@@ -1,0 +1,19 @@
+# Red team evaluation suite dependencies.
+#
+# Install into a DEDICATED virtualenv (not the agent runtime env):
+#   python -m venv .venv-eval && source .venv-eval/bin/activate
+#   pip install -r tests/eval/requirements.txt
+#
+# NOTE ON VERSIONS:
+# strands-agents-evals requires strands-agents>=1.42.0, whereas the deployed
+# agents pin strands-agents[otel]==1.41.0 (agents/requirements.txt). Keep this
+# suite in its own environment so the eval SDK can pull the newer strands-agents
+# without disturbing the pinned runtime dependency.
+#
+# The floors below are the versions the suite was validated against (see the
+# "Verification Status" section of RED_TEAM_IMPLEMENTATION.md): keep pinned and
+# documented versions identical.
+
+strands-agents-evals>=1.0.0   # validated at 1.0.0
+strands-agents>=1.44.0        # validated at 1.44.0
+sqlglot>=25.0.0               # validated at 30.12.0; statement-aware SQL guard

@@ -27,10 +27,14 @@ MANIFEST
 venv/
 venv
 .venv/
+.venv-eval/
 env/
 ENV/
 virtualenv/
 .env/
+
+# Red team breach transcripts (real, unredacted) — keep the dir, not the output
+tests/eval/red_team/reports/*_breaches.json
 
 # Jupyter Notebook
 .ipynb_checkpoints

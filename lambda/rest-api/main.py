@@ -24,11 +24,9 @@ import os
 import sys
 import logging
 import boto3
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
-from pydantic import BaseModel
-from typing import Optional
 
 # Capability flag — when false, the /metadata sub-app is not imported or mounted.
 # Import is gated because metadata_api transitively depends on the semantic-rag KB,
@@ -45,6 +43,7 @@ from feedback_api import app as feedback_api_app
 from documents_api import app as documents_api_app
 from groundtruth_api import app as groundtruth_api_app
 from evaluations_api import app as evaluations_api_app
+from monitoring_api import app as monitoring_api_app
 
 if ENABLE_SEMANTIC_RAG:
     from metadata_api import app as metadata_api_app
@@ -211,6 +210,9 @@ app.mount("/groundtruth", groundtruth_api_app)
 
 logger.info("Mounting evaluations API at /evaluations")
 app.mount("/evaluations", evaluations_api_app)
+
+logger.info("Mounting monitoring API at /monitoring")
+app.mount("/monitoring", monitoring_api_app)
 
 if ENABLE_SEMANTIC_RAG and metadata_api_app is not None:
     logger.info("Mounting metadata API at /metadata")

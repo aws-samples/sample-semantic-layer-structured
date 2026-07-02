@@ -7,32 +7,39 @@ same two-tier shape and shared graph primitives, but Tier 2 assembles an
 **ontology slice**, generates **SPARQL**, and Phase 5 translates that SPARQL to
 **SQL** (via Ontop) and runs it on **Athena**.
 
-> **Why this doc exists.** It is easy to assume this agent is a free-form ReAct
-> tool loop, or that it runs SPARQL against Neptune. **Neither is true.** There
-> is no agent-wide `SYSTEM_PROMPT`. **Neptune holds schema only** (classes,
-> properties, mappings) — running `COUNT(*)` against it returns 0 — so the
-> generated SPARQL is **lineage only**: Phase 5 hands it to the Ontop translate
-> Lambda to get **Athena SQL**, which is what actually executes against the row
-> data. The live agent resolves every question with a **two-tier cascade**:
-> Tier 1 governed-metric lookup, then a **deterministic Tier 2 Strands graph** of
-> plain function calls. The only model-facing prompts on this path are the
-> **Phase 3 slice judge** (`tier2/slice_judge.py`), the **Phase 4 SPARQL
-> generator** (inline prompt in `tier2/vkg_query_generator.py` / `main.py`), and
-> a conditional **Phase 5 SQL-repair** round (`_REPAIR_PROMPT` in `main.py`). The
-> only model-id constants live in [`query_prompts.py`](query_prompts.py).
+> Model-facing prompts exist in exactly these spots — everything else is
+> deterministic Python:
+>
+> - **Intent router** (`_router_classify_fn`) and **advisory synthesis**
+>   (`_advisory_synthesize`) — off the graph, before Tier 1.
+> - In the Tier 2 graph: the **Phase 3 slice judge** (`tier2/slice_judge.py`),
+>   the **Phase 4 SPARQL generator** (inline prompt in
+>   `tier2/vkg_query_generator.py`), a conditional **Phase 5 SQL-repair** round
+>   (`_REPAIR_PROMPT` in `main.py`), and the **Phase 5 answer renderer**
+>   (`_render_answer`, `_ANSWER_PROMPT` in `main.py`) that turns the Athena result
+>   into the user-facing sentence on the success path.
 
 ## Diagram
+
+Nodes marked **📡** emit an OpenTelemetry span the AgentCore evaluation judges
+harvest. A 🤖 marks a model (LLM) call; the SDK auto-instruments those as `chat`
+spans, while 📡-only nodes emit a hand-rolled span via `emit_answer_span` /
+`emit_grounding_span` (see [OTEL spans](#otel-spans--eval-telemetry)).
 
 ```mermaid
 flowchart TD
     Q([User question]) --> CR{"Answers a prior<br/>clarification?<br/>(resolve_clarification_reply)"}
     CR -->|"unique match"| RES["Re-run original question<br/>+ ClarificationResolution<br/>(prune rivals · confirm pick)"]
     CR -->|"no / ambiguous match"| FU["Follow-up contextualization<br/>(contextualize_question)"]
-    RES --> T1
-    FU --> T1{"Tier 1<br/>governed-metric lookup<br/>(KNN ≥ 0.85)"}
+    RES --> IR
+    FU --> IR{"🤖 Intent router<br/>(classify_intent)"}
+
+    IR -->|advisory| ADV["🤖📡 Advisory answer<br/>(build_advisory_answer · grounds in ontology<br/>comments + governed metrics)"]
+    ADV --> R([Return result])
+    IR -->|data_query / error| T1{"Tier 1<br/>governed-metric lookup<br/>(KNN ≥ 0.85)"}
 
     T1 -->|hit| T1X["execute pre-compiled SQL → Athena"]
-    T1X --> R([Return result · metadata.tier=1])
+    T1X --> R
 
     T1 -->|miss / error| T2START["Tier 2 — deterministic Strands graph<br/>(tier2_resolve · open MCP session · fetch ontology once)"]
 
@@ -40,12 +47,12 @@ flowchart TD
         direction TB
         P1["Phase 1 · Topic router<br/>KNN/lexical over ontology class+property IRIs<br/>(_GatewayTopicRouter over fetched ontologyJson)"]
         P2{"Phase 2 · Term disambiguation<br/>term → candidate IRI (exact/inflected/substring)"}
-        P3["Phase 3 · Ontology-slice builder + judge loop<br/>CONSTRUCT (n_hops) → Turtle → centrality-fit<br/>JUDGE_PROMPT sufficiency"]
+        P3["🤖 Phase 3 · Ontology-slice builder + judge loop<br/>CONSTRUCT (n_hops) → Turtle → centrality-fit<br/>JUDGE_PROMPT sufficiency (slice judge = LLM)"]
         P3B{"Phase 3b · Slice disambiguation<br/>(graph-based)"}
-        P4["Phase 4 · SPARQL generate + validate<br/>VkgQueryGenerator (rdflib parse + 1 repair)"]
+        P4["🤖 Phase 4 · SPARQL generate + validate<br/>VkgQueryGenerator (rdflib parse + 1 repair)"]
         P5G{"Phase 5a · Grounding gate<br/>BGP triples vs slice (domain check)"}
         P5T["Phase 5b · SPARQL→SQL translate<br/>Ontop gateway translate_sparql_to_sql (deterministic)"]
-        EXEC["Phase 5c · Athena execute (+1 LLM SQL-repair)<br/>row cap · result shaping"]
+        EXEC["🤖📡 Phase 5c · Athena execute (+1 LLM SQL-repair)<br/>then 🤖 answer renderer (_render_answer)<br/>+ 📡 emit_grounding_span (slice + executed SQL)"]
 
         P1 --> P2
         P2 -->|clear| P3
@@ -58,8 +65,8 @@ flowchart TD
         P5T -->|sql| EXEC
     end
 
-    P1 -.->|no candidates · phase1_empty| DEG([degraded → error answer])
-    P2 -.->|ambiguous / low-confidence| CLAR([clarify → needs_clarification JSON])
+    P1 -.->|no candidates · phase1_empty| DEG
+    P2 -.->|ambiguous / low-confidence| CLAR
     P3 -.->|"insufficient · phase3_max_rounds / no-op expand"| DEG
     P3B -.->|ambiguous| CLAR
     P3B -.->|unsupported relationship| DEG
@@ -68,11 +75,19 @@ flowchart TD
     P5T -.->|sparql_translation_failed| DEG
     EXEC -.->|sql_execution_failed · 2 attempts| DEG
 
+    CLAR["📡 clarify terminal<br/>(needs_clarification JSON ·<br/>answer_emitter → emit_answer_span)"]
+    DEG["📡 degraded terminal<br/>(error answer ·<br/>answer_emitter → emit_answer_span)"]
+
     T2START --> P1
     EXEC --> R
     CLAR --> R
     DEG --> R
 ```
+
+Note the two terminals (`CLAR`, `DEG`) emit their `emit_answer_span` **inside the
+graph**, as the terminal node's body — that is the only OTEL context position the
+SESSION harvester treats as the conversation's final answer (a post-graph emit
+orphans into a separate trace).
 
 ## Where the flow lives in code
 
@@ -81,6 +96,7 @@ flowchart TD
 | Orchestration                        | `_run_query` → `_run_query_core`                             | [`main.py`](main.py)                                                                                                      |
 | Clarification resolution             | `load_pending_clarification` + `resolve_clarification_reply` | [`../shared/clarification.py`](../shared/clarification.py)                                                                |
 | Follow-up contextualization          | `contextualize_question`                                     | [`../shared/followup.py`](../shared/followup.py)                                                                          |
+| Intent router + advisory answer      | `classify_intent` · `build_advisory_answer`                  | [`../shared/advisory.py`](../shared/advisory.py) · [`main.py`](main.py)                                                   |
 | Tier 1 lookup / execute              | KNN governed-metric lookup + Athena execute                  | [`../shared/metric_lookup.py`](../shared/metric_lookup.py) · [`main.py`](main.py)                                         |
 | Tier 2 entry + phase deps            | `tier2_resolve` → `_build_phase_deps`                        | [`main.py`](main.py) · [`tier2/workflow.py`](tier2/workflow.py)                                                           |
 | Graph + shared primitives            | `PhaseDeps` · `WorkflowContext` · `run_tier2_graph`          | [`tier2/workflow.py`](tier2/workflow.py) · [`../shared/tier2_graph.py`](../shared/tier2_graph.py)                         |
@@ -95,9 +111,12 @@ flowchart TD
 The deterministic phases (1, 2, 3b, the grounding + Ontop-translate + Athena
 halves of 5) are **not** LLM agents — they are plain Python functions wrapped by
 the `_FnNode` adapter, reading and mutating a single shared `WorkflowContext`
-that node functions and conditional-edge predicates both close over. Only three
-spots invoke a model: the **Phase 3 slice judge**, the **Phase 4 SPARQL
-generator**, and a conditional **Phase 5 SQL-repair**.
+that node functions and conditional-edge predicates both close over. Four spots
+**inside the graph** invoke a model — the **Phase 3 slice judge**, the **Phase 4
+SPARQL generator**, a conditional **Phase 5 SQL-repair**, and the **Phase 5
+answer renderer** (`_render_answer`, on the success path; it exists so Phase 5
+emits a real `chat` span for the eval judges) — plus two **before** the graph:
+the **intent router** and **advisory synthesis** (`../shared/advisory.py`).
 
 ## Invocation
 
@@ -283,6 +302,48 @@ After the graph completes, `_run_query` reads the populated `WorkflowContext`:
   ontology slice (Turtle), n-quad citations, and usage totals, shaped to match the
   Tier 1 payload (`metadata.tier = 2`) so the frontend stays tier-agnostic.
 
+## OTEL spans — eval telemetry
+
+The AgentCore evaluation judges (GoalSuccessRate, FinalAnswerFaithfulness,
+SqlGrounded, ToolCallOrdering) are **SESSION-level** graders that read the
+conversation from the agent's OpenTelemetry spans, harvested under the
+`strands.telemetry.tracer` scope. They cannot see anything the agent did **not**
+emit as a span — so every path that produces a user-visible answer must leave one
+behind, and a deterministic (no-LLM) path emits **nothing** for free. This agent
+therefore mixes two kinds of spans:
+
+- **Auto-instrumented `chat` spans** — emitted by the Strands SDK whenever a model
+  is invoked: the Phase 3 slice judge, the Phase 4 SPARQL generator, the
+  conditional Phase 5 SQL-repair, the **Phase 5 answer renderer**
+  (`_render_answer`), and the off-graph intent router / advisory synthesis.
+- **Hand-rolled spans** — for the deterministic paths that would otherwise be
+  invisible to the judges. These are **eval-only telemetry**: no tokens, no
+  behaviour change, fail-soft (a tracing error never breaks a query).
+
+| Path / terminal               | Span emitted                                       | Helper                                                       | Why it's needed                                                                                                                                                                                                                                      |
+| ----------------------------- | -------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Advisory answer (pre-cascade) | `emit_answer_span` (label `advisory`)              | [`../shared/answer_span.py`](../shared/answer_span.py)       | The user sees the advisory answer, not the intermediate intent-classification span; this makes the judges grade the real answer.                                                                                                                     |
+| Phase 5 success               | auto `chat` (renderer) **+** `emit_grounding_span` | [`../shared/grounding_span.py`](../shared/grounding_span.py) | Phase 5 is deterministic (Ontop→Athena, no LLM). The renderer gives FAF a real NL answer span; `emit_grounding_span` carries the **slice + executed SQL** so `SqlGrounded` has the schema to verify against (without it the judge fails closed → 0). |
+| Clarify terminal              | `emit_answer_span` (label `clarification`)         | [`../shared/answer_span.py`](../shared/answer_span.py)       | A clarify turn makes no model/tool call, so it has no span at all; the SESSION judges would `ValidationException` ("no spans") on the turn.                                                                                                          |
+| Degraded terminal             | `emit_answer_span` (label `final_answer`)          | [`../shared/answer_span.py`](../shared/answer_span.py)       | Same — a degraded turn's last model span is an intermediate (e.g. the Phase 4 SPARQL), which the judge would mistake for the answer.                                                                                                                 |
+
+**Where the terminal spans fire matters.** The `clarify` / `degraded`
+`emit_answer_span` calls run **inside the graph**, as the terminal node's body
+(`_emit_terminal_answer` → `deps.answer_emitter`), while the graph's `multiagent`
+span is still the active (recording) OTEL context. That is the only position the
+SESSION harvester treats as the conversation's final answer — a post-graph emit
+orphans into a separate trace and the judge never sees it. On the **success**
+path there is no synthetic answer span: the Phase 5 renderer already emitted a
+real `chat` span, so adding one would be a redundant zero-usage span that could
+shadow the real one.
+
+> ⚠️ **The `SqlGrounded` score is the least trustworthy cell** for VKG, in two
+> directions. It passes **vacuously (1.0)** on every SQL-free row (advisory,
+> bail-out, clarify) because there is no executed SQL to fault; and it can read
+> **near-zero** when the `emit_grounding_span` slice fails to harvest, even though
+> grounding is fine. Judge VKG by **GoalSuccessRate + direct answer inspection**,
+> not the grounding sub-score.
+
 ## Tier 2 module inventory
 
 **VKG-specific** ([`tier2/`](tier2/)): `vkg_topic_router.py`,
@@ -314,7 +375,7 @@ After the graph completes, `_run_query` reads the populated `WorkflowContext`:
 
 ## Model(s)
 
-- **Claude Sonnet 4.6** (`global.anthropic.claude-sonnet-4-6`) — Phase 3 judge,
+- **Claude Sonnet 5** (`global.anthropic.claude-sonnet-5`) — Phase 3 judge,
   Phase 4 SPARQL generator, Phase 5 SQL-repair (see `QUERY_MODEL_ID` /
   `JUDGE_MODEL_ID` in [`query_prompts.py`](query_prompts.py)).
 - **Titan Text Embeddings v2** (`amazon.titan-embed-text-v2:0`) — Tier 1
@@ -323,10 +384,3 @@ After the graph completes, `_run_query` reads the populated `WorkflowContext`:
 Both appear in [`models.json`](models.json); every model-id literal under this
 directory must be listed there (CDK derives `bedrock:InvokeModel` IAM grants from
 it; enforced by `tests/unit/test_model_manifests.py`).
-
-## Design docs
-
-- [`docs/plans/shipped/2026-06-04-vkg-phase5-ontop-athena-design.md`](../../docs/plans/shipped/2026-06-04-vkg-phase5-ontop-athena-design.md)
-  — the Ontop Lambda + Phase 5 SPARQL→SQL→Athena rewrite.
-- [`docs/plans/shipped/2026-05-16-ontop-vkg-design.md`](../../docs/plans/shipped/2026-05-16-ontop-vkg-design.md)
-  — the original OBDA / Ontop VKG decision.

@@ -91,6 +91,19 @@ def test_build_chat_payload_shape():
     assert "question" not in p  # chat path reads 'message', not 'question'
 
 
+def test_build_chat_payload_carries_source():
+    p = build_chat_payload(message="q", session_id="s" * 33,
+                           ontology_id="L", turn_idx=0, source="eval")
+    assert p["source"] == "eval"
+    assert p["turnId"] and p["sessionId"] == "s" * 33  # still chat-shaped
+
+
+def test_build_chat_payload_source_defaults_chat():
+    p = build_chat_payload(message="q", session_id="s" * 33,
+                           ontology_id="L", turn_idx=0)
+    assert p["source"] == "chat"
+
+
 def test_run_key_is_per_turn():
     assert run_key("s1", 0) != run_key("s1", 1)
 

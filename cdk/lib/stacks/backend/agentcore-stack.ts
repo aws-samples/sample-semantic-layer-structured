@@ -127,7 +127,7 @@ function bedrockInvokeModelResources(agentName: string, region: string, account:
       id.startsWith('eu.') ||
       id.startsWith('apac.')
     ) {
-      // Cross-region inference profile id like `global.anthropic.claude-sonnet-4-6`.
+      // Cross-region inference profile id like `global.anthropic.claude-sonnet-5`.
       // Both the inference-profile ARN and the underlying foundation-model ARN
       // need to be allowed — Bedrock validates the caller against the profile
       // ARN, but the routed model ARN is also evaluated.
@@ -399,10 +399,18 @@ export class AgentCoreStack extends cdk.Stack {
         new iam.PolicyStatement({
           effect: iam.Effect.ALLOW,
           actions: [
+            // glue:GetCatalog + glue:GetPartitions are required for Athena to
+            // RESOLVE the s3tablescatalog/<bucket> federated catalog — without
+            // GetCatalog, queries against S3 Tables fail with CATALOG_NOT_FOUND.
+            // The build-time enum-shape probe (select_distinct_values) runs
+            // SELECT DISTINCT against these tables, so the ontology agent needs
+            // the same federated-catalog resolution the query agent already has.
+            'glue:GetCatalog',
             'glue:GetDatabase',
             'glue:GetDatabases',
             'glue:GetTable',
             'glue:GetTables',
+            'glue:GetPartitions',
             'glue:UpdateTable',
           ],
           resources: [
@@ -671,6 +679,27 @@ export class AgentCoreStack extends cdk.Stack {
           resources: [
             `arn:aws:athena:${this.region}:${this.account}:workgroup/${props.athenaStack.workgroup.name}`,
           ],
+        })
+      );
+
+      // Athena data-catalog metadata access — REQUIRED to query any non-default
+      // catalog (e.g. a federated `dynamodb_catalog`). Athena calls GetDataCatalog
+      // to resolve the catalog before running SQL; without it the query fails with
+      // "not authorized to perform: athena:GetDataCatalog". Mirrors the RAG
+      // metadataQueryAgentRole grant below so both query agents can reach the
+      // raw-DynamoDB layer's federated catalog.
+      this.queryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:GetDataCatalog',
+            'athena:GetDatabase',
+            'athena:GetTableMetadata',
+            'athena:ListDataCatalogs',
+            'athena:ListDatabases',
+            'athena:ListTableMetadata',
+          ],
+          resources: [`arn:aws:athena:${this.region}:${this.account}:datacatalog/*`],
         })
       );
 
@@ -1272,6 +1301,46 @@ export class AgentCoreStack extends cdk.Stack {
         })
       );
 
+      // Athena data-catalog metadata access — REQUIRED to query any non-default
+      // catalog (e.g. the raw-DynamoDB layer's federated `dynamodb_catalog`).
+      // Athena calls GetDataCatalog to resolve the catalog before running SQL;
+      // without it a query against dynamodb_catalog fails with
+      //   "not authorized to perform: athena:GetDataCatalog ... on dynamodb_catalog".
+      // Scoped to all data catalogs in this account/region (datacatalog ARNs, not
+      // the workgroup ARN above), mirroring the Athena execution role.
+      this.metadataQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:GetDataCatalog',
+            'athena:GetDatabase',
+            'athena:GetTableMetadata',
+            'athena:ListDataCatalogs',
+            'athena:ListDatabases',
+            'athena:ListTableMetadata',
+          ],
+          resources: [`arn:aws:athena:${this.region}:${this.account}:datacatalog/*`],
+        })
+      );
+
+      // Athena routes dynamodb_catalog queries through the DDB connector Lambda;
+      // the agent role must be able to invoke it. The connector spills oversize
+      // result fragments to S3 with KMS encryption, and the caller (agent role)
+      // reads them back — so it also needs S3 + KMS Decrypt on the spill bucket.
+      // Mirrors the VKG queryAgentRole grant so the RAG query agent can query the
+      // raw-DynamoDB layer's federated catalog.
+      this.metadataQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lambda:InvokeFunction'],
+          resources: [
+            `arn:aws:lambda:${this.region}:${this.account}:function:${props.projectName}-ddb-connector`,
+          ],
+        })
+      );
+      props.athenaStack.spillBucket.grantReadWrite(this.metadataQueryAgentRole);
+      props.athenaStack.spillEncryptionKey.grantEncryptDecrypt(this.metadataQueryAgentRole);
+
       // Glue catalog access — matches queryAgentRole, including S3 Tables federated catalog ARNs
       this.metadataQueryAgentRole.addToPolicy(
         new iam.PolicyStatement({
@@ -1743,9 +1812,9 @@ export class AgentCoreStack extends cdk.Stack {
     // Chat-query runtimes (Ontology/MetadataQuery) accept BOTH the SPA user
     // client (browser token forwarded by the chat gateway via JWT_PASSTHROUGH)
     // AND the M2M client (mcp-tools Lambda / REST invoking the query tools
-    // server-to-server). A runtime is either IAM or JWT — never both — so going
-    // all-JWT means even the formerly-SigV4 backend callers present a JWT (the
-    // M2M token). Hoisted here so both query-runtime blocks reuse it.
+    // server-to-server). A runtime is either IAM or JWT — never both — and these
+    // are all-JWT, so even the backend callers present a JWT (the M2M token).
+    // Hoisted here so both query-runtime blocks reuse it.
     const chatRuntimeClients = [props.userPoolClient, props.m2mClient].filter(
       (c): c is cognito.IUserPoolClient => Boolean(c)
     );
@@ -2639,10 +2708,9 @@ export class AgentCoreStack extends cdk.Stack {
       };
       // AUTHORITATIVE AUTHORIZER: pass discovery URL + allowed clients so the
       // SAME handler re-applies the CUSTOM_JWT authorizer on every full-replace.
-      // Previously a separate RuntimeAuthorizerConstruct owned this, but it only
-      // re-fired on a clients/headers change — so container-only redeploys (which
-      // re-fire THIS resource via the image tag) wiped the authorizer. Folding it
-      // in makes one full-replace re-send everything. See the design doc.
+      // This resource re-fires on an image-tag change, so folding the authorizer
+      // in here means a container-only redeploy re-sends everything in one
+      // full-replace and can't leave the authorizer unset. See the design doc.
       if (authzEnabled) {
         crProps.DiscoveryUrl = authorizerDiscoveryUrl!;
         crProps.AllowedClients = allowedClients;

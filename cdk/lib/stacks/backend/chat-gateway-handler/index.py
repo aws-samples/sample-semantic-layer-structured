@@ -189,18 +189,16 @@ def _wait_for_gateway_ready(gateway_id):
 def _reap_failed_orphans(base_name):
     """Best-effort delete FAILED gateways left over by prior rolled-back deploys.
 
-    A gateway that went FAILED in a previously rolled-back deploy lingers in the
-    account and accumulates over time. Since create now uses a unique name (see
-    _unique_gateway_name) such an orphan no longer BLOCKS a new create, but
-    reaping it keeps the account clean. We page through list_gateways, match any
-    gateway whose name STARTS WITH base_name AND is in FAILED status, and
-    best-effort delete each.
+    A gateway that went FAILED in a rolled-back deploy lingers in the account and
+    accumulates over time. Create uses a unique name (see _unique_gateway_name) so
+    such an orphan does not BLOCK a new create, but reaping it keeps the account
+    clean. We page through list_gateways, match any gateway whose name STARTS WITH
+    base_name AND is in FAILED status, and best-effort delete each.
 
     Only FAILED gateways are reaped — never READY ones — so a live gateway
     (e.g. from a concurrent stack) is never touched. The whole routine is
     best-effort: every failure (including a missing ListGateways permission) is
-    swallowed and logged so cleanup hygiene can never block gateway creation
-    (the unique name already prevents the conflict this used to cause).
+    swallowed and logged so cleanup hygiene can never block gateway creation.
 
     :param base_name: the stable base gateway name to match orphans against.
     :type base_name: str

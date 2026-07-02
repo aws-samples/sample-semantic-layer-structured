@@ -1,0 +1,104 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-iddx7A6C74",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:381492284087:runtime/semantic_layer_dev_ontology-iddx7A6C74",
+  "service_name": "semantic_layer_dev_ontology-iddx7A6C74.DEFAULT",
+  "log_groups": [
+    "aws/spans",
+    "/aws/bedrock-agentcore/runtimes/semantic_layer_dev_ontology-iddx7A6C74-DEFAULT"
+  ],
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_981b192b-uExXolALwc"
+  ],
+  "sessions": [
+    {
+      "sessionId": "ontology_curated_layer-dac12838-2b9b-4c99-b7eb-61f16fd5e8b5",
+      "testScenarioId": "ontology_curated_layer",
+      "startTime": "2026-06-27T20:48:09.312797+00:00",
+      "endTime": "2026-06-27T22:28:23.805848+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "ontology_curated_layer"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "scenario_runs": {
+    "ontology_curated_layer": {
+      "case_id": "vkg-ontology_curated_layer-204b1478",
+      "session_id": "ontology_curated_layer-dac12838-2b9b-4c99-b7eb-61f16fd5e8b5",
+      "status": "processing",
+      "num_tables": 40,
+      "tables": [
+        "address",
+        "admin_codes",
+        "annuity_detail",
+        "arrangement_destination",
+        "arrangement_source",
+        "carrier_appointment",
+        "coverage",
+        "coverage_product",
+        "distribution_level",
+        "email_address",
+        "financial_activity",
+        "financial_statement",
+        "govt_id_info",
+        "holding",
+        "holding_activity",
+        "holding_arrangement",
+        "holding_dbg",
+        "holding_loan",
+        "holding_payout",
+        "holding_projection",
+        "holding_restriction",
+        "holding_subaccount",
+        "invest_product",
+        "life_detail",
+        "life_participant",
+        "loan_activity",
+        "party",
+        "party_banking",
+        "party_license",
+        "phone",
+        "policy_loan_summary",
+        "policy_product",
+        "producer_agreement",
+        "reinsurance_info",
+        "relation",
+        "rider",
+        "rider_participant",
+        "subaccount_activity",
+        "substandard_rating",
+        "type_codes"
+      ],
+      "summary": "status=processing",
+      "build_seconds": null
+    }
+  }
+}

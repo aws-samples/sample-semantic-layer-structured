@@ -58,7 +58,11 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 # ---------------------------------------------------------------------------
 
 
-_MAX_WAIT_SECONDS = int(os.environ.get('MCP_MAX_WAIT_SECONDS', '60'))
+# The query tools now read the runtime's FULL chat SSE stream (chat-shaped
+# payload), so this must cover a whole VKG turn (Phase 1-5 + Ontop + Athena),
+# which can approach ~60s. Default 120s (was 60) leaves headroom; override via
+# the MCP_MAX_WAIT_SECONDS env on the Lambda.
+_MAX_WAIT_SECONDS = int(os.environ.get('MCP_MAX_WAIT_SECONDS', '120'))
 _POLL_INTERVAL_SECONDS = 0.5
 
 
@@ -77,11 +81,11 @@ def _bedrock_runtime_client():
 # OAuth (M2M client-credentials) token + runtime invocation over HTTPS
 # ---------------------------------------------------------------------------
 #
-# The query runtimes are JWT-inbound (no longer IAM/SigV4), so this Lambda
-# invokes them with a Cognito machine-to-machine access token (client_credentials
-# grant + the semantic-layer-mcp/invoke scope) over the runtime's public
-# /invocations HTTPS endpoint, NOT via boto3 SigV4. The token is cached in module
-# scope until shortly before expiry and refreshed on demand (or on a 401/403).
+# The query runtimes are JWT-inbound, so this Lambda invokes them with a Cognito
+# machine-to-machine access token (client_credentials grant + the
+# semantic-layer-mcp/invoke scope) over the runtime's public /invocations HTTPS
+# endpoint. The token is cached in module scope until shortly before expiry and
+# refreshed on demand (or on a 401/403).
 
 # Module-scoped token cache: {'token': str, 'expires_at': epoch_seconds}.
 _m2m_token_cache: Dict[str, Any] = {}
@@ -223,6 +227,63 @@ def _apply_guardrail(*, text: str, source: str) -> Dict[str, Any]:
         return {'blocked': False, 'message': '', 'action': 'NONE'}
 
 
+def _parse_sse(body: str) -> Dict[str, Any]:
+    """Parse an AG-UI chat-stream SSE body into the SAME dict shape ``_run_query``
+    returns, so the tool bodies read identical keys regardless of transport.
+
+    The MCP tools now send a chat-shaped payload (so the runtime persists a
+    chat-sessions row that the Monitoring tab counts). The chat entrypoint yields
+    ``data: {json}`` SSE frames — ``message_chunk`` deltas then a terminal
+    ``run_finished`` carrying ``totals`` (or ``run_error``). VERIFIED live totals
+    keys (2026-07-01): ``sql`` = SPARQL lineage, ``executedSql`` = executed Athena
+    SQL, ``rows``, plus top-level ``graphTraversal``/``phaseTimeline``/
+    ``provenance`` (there is NO ``reasoning`` key). We remap those onto the
+    direct-invoke contract: ``answer``/``sql_query``/``results``/``reasoning``.
+
+    Args:
+        body: The full decoded SSE response body.
+
+    Returns:
+        ``{answer, sql_query, results, reasoning, provenance, error}`` — empty
+        ``sql_query``/``results`` when no ``run_finished`` arrived (a truncated or
+        timed-out stream), so the caller never reports a false success.
+    """
+    parts: list = []
+    totals: Dict[str, Any] = {}
+    error = None
+    for line in body.splitlines():
+        line = line.strip()
+        if not line.startswith('data:'):
+            continue
+        raw = line[len('data:'):].strip()
+        if not raw:
+            continue
+        try:
+            ev = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        etype = ev.get('type')
+        if etype == 'message_chunk':
+            parts.append(ev.get('delta', ''))
+        elif etype == 'run_finished':
+            totals = ev.get('totals', {}) or {}
+        elif etype == 'run_error':
+            error = ev.get('error') or 'run_error'
+    return {
+        'answer': ''.join(parts),
+        'sql_query': totals.get('sql', ''),          # SPARQL lineage
+        'results': totals.get('rows', []),
+        'reasoning': {
+            'graphTraversal': totals.get('graphTraversal', ''),
+            'phaseTimeline': totals.get('phaseTimeline', []),
+            'provenance': totals.get('provenance', {}),
+            'sqlQuery': totals.get('executedSql', ''),  # executed Athena SQL
+        },
+        'provenance': totals.get('provenance', {}),
+        'error': error,
+    }
+
+
 def _invoke_runtime_sync(*, runtime_arn: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     """Invoke a JWT-inbound AgentCore Runtime over HTTPS with an M2M Bearer token.
 
@@ -267,6 +328,12 @@ def _invoke_runtime_sync(*, runtime_arn: str, payload: Dict[str, Any]) -> Dict[s
             text = _do(_fetch_m2m_token(force=True))
         else:
             raise
+    # The query tools now send a chat-shaped payload → the runtime replies with an
+    # AG-UI SSE stream (data: {json} frames), not a single JSON object. Detect that
+    # and normalize it to the direct-invoke dict shape via _parse_sse. Non-SSE
+    # responses (suggestions, list-ontologies, errors) keep the JSON path.
+    if text.lstrip().startswith('data:'):
+        return _parse_sse(text)
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -288,9 +355,18 @@ def tool_ontology_query(args: Dict[str, Any]) -> Dict[str, Any]:
     if not runtime_arn:
         return {'error': 'OntologyQuery runtime not configured'}
 
+    # Chat-shaped payload → routes to the runtime's _chat_stream, which persists a
+    # chat-sessions row tagged source='mcp' so the admin Monitoring tab captures
+    # MCP traffic (the direct {'question','id'} shape hit _run_query, which never
+    # persisted). Fresh 33-char sessionId per call ⇒ create branch, no ownership
+    # conflict. userId is intentionally omitted: _user_id_from_context derives the
+    # trusted user from the M2M JWT sub, so a payload userId would be ignored.
+    _sid = uuid.uuid4().hex + uuid.uuid4().hex[:1]  # 33 chars — runtime session min
     result = _invoke_runtime_sync(
         runtime_arn=runtime_arn,
-        payload={'question': question, 'id': ontology_id},
+        payload={'message': question, 'id': ontology_id, 'ontologyId': ontology_id,
+                 'turnId': f'mcp-{uuid.uuid4().hex[:8]}', 'sessionId': _sid,
+                 'mode': 'vkg', 'source': 'mcp'},
     )
     answer = result.get('answer') or ''
     if answer:
@@ -329,9 +405,14 @@ def tool_metadata_query(args: Dict[str, Any]) -> Dict[str, Any]:
     if not runtime_arn:
         return {'error': 'MetadataQuery runtime not configured'}
 
+    # Chat-shaped payload (see tool_ontology_query) so MetadataQuery MCP calls
+    # persist a chat-sessions row (source='mcp') and appear on the Monitoring tab.
+    _sid = uuid.uuid4().hex + uuid.uuid4().hex[:1]  # 33 chars
     result = _invoke_runtime_sync(
         runtime_arn=runtime_arn,
-        payload={'question': question, 'id': ontology_id},
+        payload={'message': question, 'id': ontology_id, 'ontologyId': ontology_id,
+                 'turnId': f'mcp-{uuid.uuid4().hex[:8]}', 'sessionId': _sid,
+                 'mode': 'semantic-rag', 'source': 'mcp'},
     )
     answer = result.get('answer') or ''
     if answer:

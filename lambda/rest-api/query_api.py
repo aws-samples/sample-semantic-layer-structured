@@ -10,8 +10,6 @@ Provides REST API endpoints for natural language query processing:
 
 import json
 import logging
-import os
-import uuid
 from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Request
@@ -27,7 +25,7 @@ from services.chat_session_service import (
 )
 from services.feedback_service import FeedbackService
 from services.guardrail_service import GuardrailService
-from services.obo_middleware import get_principal, require_obo
+from services.obo_middleware import get_principal
 from services.ontology_service import OntologyService
 
 logger = logging.getLogger(__name__)

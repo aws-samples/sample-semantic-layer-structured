@@ -110,6 +110,256 @@ def _local_name(iri: str) -> str:
     return tail.lower()
 
 
+def _local_name_cased(iri: str) -> str:
+    """Return the ORIGINAL-CASE local name of ``iri`` (after the last ``/`` / ``#``).
+
+    Mirrors :func:`_local_name` but preserves case so callers can inspect
+    CamelCase word boundaries (an upper-case char marks a new segment).
+
+    Args:
+        iri: A class/property IRI.
+
+    Returns:
+        The local name with its original casing intact.
+    """
+    tail = iri.rstrip("/#")
+    for sep in ("#", "/"):
+        if sep in tail:
+            tail = tail.rsplit(sep, 1)[1]
+    if ":" in tail and "://" not in tail:
+        tail = tail.rsplit(":", 1)[1]
+    return tail
+
+
+def _real_inflection_forms(token: str) -> set:
+    """Inflection forms of ``token`` with stemmer-artifact PREFIXES removed.
+
+    ``inflection_variants`` over-generates intermediate stems that are strict
+    prefixes of the real word — e.g. ``parties`` yields ``parti``/``partie``
+    alongside ``party``/``parties``. In a SUBSTRING match those stems match
+    UNRELATED entities (``parti`` ⊂ ``participant`` → LifeParticipant), poisoning
+    the candidate set for "how many parties?" and driving a spurious
+    clarification (VKG round-1 root cause). We drop any form that is a strict
+    prefix of the ORIGINAL token (``parti``/``partie`` ⊂ ``parties``), keeping the
+    token itself and its genuine singular/plural (``party``, ``parties``). Longer
+    over-generated forms (``partieses``) are harmless — they match nothing real.
+
+    Args:
+        token: the query term (already lower-cased).
+    Returns:
+        The filtered set of inflection forms.
+    """
+    forms = inflection_variants(token)
+    return {f for f in forms if not (f != token and token.startswith(f))}
+
+
+def _collapse_shared_stem_siblings(
+    term: str, class_matches: List[str], candidates: List[str]
+) -> Optional[str]:
+    """Return one class IRI when 2+ matched classes are all kinds-of the question
+    TERM — i.e. every matched class local name is the term itself OR term + a
+    NEW-WORD boundary (CamelCase upper / ``_`` / end). Resolves the spurious
+    'which interpretation of parties?' clarify where Phase-1 KNN surfaced
+    PartyBanking/PartyLicense but not the base Party class.
+
+    Returns None on a genuine cross-entity tie (heads differ, e.g.
+    Party vs Participant) so the caller still clarifies. Highest-ranked
+    (earliest in ``candidates``) match wins.
+
+    Only a PLURAL/collection term collapses (``parties``, ``holdings``): a
+    plural reference to a base entity in a count/list context ("how many
+    parties?") is a non-choice — its subtypes are just narrower views of the
+    same collection. A SINGULAR term naming one of two distinct classes
+    (``email`` → EmailMessage vs EmailCampaign) is a genuine entity choice and
+    still clarifies (returns None) — this is what keeps the pre-existing
+    genuine-tie guard green.
+
+    Args:
+        term: The (already lower-cased) question term being disambiguated.
+        class_matches: Matched class IRIs sharing this term.
+        candidates: The Phase-1 candidate IRIs, in rank order (best first).
+
+    Returns:
+        The chosen class IRI, or None when the set is not a shared-stem sibling
+        collapse (so the caller keeps clarifying).
+    """
+    if len(class_matches) < 2:
+        return None
+    low_term = (term or "").lower()
+    # Number-inflection stems (parties↔party, policies↔policy). A naive
+    # rstrip('s') is WRONG for -ies (parties→partie), so reuse the module's
+    # inflection helper. Keep only stems long enough to avoid over-eager
+    # collapses (a 3-char fragment would eat too much).
+    stems = {s for s in inflection_variants(low_term) if len(s) >= 4}
+    if not stems:
+        return None
+    # PLURAL-only gate: require the term to be a genuine plural/collection form
+    # (its singular differs). A singular term (``email``, ``party``) naming a
+    # distinct entity remains a real choice; only a collection noun
+    # (``parties``, ``holdings``) is a non-choice we collapse. This is the
+    # lexical signal that separates the sibling-collapse (want) from a genuine
+    # cross-entity tie (must still clarify).
+    singulars = {s for s in stems if s != low_term and low_term.startswith(s[:3])}
+    is_plural = low_term.endswith("s") and bool(singulars)
+    if not is_plural:
+        return None
+
+    def _kind_of_term(iri: str) -> bool:
+        """True when ``iri``'s local name is a stem, or a stem + a new-word boundary."""
+        nm = _local_name_cased(iri)  # ORIGINAL case — needed for CamelCase boundary
+        low = nm.lower()
+        for stem in stems:
+            if low == stem:
+                return True
+            if not low.startswith(stem):
+                continue
+            nxt = nm[len(stem)]  # char right after the stem in original case
+            if nxt == "_" or nxt.isupper() or not nxt.isalpha():
+                return True
+        return False
+
+    if not all(_kind_of_term(iri) for iri in class_matches):
+        return None
+    rank = {iri: i for i, iri in enumerate(candidates)}
+    return min(class_matches, key=lambda iri: rank.get(iri, 1_000_000))
+
+
+# Split a CamelCase local name into its segments before lower-casing (so the
+# boundary is preserved): "CoverageProduct" → ["Coverage", "Product"].
+_CAMEL_SEG_RE = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]*|[a-z]+|\d+")
+
+
+def _camel_head(iri: str) -> str:
+    """Return the lower-cased HEAD (last CamelCase segment) of ``iri``'s local name.
+
+    The head is the noun a compound class name is "a kind of": ``CoverageProduct``
+    and ``PolicyProduct`` both have head ``"product"`` (they are kinds of product),
+    whereas ``EmailMessage`` and ``EmailCampaign`` have DIFFERENT heads
+    (``"message"`` vs ``"campaign"``) despite a shared ``Email`` modifier. The
+    shared-head collapse in Phase 2 uses this to distinguish a non-choice
+    (same-head siblings) from a genuine cross-entity tie (different heads).
+
+    Args:
+        iri: A class IRI; the local name is taken after the last ``/`` / ``#``.
+
+    Returns:
+        The lower-cased final CamelCase segment, or the whole local name when it
+        has no internal CamelCase boundary (a single-segment name is its own head).
+    """
+    tail = iri.rstrip("/#")
+    for sep in ("#", "/"):
+        if sep in tail:
+            tail = tail.rsplit(sep, 1)[1]
+    if ":" in tail and "://" not in tail:
+        tail = tail.rsplit(":", 1)[1]
+    segments = _CAMEL_SEG_RE.findall(tail)
+    return segments[-1].lower() if segments else tail.lower()
+
+
+# Phrases that mark a bare quantity/existence question (Fix 4). When a question
+# strips to ZERO significant terms (no entity named) AND matches one of these, it
+# is an ambiguous "count/total of WHAT?" ask we should clarify rather than guess.
+# Kept conservative: a genuinely empty/garbage question matches none of these and
+# is left to the normal path (so a single-token probe like "x" is NOT clarified).
+_BARE_QUANTITY_RE = re.compile(
+    r"\b(how\s+many|how\s+much|are\s+there|is\s+there|the\s+total|the\s+count|"
+    r"the\s+number|the\s+average|the\s+sum)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_bare_quantity_question(question: str) -> bool:
+    """True when ``question`` reads as a quantity/existence ask (Fix 4 guard).
+
+    Args:
+        question: The natural-language user question.
+
+    Returns:
+        True if it contains a quantity/existence phrase (e.g. 'how many',
+        'are there', 'the total'); used only after the question is already known
+        to name no entity, to decide clarify-first vs. let-the-normal-path-run.
+    """
+    return bool(_BARE_QUANTITY_RE.search(question or ""))
+
+
+# Fixed system namespaces that legitimately appear in a slice alongside the
+# per-layer ontology base — W3C vocab + the project's virtual-KG vocab. A judge
+# ``missing`` IRI in one of these is NOT a hallucination; only an IRI in NEITHER
+# the ontology base NOR these is foreign/fabricated (see _is_foreign_namespace).
+_SYSTEM_NAMESPACE_PREFIXES = (
+    "http://www.w3.org/",
+    "https://semantic-layer.aws/",
+)
+
+
+def _namespace_of(iri: str) -> str:
+    """Return the namespace of ``iri`` — everything up to and including the last
+    ``/`` or ``#`` delimiter (mirrors :func:`_local_name`'s split, inverted).
+
+    e.g. ``http://base/ontology/L/Holding/market_value`` → ``http://base/ontology/L/Holding/``.
+    Returns ``""`` for a string with no delimiter.
+    """
+    s = (iri or "").strip().strip("<>")
+    cut = max(s.rfind("/"), s.rfind("#"))
+    return s[: cut + 1] if cut >= 0 else ""
+
+
+def _slice_ontology_base(slice_text: str) -> str:
+    """Derive the per-layer ontology base IRI from the slice's own class IRIs.
+
+    The slice is multi-namespace (the per-layer ontology base + fixed W3C/vkg
+    system namespaces), so a naive common-prefix is wrong. We take the namespace
+    of the slice's ``owl:Class`` subjects — the IRIs typed
+    ``... <rdf:type> <owl#Class>`` — which is the layer's real ontology base
+    (e.g. ``http://curated-layer-ontology-…/ontology/vkg-…/``). Returns the most
+    common such namespace, or ``""`` when none can be found (caller then treats
+    NO ``missing`` IRI as foreign — a conservative no-op).
+
+    Args:
+        slice_text: The serialized Turtle slice.
+
+    Returns:
+        The ontology base namespace (with trailing delimiter), or ``""``.
+    """
+    if not slice_text:
+        return ""
+    # Find `<class-iri>` subjects typed as owl:Class. rdflib's turtle keeps the
+    # SUBJECT as a full <IRI> but abbreviates the type object — either `a owl:Class`
+    # (CURIE, the common form) or `a <…owl#Class>` (full IRI). Match the subject IRI
+    # on any line typing it owl:Class in either form; take its namespace.
+    counts: Dict[str, int] = {}
+    pat = re.compile(
+        r"<([^>]+)>\s+(?:a|<[^>]*#type>)\s+(?:owl:Class|<[^>]*owl#Class>)"
+    )
+    for m in pat.finditer(slice_text):
+        ns = _namespace_of(m.group(1))
+        if ns and not ns.startswith(_SYSTEM_NAMESPACE_PREFIXES):
+            counts[ns] = counts.get(ns, 0) + 1
+    if not counts:
+        return ""
+    return max(counts, key=counts.get)
+
+
+def _is_foreign_namespace(iri: str, ontology_base: str) -> bool:
+    """True when ``iri``'s namespace is NEITHER the layer's ontology base NOR a
+    known system namespace — i.e. a fabricated IRI the slice could never carry.
+
+    A judge that invents ``https://example.org/ontology/HoldingPayout/payout_frequency``
+    (verified hallucination: ``example.org`` appears nowhere in the layer) is caught
+    here. When ``ontology_base`` is empty (couldn't be derived) NOTHING is foreign
+    (conservative no-op), so this never over-drops.
+    """
+    if not ontology_base:
+        return False
+    ns = _namespace_of(iri)
+    if not ns:
+        return False  # bare local name — handled by the presence check, not here.
+    if ns.startswith(_SYSTEM_NAMESPACE_PREFIXES):
+        return False
+    # Same ontology base (prefix match tolerates Class vs Class/prop sub-paths).
+    return not ns.startswith(ontology_base)
+
+
 def _norm_token(name: str) -> str:
     """Normalize a local name for fuzzy comparison: lower-case, strip all
     non-alphanumerics, and drop trailing short coded-suffixes the judge tends to
@@ -193,7 +443,11 @@ def _make_phase2(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
         """
         # All number-inflections of the token (policies↔policy, parties↔party)
         # — a naive rstrip('s') turned "policies" into "policie" and missed.
+        # Tier 1 (EXACT) uses the full form set — an exact key hit is always
+        # legitimate. Tier 2 (SUBSTRING) uses the prefix-artifact-filtered set so
+        # an over-short stem can't loosely match an unrelated entity.
         token_forms = inflection_variants(token)
+        real_forms = _real_inflection_forms(token)
 
         # Tier 1: exact local-name match (token, or any of its inflected forms).
         exact: List[str] = []
@@ -203,9 +457,17 @@ def _make_phase2(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
         if exact:
             return exact
 
-        # Tier 2: substring fallback (only when no exact match exists).
+        # Tier 2: substring fallback (only when no exact match exists). Uses the
+        # stemmer-artifact-filtered forms (_real_inflection_forms): the raw
+        # ``inflection_variants`` emits over-short prefix stems (``parties`` →
+        # ``parti``/``partie``) that substring-matched an UNRELATED entity
+        # (``parti`` ⊂ ``participant`` → LifeParticipant/participant_sk), poisoning
+        # the candidate set for "how many parties?" and driving a spurious
+        # clarification (VKG round-1 root cause). Filtering those prefixes keeps
+        # ``party``/``parties`` (which still match ``party_status`` and
+        # ``partybanking``) while dropping the noise. Kept to forms >= 4 chars.
         owners: List[str] = []
-        long_forms = {f for f in token_forms if len(f) >= 4}
+        long_forms = {f for f in real_forms if len(f) >= 4}
         if long_forms:
             for local, iris in by_name.items():
                 if any(f in local or local in f for f in long_forms):
@@ -234,6 +496,42 @@ def _make_phase2(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
     def phase2(_c: WorkflowContext) -> None:
         _emit_phase(ctx, phase=2, action="phase_start")
         terms = _query_terms(ctx.question)
+        # Inflection-aware term↔name matcher (shared with the slice-graph
+        # disambiguator). Lazy import mirrors find_slice_ambiguities below; keeps
+        # the shared-head-collapse matching single-sourced rather than
+        # re-implemented (so "products"↔"product" inflection stays consistent).
+        from .slice_disambiguation import _term_matches
+        # CLARIFY-FIRST on a bare, entity-less QUANTITY question (Fix 4): "How
+        # many are there?" / "what's the total?" strip to ZERO significant terms,
+        # so the router can only TOP-RANK a guess (nb5: the VKG agent answered
+        # "how many Coverage records" and even invented a PoliticalParty class).
+        # The RAG agent clarifies here; align VKG. We fire ONLY when the question
+        # both (a) names no entity (no significant terms) AND (b) reads as a
+        # quantity/existence ask (so a genuinely empty/garbage question is left to
+        # the normal path, not force-clarified), AND (c) this is NOT a turn
+        # resolving a prior clarification (which carries the entity in the
+        # resolution, not the rewritten question). Offer the top candidate CLASSES
+        # as options; skip when there are none to offer (nothing actionable).
+        if (not terms and ctx.clarification_resolution is None
+                and _is_bare_quantity_question(ctx.question)):
+            class_options = [
+                {"table": iri, "database": "", "column": "",
+                 "label": _local_name(iri)}
+                for iri in ctx.candidates
+                if iri.rsplit("/", 1)[0] not in set(ctx.candidates)  # class IRIs
+            ][:8]  # cap the chip list so the prompt stays scannable
+            if class_options:
+                ctx.needs_clarification = build_clarification(
+                    items=[{"term": "", "matches": class_options}])
+                # Give the question real text (build_clarification falls back to
+                # the generic "Could you clarify your request?" when term is "").
+                ctx.needs_clarification["clarification_question"] = (
+                    "Which entity do you want to count or list? Please pick one:")
+                ctx.clarification_source = "phase2_no_entity"
+                _emit_phase(ctx, phase=2, action="phase_result",
+                            status="AMBIGUOUS", mappings=[],
+                            ambiguities=[{"term": "", "matches": class_options}])
+                return
         # Group candidate IRIs by lower-cased local name.
         by_name: Dict[str, List[str]] = {}
         for iri in ctx.candidates:
@@ -278,6 +576,27 @@ def _make_phase2(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
             if len(unique) == 1:
                 ctx.disambiguation[term] = {"status": "CLEAR", "iri": unique[0],
                                             "confidence": 0.9}
+                continue
+            # Redundant-fragment skip (gt-07 'hold'): a SHORT term that is a strict
+            # substring/stem of a LONGER term in the SAME question which already
+            # resolved CLEAR is not an independent entity reference — it is a
+            # fragment of the longer one (here "hold" from "they hold" vs "holding"
+            # from "holding market value", which resolved to Holding). Left to its
+            # own devices the bare stem loosely substring-matches MANY classes —
+            # including unrelated ones the longer term does NOT (e.g. "hold" also
+            # hits Policyholder, which "holding" never would) — so neither the
+            # prefix nor the shared-head collapse fires and it spuriously clarifies.
+            # Skip it: the longer term already pinned the real entity. Gated on a
+            # ≥4-char stem so generic fragments ('id','to') don't suppress anything,
+            # and only against terms ALREADY marked CLEAR (so we never defer to an
+            # equally-ambiguous sibling). Layer-agnostic: compares question terms to
+            # each other, never to class names.
+            _stem = term[:-3] if term.endswith("ing") else term
+            if len(_stem) >= 4 and any(
+                other != term and _stem in other
+                and isinstance(b, dict) and b.get("status") == "CLEAR"
+                for other, b in ctx.disambiguation.items()
+            ):
                 continue
             # Generic label-attribute deferral (mirrors the Phase-3b guard): a
             # universal descriptive attribute the user did not name as the head
@@ -359,6 +678,49 @@ def _make_phase2(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
                     ctx.disambiguation[term] = {
                         "status": "CLEAR", "iri": shortest, "confidence": 0.7,
                         "source": "base_class_collapse"}
+                    continue
+                # Shared-HEAD collapse (the mirror of base-class collapse for
+                # SUFFIX-shared siblings): the head-noun term names the HEAD (last
+                # CamelCase segment) of EVERY matched class — i.e. every sibling is
+                # a "kind of <term>". E.g. "product" → CoverageProduct +
+                # PolicyProduct (heads both "Product"). The prefix test above misses
+                # these (they share a suffix, not a prefix), so without this the
+                # query clarifies "which interpretation: product?" — an un-actionable
+                # choice (gt-07: "investment product NAMES" just needs product names
+                # for the projection; picking Coverage- vs Policy-Product is a
+                # join-path detail the generator + Phase-5 grounding gate own,
+                # exactly as the flat-KB metadata agent resolves it without asking).
+                #
+                # CRITICAL — match the HEAD segment, not just any component: for an
+                # unrelated tie like EmailMessage vs EmailCampaign the term "email"
+                # names the FIRST segment but the HEADS (Message vs Campaign) DIFFER,
+                # so this does NOT collapse and the genuine entity choice still
+                # clarifies. Only a set whose members are all kinds-of-the-same-head
+                # collapses. Resolve to the highest-RANKED match (earliest in
+                # ctx.candidates = Phase-1's best lexical hit).
+                heads = {iri: _camel_head(iri) for iri in class_matches}
+                if all(_term_matches(term, heads[iri]) for iri in class_matches):
+                    rank = {iri: i for i, iri in enumerate(ctx.candidates)}
+                    best = min(class_matches, key=lambda iri: rank.get(iri, 1_000_000))
+                    ctx.disambiguation[term] = {
+                        "status": "CLEAR", "iri": best, "confidence": 0.65,
+                        "source": "shared_head_collapse"}
+                    continue
+                # Shared-STEM sibling collapse (base class absent from the
+                # candidate set): Phase-1 KNN surfaced only derived siblings
+                # (PartyBanking, PartyLicense) but NOT the base Party, so neither
+                # the prefix nor the shared-head collapse above can fire (no base
+                # present, heads differ). When EVERY matched class is a kind-of
+                # the term (term itself, or term + a new-word boundary) resolve to
+                # the highest-ranked sibling instead of clarifying. A genuine
+                # cross-entity tie (Party vs Participant — 'party' is not a
+                # word-boundary prefix of 'Participant') returns None and still
+                # clarifies.
+                collapsed = _collapse_shared_stem_siblings(term, class_matches, ctx.candidates)
+                if collapsed is not None:
+                    ctx.disambiguation[term] = {
+                        "status": "CLEAR", "iri": collapsed, "confidence": 0.6,
+                        "source": "shared_stem_sibling_collapse"}
                     continue
             # Carry the FULL IRI as the option id (``table``) so a later
             # clarification-reply resolution can seed the chosen CLASS back into
@@ -458,6 +820,33 @@ def _make_phase3(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
             # remains the downstream backstop against hallucinated schema.
             if not ok and judge_missing:
                 slc = ctx.slice_text or ""
+                # Fabricated-namespace filter (deterministic): the judge sometimes
+                # invents IRIs in a foreign namespace it could never have read from
+                # the slice (verified: `https://example.org/ontology/HoldingPayout/
+                # payout_frequency` for gt-04 — example.org appears nowhere in the
+                # layer, and the local names don't exist either). Such IRIs can NEVER
+                # be fetched, so they only make the slice loop to a false degrade.
+                # Drop any missing IRI whose namespace is neither the layer's own
+                # ontology base nor a known system namespace; if the judge named ONLY
+                # such fabricated IRIs, treat it as a false negative and proceed.
+                ontology_base = _slice_ontology_base(slc)
+                foreign = [m for m in judge_missing
+                           if _is_foreign_namespace(m, ontology_base)]
+                real_missing = [m for m in judge_missing if m not in foreign]
+                if foreign:
+                    logger.info("phase3.judge_missing_foreign round=%d dropped=%s "
+                                "(namespace not in ontology base %r nor system ns)",
+                                rounds, foreign, ontology_base)
+                if foreign and not real_missing:
+                    logger.info("phase3.override: judge named ONLY %d fabricated-"
+                                "namespace IRI(s) — all unfetchable hallucinations; "
+                                "trusting slice, proceeding to Phase 4.", len(foreign))
+                    ok = True
+                    round_trace[-1]["overrodeJudgeFabricatedNamespace"] = True
+                # Strip fabricated IRIs from judge_missing so the downstream expand()
+                # never tries to fetch them and the degrade message never shows them.
+                if foreign:
+                    judge_missing = real_missing
                 # Normalized local-name tokens present in the slice — used for the
                 # fuzzy tier so a judge-fabricated mis-spelling (partyTypeTc) still
                 # matches the real property (party_type_code). Slice IRIs look like
@@ -467,18 +856,22 @@ def _make_phase3(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
                     for tok in re.findall(r"<[^>]+>|[A-Za-z_][\w/]*", slc)
                 }
                 slice_tokens.discard("")
+                # All-present check runs on the REAL (non-fabricated) missing list:
+                # if every genuinely-namespaced missing IRI is in fact in the slice,
+                # the judge contradicted the slice — proceed. (When real_missing is
+                # empty because all were fabricated, the branch above already fired.)
                 presence = {
                     m: _iri_present_in_slice(m, slc, slice_tokens)
-                    for m in judge_missing
+                    for m in real_missing
                 }
                 logger.info("phase3.judge_missing_presence round=%d %s "
                             "(True=present in slice → judge false-negative; "
                             "False=genuinely absent)", rounds, presence)
-                if all(presence.values()):
+                if not ok and real_missing and all(presence.values()):
                     logger.info("phase3.override: judge said insufficient but all "
-                                "%d missing IRI(s) are present in the slice — "
+                                "%d real missing IRI(s) are present in the slice — "
                                 "trusting slice, proceeding to Phase 4.",
-                                len(judge_missing))
+                                len(real_missing))
                     ok = True
                     round_trace[-1]["overrodeJudgeFalseNegative"] = True
             if ok:
@@ -644,8 +1037,12 @@ def _make_phase5(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
                         degraded=ctx.degraded, missing=missing,
                         sparql=ctx.sparql_query)
             return
-        # Grounded — run the bounded execution agent.
-        ctx.execution_result = deps.run_execution(ctx.sparql_query) or {}
+        # Grounded — run the bounded execution agent. Pass the ontology slice so the
+        # answer renderer's invoke_agent span carries it: that span now anchors the
+        # SESSION {context}, so the SqlGrounded judge must see the slice ON it (the
+        # separate emit_grounding_span chat span is displaced on a multi-turn session).
+        ctx.execution_result = deps.run_execution(
+            ctx.sparql_query, slice_text=ctx.slice_text) or {}
         # Propagate a Phase-5 execution failure (sparql_translation_failed /
         # sql_execution_failed, set on the execution-result dict by
         # main._run_execution) onto ctx.degraded so invoke()'s response builder

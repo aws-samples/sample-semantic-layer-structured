@@ -1,0 +1,467 @@
+{
+  "eval_k": {
+    "with": 3,
+    "without": 3
+  },
+  "with_source": "ontology_query_kmean_eval_20260701_114640.json",
+  "eval_ids": {
+    "with": "vkg-ontology_curated_layer-3d1fde76",
+    "without": "vkg-without-ontologyrag-287784f6"
+  },
+  "layer_a": {
+    "case_id": "vkg-ontology_curated_layer-3d1fde76",
+    "status": "completed",
+    "reused": true,
+    "source": "notebook-6 k-run mean",
+    "source_file": "ontology_query_kmean_eval_20260701_114640.json",
+    "dataSources": [
+      {
+        "databaseName": "normalized",
+        "tableName": "address",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.address"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "admin_codes",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.admin_codes"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "annuity_detail",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.annuity_detail"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "arrangement_destination",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.arrangement_destination"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "arrangement_source",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.arrangement_source"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "carrier_appointment",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.carrier_appointment"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "coverage",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.coverage"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "coverage_product",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.coverage_product"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "distribution_level",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.distribution_level"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "email_address",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.email_address"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "financial_activity",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.financial_activity"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "financial_statement",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.financial_statement"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "govt_id_info",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.govt_id_info"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_activity",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_activity"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_arrangement",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_arrangement"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_dbg",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_dbg"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_loan",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_loan"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_payout",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_payout"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_projection",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_projection"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_restriction",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_restriction"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "holding_subaccount",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.holding_subaccount"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "invest_product",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.invest_product"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "life_detail",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.life_detail"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "life_participant",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.life_participant"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "loan_activity",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.loan_activity"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "party",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.party"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "party_banking",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.party_banking"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "party_license",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.party_license"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "phone",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.phone"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "policy_loan_summary",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.policy_loan_summary"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "policy_product",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.policy_product"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "producer_agreement",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.producer_agreement"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "reinsurance_info",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.reinsurance_info"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "relation",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.relation"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "rider",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.rider"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "rider_participant",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.rider_participant"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "subaccount_activity",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.subaccount_activity"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "substandard_rating",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.substandard_rating"
+      },
+      {
+        "databaseName": "normalized",
+        "tableName": "type_codes",
+        "catalogId": "s3tablescatalog/semantic-layer-dev-analytics-tables",
+        "dataSource": "AwsDataCatalog",
+        "tableId": "s3tablescatalog/semantic-layer-dev-analytics-tables::normalized.type_codes"
+      }
+    ]
+  },
+  "layer_b": {
+    "case_id": "vkg-without-ontologyrag-287784f6",
+    "status": "completed",
+    "num_tables": 40,
+    "reused": true
+  },
+  "disable_result": {
+    "skipped": true
+  },
+  "restore_result": {
+    "skipped": true
+  },
+  "kmean_a": {
+    "label": "with-ontologyrag",
+    "mean_scores": {
+      "GoalSuccess": 0.71,
+      "FinalAnswerFaithfulness": 0.71,
+      "SqlGrounded": 1.0
+    },
+    "std_scores": {
+      "GoalSuccess": 0.0283,
+      "FinalAnswerFaithfulness": 0.0283,
+      "SqlGrounded": 0.0
+    },
+    "agent_perf_mean": {
+      "avg_wall_clock_s": 40.9433,
+      "input_tokens": 125268.6667,
+      "output_tokens": 20529.0,
+      "total_tokens": 1238375.6667,
+      "agent_total_tokens": 1238375.6667
+    },
+    "per_scenario_goal_mean": {
+      "gt-row-05": 1.0,
+      "gt-row-04": 0.0,
+      "mt-no-spurious-clarify": 1.0,
+      "gt-row-13": 1.0,
+      "gt-row-06": 1.0,
+      "gt-row-14": 1.0,
+      "mt-stable-options": 1.0,
+      "gt-row-07": 0.0,
+      "mt-simulated-party-count": 1.0,
+      "gt-row-08": 1.0,
+      "gt-row-15": 1.0,
+      "mt-parties-clarify": 1.0,
+      "gt-row-03": 0.0,
+      "gt-row-02": 1.0,
+      "gt-row-00": 0.3333,
+      "gt-row-01": 0.0
+    },
+    "eval_id": "vkg-ontology_curated_layer-3d1fde76",
+    "eval_k": 3,
+    "source_file": "ontology_query_kmean_eval_20260701_114640.json"
+  },
+  "kmean_b": {
+    "label": "without-ontologyrag",
+    "eval_id": "vkg-without-ontologyrag-287784f6",
+    "eval_k": 3,
+    "mean_scores": {
+      "GoalSuccess": 0.75,
+      "FinalAnswerFaithfulness": 0.73,
+      "SqlGrounded": 1.0
+    },
+    "std_scores": {
+      "GoalSuccess": 0.0,
+      "FinalAnswerFaithfulness": 0.0283,
+      "SqlGrounded": 0.0
+    },
+    "agent_perf_mean": {
+      "avg_wall_clock_s": 30.6133,
+      "agent_total_tokens": 1353553.0
+    },
+    "per_run_scores": [
+      {
+        "batch_id": "cmp_without_ontologyrag_cf0a0826-e3d7864153",
+        "status": "COMPLETED",
+        "scores": {
+          "FinalAnswerFaithfulness": 0.69,
+          "SqlGrounded": 1.0,
+          "GoalSuccess": 0.75
+        },
+        "agent_perf": {
+          "rows": 16,
+          "turns": 19,
+          "avg_wall_clock_s": 31.43,
+          "agent_total_tokens": 1428400
+        }
+      },
+      {
+        "batch_id": "cmp_without_ontologyrag_1ace2f17-8a16dc508b",
+        "status": "COMPLETED",
+        "scores": {
+          "FinalAnswerFaithfulness": 0.75,
+          "SqlGrounded": 1.0,
+          "GoalSuccess": 0.75
+        },
+        "agent_perf": {
+          "rows": 16,
+          "turns": 19,
+          "avg_wall_clock_s": 24.66,
+          "agent_total_tokens": 1252986
+        }
+      },
+      {
+        "batch_id": "cmp_without_ontologyrag_ef4f59e0-e927685073",
+        "status": "COMPLETED",
+        "scores": {
+          "FinalAnswerFaithfulness": 0.75,
+          "SqlGrounded": 1.0,
+          "GoalSuccess": 0.75
+        },
+        "agent_perf": {
+          "rows": 16,
+          "turns": 19,
+          "avg_wall_clock_s": 35.75,
+          "agent_total_tokens": 1379273
+        }
+      }
+    ],
+    "batch_ids": [
+      "cmp_without_ontologyrag_cf0a0826-e3d7864153",
+      "cmp_without_ontologyrag_1ace2f17-8a16dc508b",
+      "cmp_without_ontologyrag_ef4f59e0-e927685073"
+    ],
+    "per_scenario_goal_mean": {
+      "mt-simulated-party-count": 1.0,
+      "gt-row-14": 1.0,
+      "gt-row-03": 0.0,
+      "gt-row-00": 1.0,
+      "gt-row-15": 1.0,
+      "gt-row-07": 0.0,
+      "mt-no-spurious-clarify": 1.0,
+      "gt-row-02": 1.0,
+      "gt-row-06": 1.0,
+      "gt-row-08": 1.0,
+      "mt-parties-clarify": 1.0,
+      "mt-stable-options": 1.0,
+      "gt-row-13": 1.0,
+      "gt-row-05": 1.0,
+      "gt-row-04": 0.0,
+      "gt-row-01": 0.0
+    }
+  },
+  "comparison": [
+    {
+      "arm": "with-ontologyrag",
+      "eval_k": 3,
+      "GoalSuccess": 0.71,
+      "FinalAnswerFaithfulness": 0.71,
+      "SqlGrounded": 1.0,
+      "avg_latency_s": 40.9433,
+      "agent_total_tokens": 1238375.6667
+    },
+    {
+      "arm": "without-ontologyrag",
+      "eval_k": 3,
+      "GoalSuccess": 0.75,
+      "FinalAnswerFaithfulness": 0.73,
+      "SqlGrounded": 1.0,
+      "avg_latency_s": 30.6133,
+      "agent_total_tokens": 1353553.0
+    }
+  ],
+  "custom_evaluators": {
+    "GoalSuccess": "GoalSuccess_89a6f14b-JYxpowHZR6",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_89a6f14b-KblMt56H3m",
+    "SqlGrounded": "SqlGrounded_89a6f14b-HTHdFo3MsI"
+  }
+}

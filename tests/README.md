@@ -19,6 +19,7 @@ tests/
 │   ├── test_shared_*.py                           # shared building blocks (chat sessions, embedding, guardrails, knn)
 │   ├── test_streaming_runner.py / test_query_*_chat_stream.py  # AG-UI streaming chat
 │   ├── test_obo_middleware.py / test_identity_service.py  # gated OBO identity exchange
+│   ├── test_eval_judges.py                         # custom SESSION LLM-as-Judge factory (GoalSuccess / FAF / SqlGrounded)
 │   └── …                                          # REST API services, memory hooks, eval, NER, etc.
 │
 └── integration/
@@ -47,7 +48,7 @@ tests/eval/                                        # Adversarial red-team suite 
 
 **Test Counts** (Python, this directory):
 
-- Unit tests: ~563 tests across 92 files (`tests/unit/`)
+- Unit tests: ~824 tests across 110 files (`tests/unit/`)
 - Integration tests: 16 tests across 5 files (`tests/integration/`)
 
 > The frontend (`frontend/src/**/__tests__`, Jest) and CDK (`cdk/**/*.test.ts`, Jest) suites
@@ -74,12 +75,32 @@ This conftest is loaded automatically by pytest for all tests under `tests/unit/
 
 ### Running Unit Tests
 
+> **Setup:** install runtime + dev deps once —
+> `pip install -r agents/requirements.txt -r requirements-dev.txt`
+> (`requirements-dev.txt` provides `pytest` + `pytest-cov`; `agents/requirements.txt`
+> provides the runtime imports — boto3, pydantic, sqlglot, networkx, … — that
+> `conftest.py` does _not_ stub). The repo root is on `sys.path` via
+> `[tool.pytest.ini_options] pythonpath = ["."]` in `pyproject.toml`, so the bare
+> `pytest` command resolves `import agents...` without needing `python -m pytest`.
+
 **All unit tests via pytest (recommended):**
 
 ```bash
 cd <repo-root>
 pytest tests/unit/ -v
 ```
+
+**With coverage (matches the CI gate):**
+
+```bash
+# A few tests shell out to `cdk synth`, which needs the gitignored ontology-docs
+# asset dir to exist; an empty placeholder is enough for the synth to resolve.
+mkdir -p data/ontology-docs
+pytest tests/unit/ --cov --cov-report=term-missing --cov-fail-under=66
+```
+
+Current measured coverage is **~67%** (floor enforced at 66 and ratcheting toward
+80 — see `docs/plans/2026-06-19-test-coverage-improvements.md`).
 
 **Individual test files via pytest:**
 
@@ -182,6 +203,18 @@ dedicated `test_tier2_*` / `test_rag_*` files):
 - ✅ `execute_sql_query` tool signature (the sole Phase-5 model tool)
 - ✅ `invoke` entrypoint signature
 
+#### Shared Eval Judges
+
+**`test_eval_judges.py`** — 7 tests
+
+- ✅ Factory returns `[GoalSuccess, FinalAnswerFaithfulness, SqlGrounded]` ids in canonical order
+- ✅ Every judge is SESSION-level, binary-scaled, on `JUDGE_MODEL_ID`
+- ✅ RAG and VKG families register distinct prompt text (not silently the same)
+- ✅ Registered instructions match the exported prompt constants (no transform)
+- ✅ No SESSION-level judge references TRACE-only placeholders (e.g. `{expected_response}`)
+- ✅ Unknown family raises `ValueError` before creating any evaluators
+- ✅ Blank `name_suffix` auto-generates unique names across two calls
+
 #### REST API Services
 
 - `test_metadata_api.py` — 4 tests: API endpoint schemas
@@ -190,8 +223,8 @@ dedicated `test_tier2_*` / `test_rag_*` files):
 - `test_ontology_service_versioning.py` — 7 tests: ontology versioning & retrieval
 - `test_ontology_assembly_path.py` — 1 test: S3 metadata path storage
 
-> The unit suite has grown well beyond the agent-level files itemized above (~563 tests across
-> 92 files). The Tier 1/Tier 2 cascade, MCP Lambdas, streaming chat, shared building blocks, and
+> The unit suite has grown well beyond the agent-level files itemized above (~824 tests across
+> 110 files). The Tier 1/Tier 2 cascade, MCP Lambdas, streaming chat, shared building blocks, and
 > the remaining REST API services each have their own `test_*.py` — run `pytest tests/unit/ -v`
 > for the full list.
 >
@@ -334,37 +367,51 @@ Tests use the default AWS credential chain:
 
 ---
 
-## CI/CD Integration
+## Automated enforcement
 
-### Unit Tests in CI/CD
+Tests run automatically at three points. **GitLab CI is the only authoritative
+gate** — the git hook and the deploy hook are local conveniences and are bypassable.
 
-```yaml
-- name: Install dependencies
-  run: pip install -r agents/requirements.txt
+### 1. GitLab CI — every push (`.gitlab-ci.yml`)
 
-- name: Run unit tests
-  run: pytest tests/unit/ -v
+GitLab runs the pipeline on every push to `origin`. The `test` stage has three
+hermetic jobs: `python-unit` (with coverage gate), `frontend` (Jest), `cdk` (Jest).
+Integration tests are excluded (they need live AWS — run them manually, below).
+
+To make a red pipeline **block merges**: GitLab → Settings → Merge requests →
+enable _"Pipelines must succeed"_, and protect the default branch.
+
+The coverage floor (`COV_FLOOR` in `.gitlab-ci.yml`, mirrored by `fail_under` in
+`pyproject.toml`) starts at **66** and ratchets toward 80.
+
+### 2. Local `pre-push` git hook (opt-in)
+
+Runs the unit suite before a push leaves your machine. Enable once per clone:
+
+```bash
+git config core.hooksPath .githooks
 ```
 
-### Integration Tests in CI/CD
+Bypass intentionally with `git push --no-verify`. Not auto-installed — this is
+feedback, not enforcement; CI is the gate.
 
-```yaml
-- name: Configure AWS credentials
-  uses: aws-actions/configure-aws-credentials@v1
-  with:
-    role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-    aws-region: us-east-1
+### 3. `cdk deploy` gate — npm `predeploy`
 
-- name: Run integration tests
-  env:
-    TEST_DATABASE: ${{ secrets.TEST_DATABASE }}
-    TEST_TABLE: ${{ secrets.TEST_TABLE }}
-    TEST_CATALOG_ID: ${{ secrets.TEST_CATALOG_ID }}
-    NEPTUNE_GATEWAY_URL: ${{ secrets.NEPTUNE_GATEWAY_URL }}
-    ARTIFACTS_BUCKET: ${{ secrets.ARTIFACTS_BUCKET }}
-  run: |
-    python tests/integration/test_query_agent_integration.py
-    python tests/integration/test_ontology_agent_integration.py
+`npm run deploy` (in `cdk/`) runs `predeploy` first: `tsc` build + CDK Jest +
+the Python unit suite, aborting the deploy on any failure. **Standardize on
+`npm run deploy`** — a bare `npx cdk deploy` skips the gate (npm lifecycle only
+fires for `npm run`).
+
+### Integration tests (manual, env-gated)
+
+These need live AWS and are not run in CI:
+
+```bash
+export AWS_REGION=us-east-1
+export TEST_DATABASE=... TEST_TABLE=... TEST_CATALOG_ID=...
+export NEPTUNE_GATEWAY_URL=... ARTIFACTS_BUCKET=...
+python tests/integration/test_query_agent_integration.py
+python tests/integration/test_ontology_agent_integration.py
 ```
 
 ---

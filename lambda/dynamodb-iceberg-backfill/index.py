@@ -23,7 +23,7 @@ from decimal import Decimal
 from pyiceberg.catalog import load_catalog
 from pyiceberg.schema import Schema
 from pyiceberg.types import (
-    BooleanType, LongType, DoubleType,
+    BooleanType, DoubleType,
     StringType, BinaryType, NestedField
 )
 

@@ -32,7 +32,6 @@ behaviour, and is wrapped fail-soft so a tracing error can never break a query.
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

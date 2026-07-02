@@ -10,6 +10,13 @@ import json
 import os
 import subprocess
 
+import pytest
+
+# Shells out to `npx cdk synth` — needs Node + cdk/node_modules. Deselected by
+# the python-only CI job (`-m 'not requires_node'`); runs locally / where Node
+# is present. See pyproject.toml [tool.pytest.ini_options] markers.
+pytestmark = pytest.mark.requires_node
+
 _TEMPLATE = '/tmp/cdk-eval-synth/semantic-layer-dev-agentcore-eval.template.json'  # nosemgrep: hardcoded-tmp-path — CDK -o output dir; not user-controlled input
 
 

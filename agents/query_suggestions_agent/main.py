@@ -129,8 +129,12 @@ def retrieve_kb_context(user_query: str) -> str:
 def create_suggestions_agent() -> Agent:
     model = BedrockModel(
         model_id=QUERY_MODEL_ID,
-        temperature=0.3,
-        max_tokens=2000,
+        # `temperature` omitted — Sonnet 5 has adaptive thinking ON by default and
+        # Bedrock rejects temperature/top_p/top_k when thinking is active
+        # (ValidationException on ConverseStream, same as Opus 4.8). max_tokens
+        # raised from 2000 to leave headroom for adaptive thinking tokens, which
+        # share the OUTPUT budget.
+        max_tokens=4000,
         boto_session=get_boto_session(),
     )
     return Agent(
@@ -152,8 +156,9 @@ def _synthesize_advisory(prompt: str) -> str:
     """
     model = BedrockModel(
         model_id=QUERY_MODEL_ID,
-        temperature=0.3,
-        max_tokens=2000,
+        # `temperature` omitted — Sonnet 5 adaptive thinking is on by default and
+        # is incompatible with temperature (see create_suggestions_agent).
+        max_tokens=4000,
         boto_session=get_boto_session(),
     )
     # A tool-less Agent is the simplest way to get one prose completion from the

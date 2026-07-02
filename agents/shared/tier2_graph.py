@@ -42,7 +42,13 @@ logger = logging.getLogger(__name__)
 MAX_PHASE3_ROUNDS = 3
 MAX_GROUNDING_ROUNDS = 2
 MAX_NODE_EXECUTIONS = 40
-SLICE_TOKEN_BUDGET = 12000
+# Raised 12000 -> 20000 (2026-06-26): richer per-table/column descriptions from the
+# de-layering enrichment brief (join/derivation/label recipes now live in the layer,
+# not the generator prompt) made a multi-table slice + its bridge tables overflow the
+# old 12000 budget. _fit() then evicted/truncated below what the Phase-3 judge needed
+# and false-rejected EXISTING columns (e.g. party.party_type), degrading answerable
+# questions with phase3_max_rounds. 20000 fits the enriched slice with its bridges.
+SLICE_TOKEN_BUDGET = 20000
 
 
 # ---------------------------------------------------------------------------

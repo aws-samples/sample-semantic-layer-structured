@@ -19,6 +19,7 @@ import OntologyEditor from "../../components/OntologyEditor";
 import LessonsLearnedTab from "../../components/LessonsLearnedTab";
 import FeedbackTab from "../../components/FeedbackTab";
 import GovernedMetricsTab from "../../components/GovernedMetricsTab";
+import MonitoringTab from "../../components/MonitoringTab";
 import GroundTruthDataset from "./GroundTruthDataset";
 import Evaluations from "./Evaluations";
 import { transformGraphData } from "../../utils/graphTransform";
@@ -488,6 +489,21 @@ export default function ViewKnowledgeGraph({ user }) {
                   id: "evaluations",
                   content: id ? (
                     <Evaluations id={id} />
+                  ) : (
+                    <Box
+                      color="text-status-inactive"
+                      padding="l"
+                      textAlign="center"
+                    >
+                      No semantic layer selected
+                    </Box>
+                  ),
+                },
+                {
+                  label: "Monitoring",
+                  id: "monitoring",
+                  content: id ? (
+                    <MonitoringTab ontologyId={id} />
                   ) : (
                     <Box
                       color="text-status-inactive"

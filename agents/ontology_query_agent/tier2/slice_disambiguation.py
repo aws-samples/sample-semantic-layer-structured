@@ -77,6 +77,45 @@ def _term_matches(term: str, local: str) -> bool:
     return local in inflection_variants(term)
 
 
+def _term_names_class(term: str, local: str) -> bool:
+    """True iff ``term`` NAMES the class ``local`` — exact, inflected, OR a
+    name-component / shared stem.
+
+    Broader than :func:`_term_matches` (which is inflection-only) so a question
+    head noun is recognised as an entity reference even when it is only PART of a
+    compound class name, or shares a stem with it:
+      * 'product'  names 'coverageproduct' / 'policyproduct'  (component)
+      * 'hold'     names 'holding'                            (stem prefix)
+      * 'party'    names 'party'                              (exact, via _term_matches)
+    Used ONLY for the head-noun deferral guard — recognising that a colliding
+    predicate term is actually the user naming an entity, not choosing between
+    unrelated attribute owners. Kept conservative: requires a ≥4-char alphabetic
+    overlap so short/generic fragments ('id', 'is') don't spuriously match.
+
+    Args:
+        term: A single question term (already lower-cased by the caller's tokenizer).
+        local: A class local name, lower-cased.
+
+    Returns:
+        True when ``term`` is an entity-naming reference to ``local``.
+    """
+    if _term_matches(term, local):
+        return True
+    t = (term or "").strip().lower()
+    if len(t) < 4:
+        return False
+    # Component match: the term appears as a substring of the (compound) class
+    # name, e.g. 'product' in 'coverageproduct'. Compound ontology class names
+    # are concatenated CamelCase lower-cased here, so substring is the right test.
+    if t in local:
+        return True
+    # Shared-stem match: term is a prefix of the class name or vice versa, after
+    # trimming a trailing inflection (hold ↔ holding). Guards the 'hold'→'holding'
+    # case where neither is a clean substring of an inflected form of the other.
+    stem = t[:-3] if t.endswith("ing") else t
+    return len(stem) >= 4 and (local.startswith(stem) or stem.startswith(local[:4]))
+
+
 def _is_descendant(cls: str, ancestor: str, parents: Dict[str, Set[str]]) -> bool:
     """True iff ``cls`` is a (transitive) subclass of ``ancestor`` per ``parents``."""
     seen: Set[str] = set()
@@ -181,6 +220,18 @@ def find_slice_ambiguities(*, question: str, slice_graph: Any) -> Dict[str, Any]
         # entity class the question's real head noun resolved to.
         if term.lower() in _GENERIC_ATTRS:
             continue
+        # Head-noun deferral: when the term ALSO names (or is a name-component of)
+        # a class in the slice (e.g. 'product' → CoverageProduct/PolicyProduct,
+        # 'hold' → Holding), the user is naming an ENTITY, not choosing between
+        # sibling attribute-bearing classes. A predicate collision on a head-noun
+        # term is not a real user-facing choice — the generator binds the
+        # attribute on the head entity's class. Asking "which interpretation of
+        # 'product'?" is the gt-07 over-clarify. Skip.
+        # NOTE: use _term_names_class (substring/stem aware), NOT _term_matches
+        # (inflection-only) — 'product' is NOT an inflection of 'coverageproduct'
+        # but IS a name-component of it, and 'hold' stems into 'holding'.
+        if any(_term_names_class(term, _local_name(c)) for c in classes):
+            continue
         matches = [{"table": _local_name(c), "database": "", "column": term}
                    for c in sorted(owners)]
         items.append({"term": term, "matches": matches})
@@ -195,13 +246,26 @@ def find_slice_ambiguities(*, question: str, slice_graph: Any) -> Dict[str, Any]
         a, b = anchors[0], anchors[1]
         paths = _simple_paths(undirected, a, b)
         if len(paths) > 1:
-            matches = [
-                {"table": "→".join(_local_name(n) for n in path),
-                 "database": "", "column": ""}
-                for path in paths
-            ]
-            items.append({"term": f"{_local_name(a)}…{_local_name(b)}",
-                          "matches": matches})
+            # Multi-path resolution — NEVER escalate a graph-traversal choice to
+            # the user. The flat-KB metadata agent never surfaces join-path choice
+            # (its SQL generator just picks a path); the VKG agent must match that
+            # behaviour or it spuriously clarifies questions the metadata agent
+            # answers (gt-03 "which interpretation of holding…party?", gt-07).
+            #
+            # Pick the SHORTEST path (fewest hops = the canonical bridge); break a
+            # tie DETERMINISTICALLY by the lexicographically-smallest local-name
+            # sequence. Record it in ``resolved`` so the generator + the Phase-5
+            # grounding gate (which rejects truly wrong joins) own the final
+            # decision. A genuine wrong guess degrades through grounding, not
+            # through an un-actionable "pick a path" prompt.
+            min_len = min(len(p) for p in paths)
+            shortest = sorted(
+                (p for p in paths if len(p) == min_len),
+                key=lambda p: [_local_name(n) for n in p],
+            )
+            resolved[f"{_local_name(a)}…{_local_name(b)}"] = "→".join(
+                _local_name(n) for n in shortest[0]
+            )
         # Exactly one path is unambiguous — nothing to record (the generator
         # will discover the lone path itself); zero paths means the anchors are
         # disconnected, also not a *choice* to surface.
@@ -236,7 +300,10 @@ def _simple_paths(graph: "nx.Graph", a: str, b: str) -> List[List[str]]:
     if a not in graph or b not in graph:
         return []
     try:
-        # Cap path length so a dense slice can't explode the enumeration.
-        return list(nx.all_simple_paths(graph, a, b, cutoff=6))
+        # Cap path length so a dense slice can't explode the enumeration. A
+        # cutoff of 3 keeps only the plausible canonical bridge(s) (A→bridge→B);
+        # distant 4–6-hop detours are never the intended join and only add noise
+        # to the shortest-path / tie ranking in the caller.
+        return list(nx.all_simple_paths(graph, a, b, cutoff=3))
     except (nx.NodeNotFound, nx.NetworkXNoPath):
         return []

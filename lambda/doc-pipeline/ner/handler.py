@@ -99,11 +99,15 @@ def extract_entities(
     if not chunk_text.strip():
         return []
     model_id = model_id or os.environ.get(
-        'NER_MODEL_ID', 'global.anthropic.claude-sonnet-4-6'
+        'NER_MODEL_ID', 'global.anthropic.claude-sonnet-5'
     )
+    # max_tokens raised from 1024: NER_MODEL_ID (Sonnet 5) has adaptive thinking
+    # on by default, and thinking tokens share this OUTPUT budget — a 1024 cap
+    # risks truncating the entity list before it emits. No temperature is set
+    # (thinking is incompatible with temperature/top_p/top_k on Sonnet 5).
     body = {
         'anthropic_version': 'bedrock-2023-05-31',
-        'max_tokens': 1024,
+        'max_tokens': 4096,
         'system': NER_SYSTEM_PROMPT,
         'messages': [{'role': 'user', 'content': chunk_text}],
     }

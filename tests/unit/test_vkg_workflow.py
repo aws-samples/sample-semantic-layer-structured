@@ -87,7 +87,7 @@ def test_happy_path_runs_all_phases_in_order():
         builder=_Builder(_POLICY_SLICE),
         generator=_Gen(f"PREFIX ex: <{EX}> SELECT ?x WHERE "
                        "{ ?x a ex:Policy . ?x ex:hasPremium ?p }"),
-        run_execution=lambda sparql: {"columns": ["x"], "rows": [["1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
                                       "answer": "1 policy", "n_quads": ["q"],
                                       "usage": {"inputTokens": 7,
                                                 "outputTokens": 8,
@@ -129,7 +129,7 @@ def test_grounding_span_emitted_with_slice_and_sql_on_success(monkeypatch):
         builder=_Builder(_POLICY_SLICE),
         generator=_Gen(f"PREFIX ex: <{EX}> SELECT ?x WHERE "
                        "{ ?x a ex:Policy . ?x ex:hasPremium ?p }"),
-        run_execution=lambda sparql: {"columns": ["x"], "rows": [["1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
                                       "answer": "1 policy", "n_quads": [],
                                       "sql": "SELECT x FROM policy"},
     )
@@ -157,7 +157,7 @@ def test_grounding_span_not_emitted_on_degraded_execution(monkeypatch):
         builder=_Builder(_POLICY_SLICE),
         generator=_Gen(f"PREFIX ex: <{EX}> SELECT ?x WHERE "
                        "{ ?x a ex:Policy . ?x ex:hasPremium ?p }"),
-        run_execution=lambda sparql: {"columns": [], "rows": [], "n_quads": [],
+        run_execution=lambda sparql, **_kw: {"columns": [], "rows": [], "n_quads": [],
                                       "degraded": "sql_execution_failed",
                                       "answer": "failed", "sql": "SELECT 1"},
     )
@@ -183,7 +183,7 @@ def test_phase3_insufficient_slice_short_circuits_to_degraded():
             return super().generate(slice_text=slice_text, question=question,
                                     grounding_feedback=grounding_feedback)
 
-    def _exec(sparql):
+    def _exec(sparql, **_kw):
         runs["exec"] += 1
         return {"columns": [], "rows": []}
 
@@ -230,7 +230,7 @@ def test_phase3_overrides_judge_false_negative_when_missing_is_present():
             return super().generate(slice_text=slice_text, question=question,
                                     grounding_feedback=grounding_feedback)
 
-    def _exec(sparql):
+    def _exec(sparql, **_kw):
         runs["exec"] += 1
         return {"columns": ["x"], "rows": [["1"]], "answer": "1", "n_quads": ["q"]}
 
@@ -270,7 +270,7 @@ def test_phase3_override_fuzzy_matches_misspelled_property():
         router=_Router([f"{EX}Party"]),
         builder=_Misspell(slice_ttl),
         generator=_CountingGen("SELECT ?x WHERE { ?x a ex:Party }"),
-        run_execution=lambda sparql: {"columns": ["x"], "rows": [["1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
                                       "answer": "1", "n_quads": ["q"]},
     )
     ctx = tier2_vkg_workflow(question="party types", namespace="ns", deps=deps)
@@ -289,7 +289,7 @@ def test_phase3_genuinely_absent_missing_still_degrades():
         router=_Router([f"{EX}Policy"]),
         builder=_RealGap(_POLICY_SLICE),
         generator=_Gen("SELECT ?x WHERE { ?x a ex:Policy }"),
-        run_execution=lambda sparql: {"columns": [], "rows": []},
+        run_execution=lambda sparql, **_kw: {"columns": [], "rows": []},
     )
     ctx = tier2_vkg_workflow(question="policies", namespace="ns", deps=deps)
     assert ctx.degraded == "phase3_max_rounds"
@@ -320,7 +320,7 @@ def test_phase3_start_and_result_share_round_key():
         builder=_TwoRoundBuilder(_POLICY_SLICE),
         generator=_Gen(f"PREFIX ex: <{EX}> SELECT ?x WHERE "
                        "{ ?x a ex:Policy . ?x ex:hasPremium ?p }"),
-        run_execution=lambda sparql: {"columns": ["x"], "rows": [["1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
                                       "answer": "ok", "n_quads": []},
     )
     tier2_vkg_workflow(question="policies", namespace="ns", deps=deps,
@@ -335,7 +335,7 @@ def test_empty_candidates_routes_to_degraded():
         router=_Router([]),
         builder=_Builder(_POLICY_SLICE),
         generator=_Gen("SELECT 1"),
-        run_execution=lambda sparql: {"rows": []},
+        run_execution=lambda sparql, **_kw: {"rows": []},
     )
     ctx = tier2_vkg_workflow(question="x", namespace="ns", deps=deps)
     assert ctx.degraded == "phase1_empty"
@@ -353,7 +353,7 @@ def test_hallucinated_predicate_regenerates_then_succeeds():
                 else f"PREFIX ex: <{EX}> SELECT ?x WHERE "
                 "{ ?x a ex:Policy . ?x ex:hasNonsense ?p }")
 
-    def run_exec(sparql):
+    def run_exec(sparql, **_kw):
         runs["n"] += 1
         return {"columns": ["x"], "rows": [["1"]], "answer": "ok"}
 
@@ -386,7 +386,7 @@ def test_out_of_slice_predicate_expands_then_succeeds():
             return (_slice_ttl("ex:Policy a rdfs:Class .") if builds["n"] == 1
                     else _POLICY_SLICE)
 
-    def run_exec(sparql):
+    def run_exec(sparql, **_kw):
         runs["n"] += 1
         return {"columns": ["x"], "rows": [["1"]], "answer": "ok"}
 
@@ -409,7 +409,7 @@ def test_grounding_ceiling_degrades_without_executing():
     # ceiling hit → degrade without ever executing.
     runs = {"n": 0}
 
-    def run_exec(sparql):
+    def run_exec(sparql, **_kw):
         runs["n"] += 1
         return {"rows": []}
 
@@ -461,7 +461,7 @@ def test_phase5_execution_degraded_propagates_to_ctx():
         builder=_Builder(_POLICY_SLICE),
         generator=_Gen(f"PREFIX ex: <{EX}> SELECT ?x WHERE "
                        "{ ?x a ex:Policy . ?x ex:hasPremium ?p }"),
-        run_execution=lambda sparql: {"columns": [], "rows": [], "n_quads": [],
+        run_execution=lambda sparql, **_kw: {"columns": [], "rows": [], "n_quads": [],
                                       "degraded": "sql_execution_failed",
                                       "answer": "I ran the query but it failed "
                                                 "to execute.",
@@ -493,7 +493,7 @@ def test_phase2_email_resolves_to_class_not_clarification():
         router=_Router(candidates),
         builder=_Builder(slice_ttl),
         generator=_Gen("SELECT ?x WHERE { ?x a ex:EmailAddress }"),
-        run_execution=lambda sparql: {"columns": ["x"], "rows": [["1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
                                       "answer": "1 row"},
     )
     ctx = tier2_vkg_workflow(question="which parties have email addresses",
@@ -514,7 +514,7 @@ def test_phase2_two_distinct_classes_still_clarifies():
         router=_Router(candidates),
         builder=_Builder(_slice_ttl("ex:Party a rdfs:Class .")),
         generator=_Gen("SELECT ?x WHERE { ?x ?p ?o }"),
-        run_execution=lambda sparql: {"rows": []},
+        run_execution=lambda sparql, **_kw: {"rows": []},
     )
     ctx = tier2_vkg_workflow(question="show email", namespace="ns", deps=deps)
     assert ctx.needs_clarification is not None
@@ -532,7 +532,7 @@ def test_property_collision_clarifies():
         router=_Router([f"{EX}Order", f"{EX}Payment"]),
         builder=_Builder(slice_ttl),
         generator=_Gen("SELECT ?x WHERE { ?x ?p ?o }"),
-        run_execution=lambda sparql: {"rows": []},
+        run_execution=lambda sparql, **_kw: {"rows": []},
     )
     ctx = tier2_vkg_workflow(question="total amount", namespace="ns", deps=deps)
     assert ctx.needs_clarification is not None
@@ -557,7 +557,7 @@ def test_phase2_sibling_classes_collapse_to_base_not_clarification():
         router=_Router(candidates),
         builder=_Builder(_slice_ttl("ex:Holding a rdfs:Class .")),
         generator=_Gen("SELECT ?x WHERE { ?x a ex:Holding }"),
-        run_execution=lambda sparql: {"columns": ["x"], "rows": [["1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
                                       "answer": "1 row"},
     )
     ctx = tier2_vkg_workflow(question="total market value of holdings",
@@ -566,6 +566,101 @@ def test_phase2_sibling_classes_collapse_to_base_not_clarification():
     resolved = {b.get("iri") for b in ctx.disambiguation.values()
                 if isinstance(b, dict)}
     assert base in resolved, ctx.disambiguation
+
+
+def test_phase2_count_question_no_clarify_when_base_class_absent():
+    """Regression (2026-06-30, VKG 0.54→0.44): 'How many parties are there?' on the
+    rebuilt layer spuriously asked 'Which interpretation of parties?' and emitted no
+    SQL. Root cause: Phase-1 KNN surfaced only the sibling classes (PartyBanking,
+    PartyLicense) and NOT the base Party class, so the plural head noun fell to a
+    Tier-2 substring tie with no common base IN the candidate set — the existing
+    base-class-collapse could not fire. The shared-stem-sibling collapse resolves it
+    (plural term → subtype is a non-choice), so a count question answers instead of
+    clarifying. Singular ties (e.g. 'show email' → EmailMessage/EmailCampaign) still
+    clarify — see test_phase2_two_distinct_classes_still_clarifies."""
+    candidates = [
+        f"{EX}PartyBanking",
+        f"{EX}PartyLicense",
+        f"{EX}PartyBanking/party_id",
+        f"{EX}PartyLicense/party_id",
+    ]  # NOTE: base ex:Party deliberately ABSENT from Phase-1 candidates.
+    deps = PhaseDeps(
+        router=_Router(candidates),
+        builder=_Builder(_slice_ttl("ex:PartyBanking a rdfs:Class .")),
+        generator=_Gen("SELECT (COUNT(*) AS ?n) WHERE { ?x a ex:PartyBanking }"),
+        run_execution=lambda sparql, **_kw: {"columns": ["n"], "rows": [["15"]],
+                                             "answer": "15"},
+    )
+    ctx = tier2_vkg_workflow(question="How many parties are there?",
+                             namespace="ns", deps=deps)
+    assert ctx.needs_clarification is None, ctx.needs_clarification
+    resolved = {b.get("iri") for b in ctx.disambiguation.values()
+                if isinstance(b, dict)}
+    # 'parties' collapsed to a sibling class (the top-ranked one), not clarified.
+    assert resolved & set(candidates), ctx.disambiguation
+
+
+def test_phase2_shared_head_classes_collapse_not_clarification():
+    """Regression (nb5 gt-row-07): the head noun 'product' matches two SUFFIX-shared
+    sibling classes (CoverageProduct, PolicyProduct) that have the SAME head
+    ('Product') but NO common prefix — so the base-class (prefix) collapse misses
+    them and Phase 2 spuriously asked 'which interpretation: product?'. Picking
+    Coverage- vs Policy-Product is a join-path detail the generator + grounding gate
+    own (the flat-KB metadata agent resolves it without asking). Phase 2 must
+    resolve to the top-ranked product class, not clarify."""
+    candidates = [
+        f"{EX}CoverageProduct",
+        f"{EX}PolicyProduct",
+        f"{EX}Party",
+    ]
+    deps = PhaseDeps(
+        router=_Router(candidates),
+        builder=_Builder(_slice_ttl("ex:CoverageProduct a rdfs:Class .")),
+        generator=_Gen("SELECT ?x WHERE { ?x a ex:CoverageProduct }"),
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
+                                      "answer": "1 row"},
+    )
+    ctx = tier2_vkg_workflow(question="top 10 parties by holding value including "
+                             "the investment product names",
+                             namespace="ns", deps=deps)
+    assert ctx.needs_clarification is None, ctx.needs_clarification
+    resolved = {b.get("iri") for b in ctx.disambiguation.values()
+                if isinstance(b, dict)}
+    # Resolved to the top-RANKED (first-listed) product class, not clarified.
+    assert f"{EX}CoverageProduct" in resolved, ctx.disambiguation
+
+
+def test_phase2_redundant_stem_fragment_does_not_clarify():
+    """Regression (nb5 gt-row-07, the 'hold' half): the question
+    'top parties by total HOLDING market value … they HOLD' yields BOTH 'holding'
+    (resolves CLEAR to the Holding class) AND the bare verb 'hold'. Left alone,
+    'hold' loosely substring-matches the whole Holding family PLUS unrelated
+    classes like Policyholder (which 'holding' never matches) — so neither the
+    prefix nor the shared-head collapse fires and it spuriously clarifies 'which
+    interpretation of hold?'. Phase 2 must skip the redundant stem fragment because
+    the longer 'holding' already pinned the real entity."""
+    candidates = [
+        f"{EX}Holding",
+        f"{EX}HoldingSubaccount",
+        f"{EX}HoldingPayout",
+        f"{EX}Policyholder",  # substring-matches 'hold' but NOT 'holding'
+        f"{EX}Party",
+    ]
+    deps = PhaseDeps(
+        router=_Router(candidates),
+        builder=_Builder(_slice_ttl("ex:Holding a rdfs:Class .")),
+        generator=_Gen("SELECT ?x WHERE { ?x a ex:Holding }"),
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
+                                      "answer": "1 row"},
+    )
+    ctx = tier2_vkg_workflow(
+        question="top 10 parties by total holding market value they hold",
+        namespace="ns", deps=deps)
+    assert ctx.needs_clarification is None, ctx.needs_clarification
+    # 'holding' resolved CLEAR to Holding; 'hold' was skipped (not clarified).
+    resolved = {b.get("iri") for b in ctx.disambiguation.values()
+                if isinstance(b, dict)}
+    assert f"{EX}Holding" in resolved, ctx.disambiguation
 
 
 def test_phase2_property_only_term_does_not_clarify():
@@ -587,7 +682,7 @@ def test_phase2_property_only_term_does_not_clarify():
         router=_Router(candidates),
         builder=_Builder(_slice_ttl("ex:CoverageProduct a rdfs:Class .")),
         generator=_Gen("SELECT ?n WHERE { ?x a ex:CoverageProduct ; ex:name ?n }"),
-        run_execution=lambda sparql: {"columns": ["n"], "rows": [["P1"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["n"], "rows": [["P1"]],
                                       "answer": "1 row"},
     )
     ctx = tier2_vkg_workflow(question="list the top 10 coverage products by name",
@@ -619,7 +714,7 @@ def test_phase2_generic_label_attr_never_clarifies_even_if_class_matches():
         router=_Router(candidates),
         builder=_Builder(_slice_ttl("ex:Party a rdfs:Class .")),
         generator=_Gen("SELECT ?n WHERE { ?x a ex:Party ; ex:name ?n }"),
-        run_execution=lambda sparql: {"columns": ["n"], "rows": [["X"]],
+        run_execution=lambda sparql, **_kw: {"columns": ["n"], "rows": [["X"]],
                                       "answer": "1 row"},
     )
     ctx = tier2_vkg_workflow(
@@ -629,3 +724,172 @@ def test_phase2_generic_label_attr_never_clarifies_even_if_class_matches():
     # 'name' bound (not escalated); a real entity still resolved.
     binding = ctx.disambiguation.get("name")
     assert binding and binding.get("status") == "CLEAR", ctx.disambiguation
+
+
+def test_phase2_bare_entityless_question_clarifies_first():
+    """Fix 4 (nb5 mt-parties / mt-stable): a bare 'How many are there?' strips to
+    ZERO significant terms, so the agent must ASK which entity to count — offering
+    the candidate CLASSES as options — rather than guessing a class."""
+    candidates = [f"{EX}Party", f"{EX}Coverage", f"{EX}Holding"]
+    deps = PhaseDeps(
+        router=_Router(candidates),
+        builder=_Builder(_slice_ttl("ex:Party a rdfs:Class .")),
+        generator=_Gen("SELECT (COUNT(?x) AS ?n) WHERE { ?x a ex:Party }"),
+        run_execution=lambda sparql, **_kw: {"rows": []},
+    )
+    ctx = tier2_vkg_workflow(question="How many are there?", namespace="ns",
+                             deps=deps)
+    assert ctx.needs_clarification is not None
+    assert ctx.clarification_source == "phase2_no_entity"
+    # The candidate classes are offered as options (so the user can pick one).
+    # _local_name lower-cases the label.
+    labels = {o["label"] for o in ctx.needs_clarification["options"]}
+    assert {"party", "coverage", "holding"} <= labels
+    assert "count or list" in ctx.needs_clarification["clarification_question"].lower()
+
+
+def test_phase2_entityless_question_with_no_candidates_degrades_not_clarifies():
+    """A bare quantity question with NO candidates at all routes to phase1_empty
+    (degraded) BEFORE Phase 2 — the no-entity guard never runs, so there is no
+    spurious clarification."""
+    deps = PhaseDeps(
+        router=_Router([]),  # Phase 1 finds nothing → phase1_empty → degraded
+        builder=_Builder(_slice_ttl("ex:Party a rdfs:Class .")),
+        generator=_Gen("SELECT ?x WHERE { ?x ?p ?o }"),
+        run_execution=lambda sparql, **_kw: {"rows": []},
+    )
+    ctx = tier2_vkg_workflow(question="how many are there?", namespace="ns",
+                             deps=deps)
+    assert ctx.degraded == "phase1_empty"
+    assert ctx.clarification_source != "phase2_no_entity"
+
+
+def test_phase2_no_entity_guard_skips_garbage_non_quantity_question():
+    """A term-less question that is NOT a quantity/existence ask (e.g. a stray
+    token) must NOT force-clarify — it falls through to the normal path so the
+    grounding/degrade machinery handles it (guards the grounding-ceiling probe)."""
+    candidates = [f"{EX}Party"]
+    deps = PhaseDeps(
+        router=_Router(candidates),
+        builder=_Builder(_slice_ttl("ex:Party a rdfs:Class .")),
+        generator=_Gen("SELECT ?x WHERE { ?x a ex:Party }"),
+        run_execution=lambda sparql, **_kw: {"columns": ["x"], "rows": [["1"]],
+                                      "answer": "ok"},
+    )
+    # "the" strips to zero terms but is not a quantity ask → guard must NOT fire.
+    ctx = tier2_vkg_workflow(question="the", namespace="ns", deps=deps)
+    assert ctx.clarification_source != "phase2_no_entity"
+
+
+def test_phase2_question_naming_an_entity_skips_no_entity_guard():
+    """A question that DOES name an entity ('how many parties?') must resolve
+    normally — the no-entity clarify-first must not fire when a term is present."""
+    candidates = [f"{EX}Party"]
+    deps = PhaseDeps(
+        router=_Router(candidates),
+        builder=_Builder(_slice_ttl("ex:Party a rdfs:Class .")),
+        generator=_Gen("SELECT (COUNT(?x) AS ?n) WHERE { ?x a ex:Party }"),
+        run_execution=lambda sparql, **_kw: {"columns": ["n"], "rows": [["15"]],
+                                      "answer": "15 parties"},
+    )
+    ctx = tier2_vkg_workflow(question="how many parties are there?",
+                             namespace="ns", deps=deps)
+    assert ctx.needs_clarification is None, ctx.needs_clarification
+    assert ctx.clarification_source != "phase2_no_entity"
+
+
+# ── P2-2: fabricated-namespace guard ─────────────────────────────────────────
+def test_namespace_helpers_derive_base_and_flag_foreign():
+    from agents.ontology_query_agent.tier2.workflow import (
+        _slice_ontology_base, _is_foreign_namespace, _namespace_of,
+    )
+    # Real slice shape: full-IRI subjects, owl:Class object (CURIE or full IRI).
+    slice_ttl = (
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n"
+        "<http://base/ontology/L/Holding> a owl:Class .\n"
+        "<http://base/ontology/L/Party> a owl:Class .\n"
+        "<http://base/ontology/L/Holding/market_value> a owl:DatatypeProperty .\n"
+    )
+    base = _slice_ontology_base(slice_ttl)
+    assert base == "http://base/ontology/L/"
+    assert _namespace_of("http://base/ontology/L/Holding/market_value") == \
+        "http://base/ontology/L/Holding/"
+    # Fabricated foreign namespace (the gt-04 example.org hallucination).
+    assert _is_foreign_namespace(
+        "https://example.org/ontology/HoldingPayout/payout_frequency", base) is True
+    # Real same-base IRI is NOT foreign.
+    assert _is_foreign_namespace("http://base/ontology/L/Holding/holding_id", base) is False
+    # W3C / vkg system namespaces are NOT foreign.
+    assert _is_foreign_namespace("http://www.w3.org/2000/01/rdf-schema#label", base) is False
+    assert _is_foreign_namespace(
+        "https://semantic-layer.aws/virtual-kg/mapsToColumn", base) is False
+    # No derivable base → nothing is foreign (conservative no-op).
+    assert _is_foreign_namespace("https://example.org/x/y", "") is False
+
+
+def test_phase3_overrides_when_judge_names_only_fabricated_namespace():
+    # gt-04 shape: the judge degrades naming ONLY fabricated-namespace IRIs
+    # (example.org) whose local names aren't in the slice. The fabricated-namespace
+    # guard must recognise them as unfetchable hallucinations and proceed to Phase 4,
+    # not loop to a phase3_max_rounds degrade.
+    from agents.ontology_query_agent.tier2.workflow import tier2_vkg_workflow
+    slice_ttl = (
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n"
+        "<http://base/ontology/L/AnnuityDetail> a owl:Class .\n"
+        "<http://base/ontology/L/AnnuityDetail/holding_id> a owl:DatatypeProperty .\n"
+    )
+    runs = {"gen": 0, "exec": 0}
+
+    class _OnlyFabricated(_Builder):
+        def is_sufficient(self, *, slice_text, question):
+            return False, [
+                "https://example.org/ontology/HoldingPayout/payout_frequency",
+                "https://example.org/ontology/HoldingPayout/payout_amount",
+            ]
+
+    class _CountingGen(_Gen):
+        def generate(self, *, slice_text, question, grounding_feedback=""):
+            runs["gen"] += 1
+            return super().generate(slice_text=slice_text, question=question,
+                                    grounding_feedback=grounding_feedback)
+
+    def _exec(sparql, **_kw):
+        runs["exec"] += 1
+        return {"columns": ["x"], "rows": [["1"]], "answer": "1", "n_quads": ["q"]}
+
+    deps = PhaseDeps(
+        router=_Router(["http://base/ontology/L/AnnuityDetail"]),
+        builder=_OnlyFabricated(slice_ttl),
+        generator=_CountingGen("SELECT ?x WHERE { ?x a <http://base/ontology/L/AnnuityDetail> }"),
+        run_execution=_exec,
+    )
+    ctx = tier2_vkg_workflow(question="payout schedules", namespace="ns", deps=deps)
+    assert ctx.degraded != "phase3_max_rounds", \
+        "all-fabricated-namespace missing must override, not degrade"
+    assert runs["gen"] == 1 and runs["exec"] == 1
+
+
+def test_phase3_does_not_override_genuinely_absent_same_namespace():
+    # A genuinely-absent SAME-namespace IRI must still degrade (guard must not
+    # over-drop). The judge names a real-looking but absent same-base concept.
+    from agents.ontology_query_agent.tier2.workflow import tier2_vkg_workflow
+    slice_ttl = (
+        "@prefix owl: <http://www.w3.org/2002/07/owl#> .\n"
+        "<http://base/ontology/L/Party> a owl:Class .\n"
+    )
+
+    class _RealAbsent(_Builder):
+        def is_sufficient(self, *, slice_text, question):
+            # same base, but this class is NOT in the slice and never fetchable here
+            return False, ["http://base/ontology/L/NonexistentBridgeClass"]
+
+    deps = PhaseDeps(
+        router=_Router(["http://base/ontology/L/Party"]),
+        builder=_RealAbsent(slice_ttl),
+        generator=_Gen("SELECT ?x WHERE { ?x a <http://base/ontology/L/Party> }"),
+        run_execution=lambda sparql, **_kw: {"rows": [], "columns": [], "answer": "0", "n_quads": []},
+    )
+    ctx = tier2_vkg_workflow(question="x related to y", namespace="ns", deps=deps)
+    # genuinely-absent same-namespace IRI → NOT overridden by the fabricated guard
+    assert ctx.degraded == "phase3_max_rounds", \
+        "a real same-namespace absent IRI must still degrade (no over-drop)"

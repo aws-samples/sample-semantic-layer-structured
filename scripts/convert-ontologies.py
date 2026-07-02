@@ -11,12 +11,10 @@ Usage:
 
 import os
 import sys
-import glob
 import logging
 import argparse
 from pathlib import Path
-from typing import Dict, List, Set, Optional
-import json
+from typing import Dict, List, Optional
 
 # rdflib's RDF/XML reader writes a "does not look like a valid URI" warning
 # to stderr for every FIBO file that uses an XML DOCTYPE with <!ENTITY>
@@ -27,7 +25,7 @@ logging.getLogger("rdflib").setLevel(logging.ERROR)
 logging.getLogger("rdflib.term").setLevel(logging.ERROR)
 
 try:
-    from rdflib import BNode, Graph, Namespace, URIRef, Literal
+    from rdflib import BNode, Graph, Namespace, URIRef
     from rdflib.namespace import RDF, RDFS, OWL, SKOS, DCTERMS
 except ImportError:
     print("ERROR: rdflib not installed. Install with: pip install rdflib")

@@ -105,7 +105,7 @@ export class McpServerStack extends Stack {
     });
 
     // The mcp-tools Lambda invokes the JWT-inbound runtimes over HTTPS with an
-    // M2M OAuth Bearer token (NOT SigV4), so it no longer needs
+    // M2M OAuth Bearer token, so it does not need
     // bedrock-agentcore:InvokeAgentRuntime — only read access to the M2M client
     // secret to mint that token. Grant least-privilege Secrets Manager read.
     if (props.m2mClientSecret) {
@@ -146,12 +146,18 @@ export class McpServerStack extends Stack {
       }),
       architecture: lambda.Architecture.ARM_64,
       role: lambdaRole,
-      timeout: Duration.seconds(120),
+      // The query tools now read the runtime's FULL chat SSE stream (chat-shaped
+      // payload so Monitoring captures MCP traffic). That HTTPS read is bounded by
+      // MCP_MAX_WAIT_SECONDS (120); the Lambda timeout must exceed it so the Lambda
+      // doesn't kill the request before the read's own timeout can surface an error.
+      timeout: Duration.seconds(150),
       memorySize: 1024,
       environment: {
         QUERY_RUNTIME_ARN: props.queryRuntimeArn ?? '',
         METADATA_QUERY_RUNTIME_ARN: props.metadataQueryRuntimeArn ?? '',
         SUGGESTIONS_RUNTIME_ARN: props.suggestionsRuntimeArn ?? '',
+        // Full-stream read budget for the chat-SSE query tools (see index.py).
+        MCP_MAX_WAIT_SECONDS: '120',
         GUARDRAIL_IDENTIFIER: props.guardrailId ?? '',
         GUARDRAIL_VERSION: props.guardrailVersion ?? '',
         // OAuth (M2M client_credentials) for invoking JWT-inbound runtimes.

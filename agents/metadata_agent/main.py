@@ -25,7 +25,7 @@ import contextvars
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional, Set
+from typing import Dict, Any, Optional, Set, Tuple
 
 import boto3
 from bedrock_agentcore import BedrockAgentCoreApp
@@ -199,8 +199,6 @@ def get_single_table_schema(
     Returns:
         JSON string containing table schema details
     """
-    import time
-
     logger.info(
         f"get_single_table_schema called: database='{database_name}', "
         f"table='{table_name}', catalog_id='{catalog_id}'"
@@ -510,8 +508,6 @@ def sample_table_data(
     Returns:
         JSON with column names, sample rows, and query metadata
     """
-    import time
-
     session = get_boto_session()
     athena = session.client("athena")
 
@@ -922,6 +918,83 @@ def update_glue_table_metadata(
 # Schema-validation helpers (used by save_metadata_document_to_s3)
 # ===========================================================================
 
+def _ddb_query_coordinate(
+    session: boto3.Session,
+    database_name: str,
+    table_name: str,
+    catalog_id: str,
+) -> Optional[Tuple[str, str, str]]:
+    """Return the QUERY-time coordinate for a DynamoDB-connector-backed table.
+
+    A Glue table is served by the Amazon Athena DynamoDB connector when its
+    ``StorageDescriptor.Location`` is a DynamoDB ARN
+    (``arn:aws:dynamodb:<region>:<acct>:table/<NAME>``). For such tables the
+    BUILD/DESCRIBE coordinate (the Glue catalog/db/table — what callers pass here)
+    is NOT the coordinate a SELECT runs against: the connector exposes the data
+    under catalog ``<catalog_id>`` (the connector catalog, e.g. ``dynamodb_catalog``),
+    database ``default`` (the connector's only database), and the table named by the
+    ARN tail (the REAL DynamoDB table name, usually hyphenated). Recording the Glue
+    coordinate in the KB sidecar makes the query agent emit SQL that fails with
+    ``SCHEMA_NOT_FOUND`` (verified: ``raw-vs-normalized`` GoalSuccess 0.0 root cause).
+
+    Args:
+        session: Active boto3 session.
+        database_name: Glue database the table was described from.
+        table_name: Glue table name.
+        catalog_id: The catalog the table was described under. For a DDB-connector
+            table this is already the connector catalog (e.g. ``dynamodb_catalog``);
+            it is preserved as-is in the returned coordinate.
+
+    Returns:
+        ``(catalog_id, "default", <arn_tail>)`` when the table is DynamoDB-backed,
+        else ``None`` (so non-DDB tables — S3 Tables, plain Glue — are unchanged).
+
+    Raises:
+        ValueError: when the Location IS a DynamoDB ARN but the ``:table/`` tail
+            cannot be parsed — a wrong coordinate is the exact bug being fixed, so
+            we fail loud rather than silently fall back to the Glue name.
+    """
+    try:
+        glue = session.client("glue")
+        get_kwargs: Dict[str, Any] = {"DatabaseName": database_name, "Name": table_name}
+        if catalog_id and catalog_id not in ("AWSDataCatalog", "AwsDataCatalog"):
+            # The DDB connector catalog is a LAMBDA data catalog, not a Glue
+            # CatalogId; passing it to glue.get_table would 400. The crawler that
+            # registered these tables put them in the standard Glue catalog under
+            # database_name, so describe them there (no CatalogId).
+            get_kwargs.pop("CatalogId", None)
+        tbl = glue.get_table(**get_kwargs)["Table"]
+        location = tbl.get("StorageDescriptor", {}).get("Location", "") or ""
+    except Exception as e:  # noqa: BLE001 — a Glue miss must not block the save
+        logger.warning(
+            "Could not read Glue Location for %s.%s (skip DDB-coordinate "
+            "derivation): %s", database_name, table_name, e,
+        )
+        return None
+
+    # Only a real string Location can be a DDB ARN. A non-str (e.g. a test
+    # MagicMock, or a missing field) is never a DDB-connector table — guard
+    # explicitly so a mock's truthy ``.startswith`` can't mis-trigger derivation.
+    if not isinstance(location, str) or not location.startswith("arn:aws:dynamodb:"):
+        return None  # not a DDB-connector table — leave the coordinate unchanged
+
+    # arn:aws:dynamodb:<region>:<acct>:table/<NAME>  →  <NAME>
+    marker = ":table/"
+    idx = location.find(marker)
+    if idx == -1:
+        raise ValueError(
+            f"DynamoDB Location ARN for {database_name}.{table_name} has no "
+            f"':table/' segment: {location!r} — cannot derive the query coordinate."
+        )
+    ddb_table = location[idx + len(marker):].strip()
+    if not ddb_table:
+        raise ValueError(
+            f"DynamoDB Location ARN for {database_name}.{table_name} has an empty "
+            f"table name: {location!r}."
+        )
+    return catalog_id, "default", ddb_table
+
+
 def _fetch_real_columns(
     session: boto3.Session,
     database_name: str,
@@ -1141,12 +1214,43 @@ def save_metadata_document_to_s3(
     #
     # Validate the sidecar size BEFORE writing anything, so a pathological
     # identifier fails loudly without orphaning a .md that has no sidecar.
+    # QUERY-time coordinate: for a DynamoDB-connector-backed table the Glue
+    # build/DESCRIBE coordinate (database_name/table_name above) is NOT what a SELECT
+    # runs against — the connector serves the data at catalog/<default>/<real DDB
+    # table name from the Location ARN>. The query agent reads these sidecar attrs
+    # and runs SQL against them, so the sidecar MUST carry the query coordinate or
+    # every query fails SCHEMA_NOT_FOUND. Non-DDB tables return None → unchanged.
+    q_database, q_table, q_catalog = database_name, table_name, (catalog_id or 'AWSDataCatalog')
+    ddb_coord = _ddb_query_coordinate(session, database_name, table_name, catalog_id)
+    if ddb_coord is not None:
+        q_catalog, q_database, q_table = ddb_coord
+        logger.info(
+            "DynamoDB-connector table %s.%s: sidecar query coordinate set to "
+            "catalog=%s database=%s table=%s (Glue coordinate %s.%s kept for storage key)",
+            database_name, table_name, q_catalog, q_database, q_table,
+            database_name, table_name,
+        )
+        # The markdown body the LLM authored references the table by its GLUE name
+        # (the `# header`, the `## Common Query Patterns` example SQL, join `sql`),
+        # and the query agent COPIES that name into FROM. Rewrite the Glue table
+        # name → the connector table name so the doc is consistent with the
+        # corrected sidecar coordinate. The connector name is usually HYPHENATED
+        # (e.g. semantic-layer-dev-parties), which is INVALID as a bare SQL
+        # identifier (Athena: "mismatched input '-'"), so we substitute the
+        # DOUBLE-QUOTED form — valid in every SQL position and harmless in prose.
+        # Whole-token match (word boundaries) so we never touch a longer identifier.
+        if q_table != table_name:
+            quoted = f'"{q_table}"'
+            metadata_content = re.sub(
+                rf'\b{re.escape(table_name)}\b', quoted, metadata_content,
+            )
+
     attrs: Dict[str, str] = {
         'semantic_layer_id': semantic_layer_id,
         'semantic_layer_version': semantic_layer_version,
-        'database_name': database_name,
-        'table_name': table_name,
-        'catalog_id': catalog_id or 'AWSDataCatalog',
+        'database_name': q_database,
+        'table_name': q_table,
+        'catalog_id': q_catalog,
     }
     sidecar_body = json.dumps({'metadataAttributes': attrs}).encode('utf-8')
     if len(sidecar_body) > _KB_METADATA_MAX_BYTES:

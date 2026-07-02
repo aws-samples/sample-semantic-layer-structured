@@ -75,13 +75,54 @@ public class ObdaMappingGenerator {
             // to mapped properties and returns them in sorted order, keeping the
             // property-triple order within an entry stable.
             final List<String> propertyTriples = new ArrayList<>();
+            // Computed source columns for prefix-transform FKs (see below): name → SQL expr.
+            final Map<String, String> computedColumns = new java.util.LinkedHashMap<>();
             for (final String propIri : OntologyMappings.sortedPropertyIrisForClass(ontologyJson, classIri)) {
                 final String column = OntologyMappings.columnFor(ontologyJson, propIri);
                 final String bareColumn = OntologyMappings.bareColumn(column);
-                propertyTriples.add("<" + propIri + "> {" + bareColumn + "}");
+                // An owl:ObjectProperty is an FK relationship: its object must be an
+                // IRI that matches the TARGET class's subject template
+                // (<TargetClassIri/{fkColumn}>), NOT a bare literal {fkColumn}. With a
+                // literal object, a SPARQL join like `?cov hasHolding ?h . ?h a Holding`
+                // cannot unify ?h (a string) with Holding's IRI subjects, so Ontop
+                // reformulates to EMPTY (no NativeNode) — the gt-03 failure. Emitting
+                // the FK as the target's subject-IRI template makes the join resolve:
+                // the FK column value templates into the same IRI shape the target
+                // class's subject uses, so Ontop generates the underlying FK SQL join.
+                final String rangeClassIri =
+                    OntologyMappings.isObjectProperty(ontologyJson, propIri)
+                        ? OntologyMappings.rangeFor(ontologyJson, propIri)
+                        : null;
+                if (rangeClassIri != null && !rangeClassIri.isBlank()) {
+                    // FK key-prefix transform: when the bridge/child FK stores the id
+                    // UNPREFIXED but the target PK is PREFIXED (coverage.party_id
+                    // 'PARTY000042' vs party.party_id 'PARTY#PARTY000042'), the comment
+                    // documents CONCAT('PARTY#', fk). Ontop matches FK templates to the
+                    // target SUBJECT template STRUCTURALLY (same column expression), so
+                    // baking the prefix into the template literal alone is NOT enough —
+                    // it must be a COMPUTED SOURCE COLUMN whose values already equal the
+                    // target PK, referenced by a template structurally identical to the
+                    // target's subject. We add `CONCAT('PARTY#', fk) AS fk__ref` to the
+                    // source SQL and template the FK as <Target/{fk__ref}>. Prefix VALUE
+                    // is read from the comment (layer-agnostic). No prefix → plain column.
+                    final String prefix = OntologyMappings.concatPrefixFor(ontologyJson, propIri);
+                    if (!prefix.isEmpty()) {
+                        final String ref = bareColumn + "__ref";
+                        computedColumns.put(ref,
+                            "CONCAT('" + prefix + "', " + bareColumn + ") AS " + ref);
+                        propertyTriples.add(
+                            "<" + propIri + "> <" + rangeClassIri + "/{" + ref + "}>");
+                    } else {
+                        propertyTriples.add(
+                            "<" + propIri + "> <" + rangeClassIri + "/{" + bareColumn + "}>");
+                    }
+                } else {
+                    propertyTriples.add("<" + propIri + "> {" + bareColumn + "}");
+                }
             }
 
-            entries.add(buildEntry(classIri, table, subjectColumn, propertyTriples));
+            entries.add(buildEntry(classIri, table, subjectColumn, propertyTriples,
+                                   computedColumns));
         }
 
         return wrapCollection(entries);
@@ -105,7 +146,8 @@ public class ObdaMappingGenerator {
      *         and a {@code target} line.
      */
     private String buildEntry(final String classIri, final String table,
-                              final String subjectColumn, final List<String> propertyTriples) {
+                              final String subjectColumn, final List<String> propertyTriples,
+                              final Map<String, String> computedColumns) {
         // Subject template references a REAL mapped column of the relation, so Ontop
         // emits SQL that resolves against the actual Athena table (no synthetic __pk).
         final String subject = "<" + classIri + "/{" + subjectColumn + "}>";
@@ -120,11 +162,20 @@ public class ObdaMappingGenerator {
         }
         target.append(" .");
 
+        // Source SQL: `SELECT *` plus any computed prefix-transform columns (e.g.
+        // `CONCAT('PARTY#', party_id) AS party_id__ref`) so a prefix-transform FK
+        // template can reference a column whose values already equal the target PK —
+        // the structural shape Ontop needs to reformulate the join. With none, it's a
+        // plain `SELECT * FROM table` (unchanged for the common case).
+        final String selectList = computedColumns.isEmpty()
+            ? "*"
+            : "*, " + String.join(", ", computedColumns.values());
+
         // mappingId must be unique within the collection; the class IRI is unique.
         final StringBuilder entry = new StringBuilder();
         entry.append("mappingId\t").append(classIri).append("\n");
         // 2-part source, no catalog prefix.
-        entry.append("source\t\tSELECT * FROM ").append(table).append("\n");
+        entry.append("source\t\tSELECT ").append(selectList).append(" FROM ").append(table).append("\n");
         entry.append("target\t\t").append(target);
         return entry.toString();
     }

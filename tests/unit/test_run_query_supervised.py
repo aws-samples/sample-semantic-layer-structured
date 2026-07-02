@@ -17,10 +17,11 @@ def test_run_query_routes_into_tier2_workflow(monkeypatch):
 
     def fake_tier2_resolve(question, namespace, *, ontology_id="", phase_sink=None,
                            clarification_resolution=None, recall_resolver=None,
-                           conversation_history=None):
+                           conversation_history=None, domain_context=""):
         seen['question'] = question
         seen['namespace'] = namespace
         seen['ontology_id'] = ontology_id
+        seen['domain_context'] = domain_context
         return WorkflowContext(
             question=question, namespace=namespace,
             candidates=["ex:Customer"], sql="SELECT ?c WHERE { ?c a ex:Customer }",
@@ -38,6 +39,8 @@ def test_run_query_routes_into_tier2_workflow(monkeypatch):
 
     assert seen['question'] == 'how many customers?'
     assert seen['namespace'] == 'ns-x'
+    # Fix 2: a domain descriptor (derived from the layer config) flows through.
+    assert 'demo' in seen['domain_context']
     # The ontology id flows to tier2_resolve so the gateway fetch_ontology
     # targets the right named graph.
     assert seen['ontology_id'] == 'ont-1'

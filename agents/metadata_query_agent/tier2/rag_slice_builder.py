@@ -33,6 +33,13 @@ except ImportError:  # container path: agents/ is on PYTHONPATH
     )
 
 
+# How many top-ranked Phase-1 candidates to treat as anchor (target) tables that
+# _fit() must never evict. The answer table is reliably among the top few router
+# hits but not always rank 0 (a party question can rank a party-satellite first),
+# so protect a small head rather than only candidates[0].
+_ANCHOR_TOPN = 3
+
+
 class RagSliceBuilder:
     """Build a JSON slice from KB markdown chunks within a token budget."""
 
@@ -61,6 +68,16 @@ class RagSliceBuilder:
         # Bridge tables discovered in build() — structurally required to join the
         # candidates, so _fit() protects their columns from budget eviction.
         self._bridges: set = set()
+        # Anchor (target) tables — the top-ranked Phase-1 candidates, i.e. the
+        # tables the question is most about (e.g. ``party`` for "top party types").
+        # _fit() never evicts an anchor's columns nor strips its descriptions:
+        # dropping the very table the question targets is what made the judge
+        # false-reject an EXISTING column and degrade with phase3_max_rounds. We
+        # protect the top ``_ANCHOR_TOPN`` candidates (not just #1) because the
+        # answer table is reliably top-ranked but not always rank 0 — a party
+        # question may rank a party-satellite table first. Captured at build()
+        # before expand() widens the candidate set.
+        self._anchors: set = set()
         # Accumulated judge token usage across is_sufficient() calls; Phase 3
         # rolls this into the workflow's running total.
         self.judge_usage = {"inputTokens": 0, "outputTokens": 0, "totalTokens": 0}
@@ -77,6 +94,9 @@ class RagSliceBuilder:
         """
         self._candidates = list(candidates)
         self._namespace = namespace
+        # The top-ranked candidates are the question's anchor/target tables; protect
+        # them from _fit eviction so a verbose slice can never drop the target table.
+        self._anchors = set(self._candidates[:_ANCHOR_TOPN])
         bridges = self.bridge_table_candidates(
             endpoints=self._candidates, namespace=namespace,
         )
@@ -320,21 +340,37 @@ class RagSliceBuilder:
         to go), leaving the judge to correctly reject a slice missing its target
         columns. This rewrites eviction to preserve answerability:
 
-        1. **Strip column descriptions** before dropping any column. Descriptions
-           are the bulk of the token weight; column *names + types* (what the
-           judge and generator actually need) are tiny. This alone usually fits a
-           20-table slice under budget without losing a single column.
+        1. **Strip column descriptions** before dropping any column, EXCEPT the
+           anchor (target) table's — keep the table the question is about fully
+           described so the judge never false-rejects an existing target column.
+           Descriptions are the bulk of the token weight; column *names + types*
+           (what the judge and generator need elsewhere) are tiny. This alone
+           usually fits a 20-table slice under budget without losing a column.
         2. If still over budget, drop columns **least-relevant table first** —
            walking ``self._candidates`` in REVERSE (the router returns them in
-           relevance order, most-relevant first), while never evicting a
-           discovered **bridge** table (structurally required for the join path).
+           relevance order, most-relevant first), while never evicting a discovered
+           **bridge** table (structurally required for the join path) nor the
+           **anchor** (the question's target table).
 
         Joins are always kept (cheap and structurally critical for SQL).
         """
         text = json.dumps(payload)
         if self.tokens(text) <= self.budget:
             return text
-        # Step 1 — drop verbose descriptions, keep every column name/type.
+        # Step 1 — drop verbose descriptions, keep every column name/type. The
+        # anchor tables keep their descriptions (they are the question's target;
+        # losing their semantics is what triggered the phase3_max_rounds false-reject).
+        payload['columns'] = [
+            c if c.get('table_id') in self._anchors
+            else {k: v for k, v in c.items() if k != 'description'}
+            for c in payload['columns']
+        ]
+        text = json.dumps(payload)
+        if self.tokens(text) <= self.budget:
+            return text
+        # Step 1b — if the anchors' own descriptions are what overflow, strip them too
+        # (names/types still protect them from eviction in step 2). Better a terse
+        # anchor than an evicted neighbor the join needs.
         payload['columns'] = [
             {k: v for k, v in c.items() if k != 'description'}
             for c in payload['columns']
@@ -342,11 +378,12 @@ class RagSliceBuilder:
         text = json.dumps(payload)
         if self.tokens(text) <= self.budget:
             return text
-        # Step 2 — evict least-relevant tables' columns first, protecting bridges.
-        # self._candidates is router-relevance order (most relevant first), so
-        # reverse it; a bridge is never dropped even if it ranks low.
+        # Step 2 — evict least-relevant tables' columns first, protecting bridges AND
+        # the anchors. self._candidates is router-relevance order (most relevant
+        # first), so reverse it; a bridge/anchor is never dropped even if low-ranked.
         present = [t for t in self._candidates if t in set(payload['tables'])]
-        evict_order = [t for t in reversed(present) if t not in self._bridges]
+        protected = self._bridges | self._anchors
+        evict_order = [t for t in reversed(present) if t not in protected]
         for t in evict_order:
             payload['columns'] = [
                 c for c in payload['columns'] if c.get('table_id') != t

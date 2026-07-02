@@ -2,8 +2,8 @@
 Metadata API Endpoints
 
 Provides REST API endpoints for metadata enrichment and table KB documents.
-Natural-language metadata querying runs over the streaming AG-UI chat path
-(``/query/chat``) — there is no async submit/status/result surface here.
+Natural-language metadata querying runs over the streaming AG-UI chat gateway —
+there is no async submit/status/result surface here.
 """
 
 import logging

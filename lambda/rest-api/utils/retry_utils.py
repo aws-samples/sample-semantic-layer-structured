@@ -10,7 +10,7 @@ import logging
 import asyncio
 import time
 from functools import wraps
-from typing import Callable, TypeVar, Any, Optional
+from typing import Callable, TypeVar, Optional
 from botocore.exceptions import ClientError, EventStreamError
 from botocore.config import Config
 

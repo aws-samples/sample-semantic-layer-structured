@@ -21,7 +21,7 @@ import os
 import re
 import uuid
 from dataclasses import dataclass
-from typing import Iterable, Iterator, List, Optional
+from typing import Iterator, List
 
 logger = logging.getLogger(__name__)
 

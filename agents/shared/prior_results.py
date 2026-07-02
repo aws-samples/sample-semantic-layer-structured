@@ -24,7 +24,7 @@ import contextvars
 import json
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import boto3
 from strands import tool

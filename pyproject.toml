@@ -1,3 +1,33 @@
+[tool.pytest.ini_options]
+# Put the repo root on sys.path so `pytest tests/unit/` (bare shim) resolves
+# `import agents...` / `import lambda...` without needing `python -m pytest`.
+pythonpath = ["."]
+testpaths = ["tests/unit"]
+markers = [
+    # Tests that shell out to `npx cdk synth` — need Node + cdk/node_modules.
+    # The python-only CI job deselects these with `-m 'not requires_node'`;
+    # they run locally and in the `cdk` CI job's environment. Tracked for port
+    # to CDK Jest in the coverage-improvement plan (Phase 5).
+    "requires_node: test invokes the Node/CDK toolchain (npx cdk synth)",
+]
+
+[tool.coverage.run]
+source = ["agents", "lambda"]
+# agents/shared is vendored into lambda/rest-api/agents/shared by `cdk synth`;
+# measure the canonical copy under agents/ only, not the synced duplicate.
+omit = [
+    "*/__pycache__/*",
+    "*/tests/*",
+    "lambda/rest-api/agents/shared/*",
+]
+
+[tool.coverage.report]
+skip_empty = true
+# Ratchet target: start at the current measured floor (66.98% -> 66) to
+# prevent regression, raise toward 80% as the coverage-improvement plan lands.
+# Keep in sync with COV_FLOOR in .gitlab-ci.yml.
+fail_under = 66
+
 [tool.bandit]
 # B311 is suppressed inline in generate_complete_synthetic_data.py via # nosec B311 comments
 # (per_file_ignores is not a valid Bandit key and is silently ignored)

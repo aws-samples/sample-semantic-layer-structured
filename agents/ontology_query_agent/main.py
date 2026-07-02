@@ -9,9 +9,7 @@ NOTE: Neptune access is now via AgentCore Gateway (not direct)
 import os
 import json
 import logging
-import re
 import contextvars
-from datetime import datetime, timezone
 import boto3
 try:
     from bedrock_agentcore.runtime import BedrockAgentCoreApp
@@ -123,7 +121,7 @@ metadata_table = dynamodb.Table(metadata_table_name)
 MAX_TOKENS_PER_REQUEST = 150000
 
 # Per-invocation session marker. The deterministic Tier 2 graph holds its own
-# state on the WorkflowContext, so this no longer gates a tool loop — it is kept
+# state on the WorkflowContext, so this does not gate a tool loop — it exists
 # only so ``reset_agent_state`` has a single place to record the current session.
 _agent_state = {
     'current_session': None,
@@ -149,13 +147,12 @@ _layer_version_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextV
 
 
 def _write_step(step: str) -> None:
-    """No-op step-label hook kept for Tier 1/3 callers.
+    """No-op step-label hook for Tier 1/3 callers.
 
-    The query-results DDB step-tracking path no longer exists; the
-    streaming AG-UI chat surface is the sole UX. Callers still pass
-    diagnostic step labels (``tier1_metric_hit``, ``tier3_fallback_*``)
-    so we keep a no-op shim rather than thread conditional calls through
-    every site.
+    The streaming AG-UI chat surface is the sole UX; there is no query-results
+    DDB step-tracking path. Callers still pass diagnostic step labels
+    (``tier1_metric_hit``, ``tier3_fallback_*``), so this no-op shim absorbs them
+    rather than threading conditional calls through every site.
     """
     return None
 
@@ -464,8 +461,15 @@ def _build_query_model() -> BedrockModel:
     from strands.models.bedrock import CacheConfig
     return BedrockModel(
         model_id=QUERY_MODEL_ID,
-        temperature=0.0,
-        max_tokens=4000,
+        # NOTE: `temperature` is intentionally omitted — Sonnet 5 has adaptive
+        # thinking ON by default, and Bedrock rejects `temperature`/`top_p`/`top_k`
+        # when thinking is active ("Thinking isn't compatible with temperature…"),
+        # surfacing as a ValidationException on ConverseStream. Same class of issue
+        # as Opus 4.8. See docs/plans and the Bedrock extended-thinking guide.
+        # max_tokens is the OUTPUT budget and now also covers adaptive thinking
+        # tokens, so it is raised from 4000 to leave headroom for reasoning +
+        # the generated SPARQL/answer and avoid stop_reason="max_tokens".
+        max_tokens=8000,
         boto_session=get_boto_session(),
         cache_config=CacheConfig(strategy="auto"),
     )
@@ -474,7 +478,13 @@ def _build_query_model() -> BedrockModel:
 _REPAIR_PROMPT = (
     "You fix a single Athena (Trino/Presto SQL) query that FAILED. Fix ONLY the "
     "specific error reported; do NOT change the tables or columns referenced; "
-    "output ONLY the corrected SQL — no markdown fences, no commentary."
+    "output ONLY the corrected SQL — no markdown fences, no commentary.\n"
+    "If the error is a TYPE/aggregation error on a numeric column exposed as text "
+    "(e.g. SUM/AVG/MIN/MAX or a numeric comparison over a VARCHAR column), fix it "
+    "by CASTing the column to a number — CAST(col AS DOUBLE) (or DECIMAL) — inside "
+    "the aggregate/comparison, keeping the same column. Do NOT rewrite the query "
+    "to COUNT non-numeric rows or otherwise change what it computes — preserve the "
+    "original SUM/AVG/etc semantics, only add the numeric cast."
 )
 
 
@@ -538,6 +548,87 @@ def _repair_sql(*, sql: str, error: str, ontology_json: Dict[str, Any],
     return _strip_fences(text)
 
 
+# Phase 5 SPARQL-translation-repair prompt. Ontop (RDF4J) is STRICTER than a
+# plain SPARQL parser, so a query that parses fine can still fail to reformulate
+# into SQL (e.g. a SELECT alias reused in GROUP BY, a computed GROUP BY key, an
+# aggregate that isn't aliased). Ontop does no repair of its own, so — exactly
+# like the Athena SQL-repair path below — the agent owns resilience: feed the
+# Ontop error + the offending SPARQL back to the worker model and ask for a
+# translation-safe rewrite that keeps the SAME slice classes/predicates. The
+# rules restated here mirror the Phase-4 generator's Ontop guidance so the model
+# fixes the structural issue rather than re-emitting it.
+_SPARQL_TRANSLATION_REPAIR_PROMPT = (
+    "You fix a single SPARQL 1.1 SELECT query that PARSED but FAILED to translate "
+    "to SQL via Ontop (RDF4J), which is stricter than a plain parser. Fix ONLY the "
+    "translation error reported, keeping the SAME classes and predicates (the full "
+    "angle-bracketed IRIs) the query already uses — do NOT add or rename schema. "
+    "Apply these Ontop rules:\n"
+    "- GROUP BY / ORDER BY must reference a PLAIN VARIABLE that was bound by a "
+    "triple pattern or by a BIND(... AS ?v) in the WHERE clause — NEVER a bare "
+    "computed expression (WRONG: GROUP BY (SUBSTR(?d,1,7)); RIGHT: "
+    "... BIND(SUBSTR(STR(?d),1,7) AS ?month) ... GROUP BY ?month). A computed "
+    "expression directly in GROUP BY / ORDER BY fails to translate in Ontop; move "
+    "it to a BIND first, then group/order/select that variable.\n"
+    "- Each (expr AS ?alias) alias must be NEW — never a variable already bound by "
+    "a triple pattern.\n"
+    "- Every aggregate (COUNT/SUM/AVG/MIN/MAX) must be aliased, and every "
+    "non-aggregated SELECT variable must appear in GROUP BY (as a plain variable).\n"
+    "- Do NOT compare a variable to a bare boolean in a FILTER "
+    "(`FILTER(?x = false)`); bind the column and use "
+    "`FILTER(LCASE(STR(?x)) IN (\"false\",\"0\",\"f\"))`, or omit the flag filter "
+    "if the question does not ask to exclude deleted/inactive rows.\n"
+    "Output ONLY the corrected SPARQL query text — no markdown fences, no commentary."
+)
+
+
+def _repair_sparql_for_translation(
+    *, sparql: str, error: str, usage_sink: Optional[Dict[str, int]] = None
+) -> str:
+    """Run one bounded LLM repair round on a SPARQL that failed Ontop translation.
+
+    Mirrors ``_repair_sql`` (the Athena query-repair round) for the EARLIER
+    Phase-5 failure mode: the grounded SPARQL parsed and grounded fine but Ontop
+    could not reformulate it into SQL (alias-in-GROUP-BY, computed group key,
+    unaliased aggregate, …). Ontop does no repair, so the agent feeds the error +
+    the offending SPARQL to the worker model for a translation-safe rewrite that
+    keeps the same slice classes/predicates, then the caller re-translates.
+
+    Args:
+        sparql: The SPARQL the gateway rejected (already grounded against the slice).
+        error: The Ontop error text from ``gateway.translate_sql`` ``{"error": …}``.
+        usage_sink: Optional accumulator; this call's Bedrock token usage is folded
+            in so Phase 5 telemetry counts the repaired path (mirrors ``_repair_sql``).
+
+    Returns:
+        The repaired SPARQL with Markdown fences stripped, or ``""`` on a
+        degenerate model response (the caller treats ``""`` as "no repair" and
+        degrades rather than re-translating empty SPARQL).
+    """
+    agent = Agent(
+        model=_build_query_model(),
+        system_prompt=_SPARQL_TRANSLATION_REPAIR_PROMPT,
+        tools=[],
+    )
+    prompt = (
+        f"This SPARQL FAILED to translate to SQL (Ontop) with this error:\n{error}\n\n"
+        f"Failing SPARQL:\n{sparql}\n\n"
+        f"Return ONLY the corrected SPARQL."
+    )
+    result = agent(prompt)
+    if usage_sink is not None:
+        for key, value in _extract_usage_summary(result).items():
+            usage_sink[key] = usage_sink.get(key, 0) + int(value)
+    # Guard the SHAPE parsing (a throttled/blocked/tool-only completion can yield
+    # no text); the Agent CALL raising is caught at the call site. Return "" on a
+    # degenerate response so the caller degrades instead of re-translating empty.
+    try:
+        content = result.message["content"]
+        text = content[0]["text"] if (content and isinstance(content[0].get("text"), str)) else ""
+    except (KeyError, IndexError, TypeError, AttributeError):
+        return ""
+    return _strip_fences(text)
+
+
 # Phase 5 answer-renderer prompt. The VKG Phase 5 is otherwise deterministic
 # (Ontop→Athena), but a deterministic string summary ("returned N rows, see
 # table") (a) under-answers multi-row questions and (b) emits NO model span, so
@@ -568,8 +659,8 @@ _ANSWER_PROMPT = (
 
 
 def _render_answer(*, question: str, columns: List[str], rows: List[list],
-                   over_limit: bool, usage_sink: Optional[Dict[str, int]] = None
-                   ) -> str:
+                   over_limit: bool, usage_sink: Optional[Dict[str, int]] = None,
+                   domain_context: str = "", retrieved_schema: str = "") -> str:
     """Render the user-facing NL answer from a VKG Athena result via a bounded LLM.
 
     Mirrors the metadata agent's Phase-5 execution agent: a real Bedrock call
@@ -589,6 +680,17 @@ def _render_answer(*, question: str, columns: List[str], rows: List[list],
         usage_sink: Optional accumulator; this call's Bedrock token usage is
             folded in so Phase 5 telemetry counts the renderer (real, billed
             tokens).
+        domain_context: One-line business-domain descriptor for THIS layer (Fix
+            2). Prepended to the answer prompt so the renderer names entities in
+            the right domain (e.g. insured "parties", never "political parties").
+            Empty → prompt reads exactly as before.
+        retrieved_schema: The Phase-3 ontology slice (classes/properties with
+            mapsToTable/mapsToColumn) the SPARQL was grounded in. Folded into this
+            renderer's prompt as a ``[retrieved_schema_context]`` block so the
+            renderer's ``invoke_agent`` span carries the slice. Necessary because
+            that span anchors the SESSION ``{context}`` on a multi-turn session,
+            displacing the separate ``emit_grounding_span`` chat span the
+            ``SqlGrounded`` judge otherwise reads. Empty → prompt unchanged.
 
     Returns:
         The NL answer string. Fail-soft: on any error falls back to the
@@ -596,14 +698,24 @@ def _render_answer(*, question: str, columns: List[str], rows: List[list],
         the answer.
     """
     try:
-        agent = Agent(model=_build_query_model(), system_prompt=_ANSWER_PROMPT,
+        system_prompt = (f"{domain_context.strip()}\n{_ANSWER_PROMPT}"
+                         if domain_context.strip() else _ANSWER_PROMPT)
+        agent = Agent(model=_build_query_model(), system_prompt=system_prompt,
                       tools=[])
         # Cap rows in the prompt so a large result never blows the context; the
         # full table is rendered separately by the UI from columns/rows.
         sample = rows[:20]
         trunc_note = (" (result truncated to the first 100 rows)"
                       if over_limit else "")
+        # Carry the ontology slice in the prompt (== this invoke_agent span's input)
+        # so the SqlGrounded judge can verify the executed SQL against it from the
+        # turn-anchoring span (see retrieved_schema docstring). Empty → omitted.
+        schema_block = (
+            f"[retrieved_schema_context]\n{retrieved_schema}\n[/retrieved_schema_context]\n\n"
+            if retrieved_schema else ""
+        )
         prompt = (
+            f"{schema_block}"
             f"[question]\n{question}\n[/question]\n\n"
             f"The query has already run. Result columns: {columns}\n"
             f"Result rows ({len(rows)} total{trunc_note}; up to 20 shown):\n"
@@ -632,30 +744,19 @@ def _render_answer(*, question: str, columns: List[str], rows: List[list],
 
 
 def _build_judge_model() -> BedrockModel:
-    """BedrockModel used by the supervisor judge + decomposer.
+    """BedrockModel used by the supervisor judge + decomposer (Sonnet 5).
 
-    Sonnet 4.6 instead of Opus: the judge only emits a small structured-output
-    decision (~200–500 tokens) per attempt, and we'd rather not double the
-    per-query Opus spend. Lower max_tokens to match the bounded output shape.
+    The judge emits a small structured-output decision (~200–500 tokens) per
+    attempt — we keep it on the same Sonnet model as the worker to bound spend.
     """
     return BedrockModel(
         model_id=JUDGE_MODEL_ID,
-        temperature=0.0,
-        max_tokens=1500,
-        boto_session=get_boto_session(),
-    )
-
-
-def _build_router_model() -> BedrockModel:
-    """BedrockModel for the intent router (Haiku 4.5 — NOT the query model).
-
-    Runs before Tier 1 on every chat turn, so it must be cheap + fast. A bare,
-    short structured-output call: no tools, no cache.
-    """
-    return BedrockModel(
-        model_id=ROUTER_MODEL_ID,
-        temperature=0.0,
-        max_tokens=100,
+        # `temperature` omitted — Sonnet 5 adaptive thinking is on by default and
+        # is incompatible with temperature (see _build_query_model). max_tokens
+        # raised from 1500: adaptive thinking tokens share the OUTPUT budget, so a
+        # 1500 cap risks truncating the structured verdict (stop_reason=max_tokens)
+        # before the judge emits its ~200-500 token decision.
+        max_tokens=4000,
         boto_session=get_boto_session(),
     )
 
@@ -663,15 +764,30 @@ def _build_router_model() -> BedrockModel:
 def _router_classify_fn(question: str) -> Dict[str, Any]:
     """Run the Haiku intent classifier and parse its JSON verdict.
 
+    Calls Bedrock ``converse`` directly via boto3 — NOT through a Strands
+    ``Agent`` — on purpose. A Strands ``Agent`` auto-emits a harvested
+    ``strands.telemetry.tracer`` model-invoke span whose OUTPUT is this router's
+    raw ``{"intent": ...}`` JSON. The AgentCore SESSION eval judges then see that
+    intermediate routing JSON in the conversation ``{context}`` and can mistake
+    it for the assistant's turn (e.g. scoring a correctly-clarified turn as "the
+    agent returned JSON, not a clarifying question"). A bare ``converse`` call is
+    not instrumented as a model span, so the routing JSON never enters telemetry.
+    The router is also cheap/low-latency by design: no tools, no cache.
+
     :param question: The contextualized user question.
     :returns: ``{"intent": str, "confidence": float}``; the conservative
         ``data_query`` default on any parse failure.
     """
-    agent = Agent(model=_build_router_model(), system_prompt=ROUTER_PROMPT)
-    response = agent(question)
+    client = get_boto_session().client("bedrock-runtime")
     try:
-        text = response.message['content'][0]['text'].strip()
-    except (KeyError, IndexError, TypeError):
+        response = client.converse(
+            modelId=ROUTER_MODEL_ID,
+            system=[{"text": ROUTER_PROMPT}],
+            messages=[{"role": "user", "content": [{"text": question}]}],
+            inferenceConfig={"temperature": 0.0, "maxTokens": 100},
+        )
+        text = response["output"]["message"]["content"][0]["text"].strip()
+    except Exception:  # noqa: BLE001 — fail-soft: any router error → conservative data_query
         return {"intent": "data_query", "confidence": 0.0}
     if text.startswith('```'):
         text = text.strip('`')
@@ -716,8 +832,8 @@ def _run_query_with_callback(
     ``(phase, action, payload) -> None`` sink the graph's phase nodes call.
 
     The deterministic graph has no model tool-loop, so the Strands ``callback`` /
-    ``hook`` channels — which only ever fed the removed legacy ReAct agent — are
-    accepted for the ``stream_agent_run`` contract but no longer wired anywhere.
+    ``hook`` channels are accepted for the ``stream_agent_run`` contract but not
+    otherwise wired.
     """
     global _STREAMING_PHASE_SINK
     _STREAMING_PHASE_SINK = phase_sink
@@ -784,9 +900,9 @@ def _degraded_answer(state: str) -> str:
     ``""`` for unknown states so the caller falls through to the executed
     answer/summary.
 
-    ``phase3_max_rounds`` now short-circuits to the degraded terminal (the
-    graph no longer runs Phase 4/5 against a slice the judge rejected), so it
-    carries its own message here rather than passing through to a 0-row answer.
+    ``phase3_max_rounds`` short-circuits to the degraded terminal (the graph does
+    not run Phase 4/5 against a slice the judge rejected), so it carries its own
+    message here rather than passing through to a 0-row answer.
 
     Args:
         state: The degraded-state key set on the workflow context.
@@ -1142,12 +1258,43 @@ class _GatewayTopicRouter:
         return [iri for (_s, iri, _l) in chosen]
 
 
+def _build_domain_context(config: Dict[str, Any]) -> str:
+    """Build a one-line business-domain descriptor from the layer config (Fix 2).
+
+    The query agents otherwise carry NO domain context, so a worker model maps a
+    bare term like "party" to its most common world-knowledge sense (a *political*
+    party). This stitches the layer's own ``useCasesDescription`` /
+    ``dataSourcesDescription`` (the same fields the metadata agent's prompt builder
+    injects as "DOMAIN CONTEXT", and that the admin authors per layer) into a short
+    preamble for the SPARQL generator + answer renderer.
+
+    Args:
+        config: The layer metadata item (``get_latest_metadata_item``). Reads
+            ``useCasesDescription`` / ``dataSourcesDescription`` / ``name``.
+
+    Returns:
+        A single ``"DOMAIN CONTEXT: …"`` line, or ``""`` when the config carries
+        no description (callers then leave their prompts unchanged).
+    """
+    use_cases = (config.get("useCasesDescription") or "").strip()
+    data_sources = (config.get("dataSourcesDescription") or "").strip()
+    name = (config.get("name") or "").strip()
+    parts = [p for p in (name, use_cases, data_sources) if p]
+    if not parts:
+        return ""
+    # Keep it to one compact line — interpret entity terms in THIS domain.
+    return ("DOMAIN CONTEXT: this semantic layer is " + " — ".join(parts) +
+            ". Interpret entity terms (e.g. 'party', 'holding', 'coverage') in "
+            "THIS business domain, never a generic/world-knowledge sense.")
+
+
 def _build_phase_deps(*, gateway: NeptuneGatewayClient,
                       ontology_json: Dict[str, Any],
                       ontology_id: str = "",
                       recall_resolver=None,
                       answer_emitter=None,
-                      question: str = "") -> PhaseDeps:
+                      question: str = "",
+                      domain_context: str = "") -> PhaseDeps:
     """Assemble the gateway-driven Tier 2 VKG phase implementations.
 
     All Neptune I/O is routed through ``gateway`` (the AgentCore Gateway MCP):
@@ -1180,10 +1327,20 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
         judge_fn=judge, token_counter=count_tokens,
         budget=SLICE_TOKEN_BUDGET, n_hops=2,
     )
+    # Domain grounding (Fix 2): a one-line descriptor of THIS layer's business
+    # domain (from its useCases/dataSources config) prepended to the generator
+    # and answer-renderer prompts. Without it the worker model free-associates a
+    # bare term like "party" to its most common world-knowledge sense (a
+    # *political* party), producing "There are 15 political parties" and even an
+    # invented "PoliticalParty" class. Empty string when no description is
+    # configured → the prompts read exactly as before (no behavior change).
+    _domain_preamble = (f"{domain_context.strip()}\n" if domain_context.strip()
+                        else "")
     generator = VkgQueryGenerator(
         agent_factory=lambda: Agent(
             model=_build_query_model(),
             system_prompt=(
+                _domain_preamble +
                 "You write a single SPARQL 1.1 SELECT query that answers the "
                 "user's question using ONLY the classes and predicates present "
                 "in the provided ontology slice (Turtle).\n"
@@ -1199,14 +1356,37 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
                 "For a 'how many' question, use SELECT (COUNT(...) AS ?n).\n"
                 "CRITICAL — Ontop (RDF4J) translates this SPARQL to SQL and is "
                 "STRICTER than a plain parser. To avoid translation failures:\n"
-                "- GROUP BY / ORDER BY must repeat the full EXPRESSION, never a "
-                "SELECT alias. WRONG: SELECT (SUBSTR(?d,1,7) AS ?month) ... GROUP "
-                "BY ?month. RIGHT: ... GROUP BY (SUBSTR(?d,1,7)). Each (expr AS "
-                "?alias) alias must be NEW — never a variable already bound by a "
-                "triple pattern.\n"
+                "- A computed grouping/ordering key must be BOUND with BIND in the "
+                "WHERE clause and then referenced as a PLAIN VARIABLE. WRONG: "
+                "SELECT (SUBSTR(?d,1,7) AS ?month) ... GROUP BY (SUBSTR(?d,1,7)) "
+                "(a computed expression directly in GROUP BY/ORDER BY fails to "
+                "translate). RIGHT: ... { ... BIND(SUBSTR(STR(?d),1,7) AS ?month) } "
+                "GROUP BY ?month ORDER BY ?month — group/order/select the bound "
+                "variable. Each (expr AS ?alias) alias must be NEW — never a "
+                "variable already bound by a triple pattern.\n"
                 "- Every aggregate (COUNT/SUM/AVG/MIN/MAX) must be aliased, and "
-                "every non-aggregated SELECT variable must appear in GROUP BY (as "
-                "its expression).\n"
+                "every non-aggregated SELECT variable must appear in GROUP BY as a "
+                "PLAIN VARIABLE.\n"
+                "- Ontop maps every column to text (VARCHAR). For a numeric "
+                "aggregate, cast inside the function: SUM(xsd:decimal(?v)), "
+                "AVG(xsd:decimal(?v)) — a bare SUM(?v) aggregates text and errors "
+                "or miscounts. COUNT needs no cast.\n"
+                "CRITICAL — lifecycle/state words are NEVER a deletion flag. When "
+                "the question says 'active', 'in-force', 'open', 'closed', "
+                "'pending', 'inactive', 'current' (a LIFECYCLE state), you MUST "
+                "filter the dedicated status property on the entity the question "
+                "names, using the value the slice documents (a property whose "
+                "rdfs:comment or sh:in lists that value). A soft-delete flag "
+                "(is_deleted / deleted) is INDEPENDENT of lifecycle — a row can be "
+                "not-deleted yet Inactive or Closed, so 'not deleted' does NOT mean "
+                "'active'. NEVER substitute a deletion flag for a lifecycle filter, "
+                "and NEVER answer a lifecycle question via a subaccount/child entity "
+                "that lacks the status — bind the class that OWNS the status "
+                "property.\n"
+                "  WRONG (deletion flag as lifecycle): ?h a <…/Holding> ; "
+                "<…/Holding/is_deleted> ?d . FILTER(LCASE(STR(?d)) IN (\"false\"))\n"
+                "  RIGHT (dedicated status on the owning class): ?h a <…/Holding> ; "
+                "<…/Holding/holding_status> ?st . FILTER(?st = \"Active\")\n"
                 "Output ONLY the SPARQL query text — no markdown fences, no "
                 "commentary, no explanation."
             ),
@@ -1214,7 +1394,7 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
         ),
     )
 
-    def _run_execution(sparql: str) -> Dict[str, Any]:
+    def _run_execution(sparql: str, slice_text: str = "") -> Dict[str, Any]:
         """Phase 5: translate the grounded SPARQL→SQL (Ontop) then run on Athena.
 
         The grounded SPARQL is lineage, NOT the executed query: the Neptune graph
@@ -1242,24 +1422,60 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
         # message by ``_degraded_answer`` in ``invoke()`` so the answer reflects
         # the degraded state.
 
-        # translate_sql can RAISE (RuntimeError on a non-JSON gateway body), so
-        # wrap it: a raised error degrades to the same shape as the
-        # {error}/no-sql case rather than crashing the graph node.
-        try:
-            translated = gateway.translate_sql(
-                sparql=sparql, ontology_json=ontology_json,
-                ontology_id=ontology_id,
-            )
-        except Exception as exc:  # noqa: BLE001 — degrade on any translate failure
-            logger.warning("Phase 5 SPARQL→SQL translation raised: %s", exc)
-            translated = {}
-        if translated.get("error") or not translated.get("sql"):
-            logger.warning("Phase 5 SPARQL→SQL translation failed: %s",
-                           translated.get("error") or "no sql returned")
+        # Agent-owned SPARQL→SQL TRANSLATION repair + retry. Ontop (RDF4J) is
+        # stricter than a plain parser: a grounded SPARQL that parsed fine can
+        # still fail to reformulate (alias-in-GROUP-BY, computed group key,
+        # unaliased aggregate). Ontop does no repair, so — exactly like the Athena
+        # SQL-repair loop below — when translation FAILS ({"error"} or no sql) and
+        # attempts remain, feed the Ontop error + offending SPARQL to a bounded LLM
+        # repair and re-translate. Max 2 translate attempts total (1 repair round),
+        # matching the SQL-repair budget. translate_sql can RAISE (non-JSON gateway
+        # body) — treat a raised error as a failed translation (empty dict) so we
+        # degrade rather than crash the graph node.
+        _MAX_TRANSLATE_ATTEMPTS = 2
+        translate_repair_usage: Dict[str, int] = {}
+        translated: Dict[str, Any] = {}
+        for t_attempt in range(1, _MAX_TRANSLATE_ATTEMPTS + 1):
+            try:
+                translated = gateway.translate_sql(
+                    sparql=sparql, ontology_json=ontology_json,
+                    ontology_id=ontology_id,
+                )
+            except Exception as exc:  # noqa: BLE001 — treat as failed translation
+                logger.warning("Phase 5 SPARQL→SQL translation raised: %s", exc)
+                translated = {}
+            if translated.get("sql") and not translated.get("error"):
+                break  # translation succeeded
+            err = translated.get("error") or "no sql returned"
+            logger.warning("Phase 5 SPARQL→SQL translation failed: %s", err)
+            if t_attempt < _MAX_TRANSLATE_ATTEMPTS:
+                logger.info("Phase 5 repairing SPARQL for translation "
+                            "(attempt %d/%d)", t_attempt, _MAX_TRANSLATE_ATTEMPTS)
+                # The repair makes a live Bedrock call that can RAISE; guard it so
+                # a raised repair degrades (break) rather than crashing the node.
+                try:
+                    repaired = _repair_sparql_for_translation(
+                        sparql=sparql, error=str(err),
+                        usage_sink=translate_repair_usage,
+                    )
+                except Exception as exc:  # noqa: BLE001 — degrade on repair failure
+                    logger.warning("Phase 5 SPARQL translation-repair raised: %s", exc)
+                    break
+                # An empty/blank repair (degenerate output) means "no repair" —
+                # don't waste the re-translate on empty SPARQL; degrade instead.
+                if not repaired.strip():
+                    logger.warning("Phase 5 SPARQL translation-repair returned "
+                                   "empty — degrading")
+                    break
+                # Re-translate the repaired SPARQL on the next loop iteration.
+                sparql = repaired
+        if not translated.get("sql") or translated.get("error"):
+            # Report any repair tokens already spent so Phase 5 telemetry counts
+            # the repaired path (mirrors the SQL-repair degrade dicts).
             return {"columns": [], "rows": [], "n_quads": [],
                     "degraded": "sparql_translation_failed",
                     "answer": "I couldn't translate the query to SQL.",
-                    "usage": {}, "sql": ""}
+                    "usage": dict(translate_repair_usage), "sql": ""}
 
         sql = translated["sql"]
         database_name = translated.get("database", "")
@@ -1276,9 +1492,10 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
         # crashing the graph node (the Task 9 contract — preserved here).
         _MAX_ATTEMPTS = 2
         # Accumulates the repair LLM's token usage across attempts so the
-        # returned ``usage`` counts the repaired path (todo item 5). Empty when
-        # no repair runs (the deterministic translate+execute path spends none).
-        repair_usage: Dict[str, int] = {}
+        # returned ``usage`` counts the repaired path (todo item 5). Seeded with
+        # any SPARQL translation-repair tokens already spent above so the success
+        # / answer-render / degrade returns below all count the full Phase-5 cost.
+        repair_usage: Dict[str, int] = dict(translate_repair_usage)
         exec_result: Dict[str, Any] = {}
         for attempt in range(1, _MAX_ATTEMPTS + 1):
             try:
@@ -1343,8 +1560,8 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
         # the real rows into the user-facing NL answer — this is a genuine
         # in-graph model call, so the Strands SDK emits a `chat` span (real model
         # id + usage, NL output) the eval harvester captures for the SESSION
-        # FinalAnswerFaithfulness / SqlGrounded judges (the VKG path previously
-        # had no such span → scored ~0 regardless of correctness). Renderer usage
+        # FinalAnswerFaithfulness / SqlGrounded judges (without this span the VKG
+        # path would score ~0 regardless of correctness). Renderer usage
         # accumulates into the same dict as any repair usage so the returned
         # `usage` reflects all real Phase-5 tokens. Fail-soft: the renderer falls
         # back to the deterministic `_summarize_select` on any error. We only
@@ -1352,6 +1569,7 @@ def _build_phase_deps(*, gateway: NeptuneGatewayClient,
         answer = _render_answer(
             question=question, columns=cols, rows=rows,
             over_limit=over_limit, usage_sink=repair_usage,
+            domain_context=domain_context, retrieved_schema=slice_text,
         )
         return {
             "columns": cols,
@@ -1441,7 +1659,8 @@ def _map_rows_to_nquads(*, columns: List[str], rows: List[list],
 def tier2_resolve(question: str, namespace: str, *, ontology_id: str = "",
                   phase_sink=None, clarification_resolution=None,
                   recall_resolver=None,
-                  conversation_history=None) -> WorkflowContext:
+                  conversation_history=None,
+                  domain_context: str = "") -> WorkflowContext:
     """Run the Tier 2 VKG resolution graph (Phase 1→5) over the gateway.
 
     Opens the Neptune Gateway MCP session, fetches the ontology once (Phase 1
@@ -1490,7 +1709,8 @@ def tier2_resolve(question: str, namespace: str, *, ontology_id: str = "",
                                  ontology_id=ontology_id or namespace,
                                  recall_resolver=recall_resolver,
                                  answer_emitter=answer_emitter,
-                                 question=question)
+                                 question=question,
+                                 domain_context=domain_context)
         ctx = WorkflowContext(question=question, namespace=namespace,
                               phase_sink=phase_sink,
                               clarification_resolution=clarification_resolution)
@@ -1560,7 +1780,7 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
         # is the user's selection. Match it to one offered option; on a single
         # match, re-run the ORIGINAL standalone question (not the bare reply) and
         # carry a resolution that Phase 1 uses to prune the rival candidate IRIs
-        # so Phase 2 no longer re-fires the identical clarification. Fail-soft:
+        # so Phase 2 does not re-fire the identical clarification. Fail-soft:
         # no pending clarification / no unique match → resolution is None and the
         # turn proceeds through normal contextualization. See
         # agents/shared/clarification.py.
@@ -1749,6 +1969,10 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
                 clarification_resolution=clarification_resolution,
                 recall_resolver=recall_resolver,
                 conversation_history=_history,
+                # Fix 2: ground the SPARQL generator + answer renderer in THIS
+                # layer's business domain so a bare "party" isn't rendered as a
+                # political party. Derived from the layer's useCases/dataSources.
+                domain_context=_build_domain_context(config),
             )
         except Exception as e:  # noqa: BLE001
             logger.exception("tier2 workflow error")
@@ -2160,7 +2384,8 @@ def _chat_stream(payload: Dict[str, Any], context=None):
             _chat_sessions.get_or_create(session_id=session_id,
                                          ontology_id=payload.get('ontologyId', ''),
                                          mode=payload.get('mode', 'vkg'),
-                                         user_id=user_id)
+                                         user_id=user_id,
+                                         source=payload.get('source', 'chat'))
         except SessionOwnershipError:
             cw_metrics.emit('chat.session.ownership_violation',
                             dimensions={'agent': 'ontology'})

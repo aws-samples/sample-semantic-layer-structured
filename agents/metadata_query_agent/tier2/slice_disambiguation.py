@@ -19,33 +19,58 @@ frontend shape).
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Optional
+import re
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 try:
-    from agents.shared.disambiguation_common import _query_terms
+    from agents.shared.disambiguation_common import (
+        _query_terms,
+        inflection_variants,
+    )
 except ImportError:  # container path: agents/ is on PYTHONPATH
-    from shared.disambiguation_common import _query_terms  # type: ignore
+    from shared.disambiguation_common import (  # type: ignore
+        _query_terms,
+        inflection_variants,
+    )
 
 
-# Canonical policy-role GROUPS. A question word maps to a group; the group's
-# member tokens are the synonyms we search for as evidence the slice can represent
-# that role. Policyholder and owner are the same concept in insurance, so they
-# share a group. Comparing two DISTINCT groups (e.g. insured vs owner) on the same
-# policy needs a per-policy party-role representation the curated model may lack.
-_ROLE_WORD_TO_GROUP: Dict[str, str] = {
-    "policyholder": "owner",
-    "policyholders": "owner",
-    "owner": "owner",
-    "owners": "owner",
-    "insured": "insured",
-}
+# --- Role vocabulary: DERIVED from the curated slice, not hard-coded -----------
+#
+# The policy-role vocabulary (which words name a role, which words are synonyms
+# of the same role, and the tokens that evidence a role) is derived at runtime by
+# ``_role_vocabulary`` rather than hard-coded, keeping layer-specific knowledge out
+# of the agent. It parses the role enumeration the metadata agent already authors
+# into the curated ``columns[].description`` text (the ``Values: …`` / ``Role values
+# include: …`` convention, with an optional ``(synonyms: …)`` hint).
+#
+# Convention parsed (case-insensitive), e.g.::
+#
+#     Role of the party on the policy. Values: Owner (synonyms: Policyholder),
+#     Insured, Beneficiary. Each value is a distinct policy party-role.
+#
+# yields canonical groups ``{owner, insured, beneficiary}`` and a word→group map
+# ``{owner: owner, policyholder: owner, insured: insured, beneficiary: …}``.
+#
+# When NO slice column declares such an enumeration the vocabulary is empty and
+# the unsupported-relationship guard degrades to a no-op (see
+# ``detect_unsupported_relationship`` / design §4c): absent supporting metadata we
+# do NOT invent a domain-specific fast-fail.
 
-# Member tokens to search for (in column names / descriptions) as evidence that a
-# given role group is representable by the slice.
-_ROLE_GROUP_TOKENS: Dict[str, set] = {
-    "owner": {"owner", "policyholder"},
-    "insured": {"insured"},
-}
+# Matches the enumeration lead-in followed by the value list, capturing the list
+# body up to the sentence terminator. Accepts both the bare ``Values:`` form and
+# the longer ``Role values include:`` form the B1 enrichment authored.
+_ENUM_LEAD_IN = re.compile(
+    r"(?:role\s+values?(?:\s+include)?|values?)\s*:\s*",
+    re.IGNORECASE,
+)
+# Matches one value entry: a label optionally followed by ``(synonyms: a, b)``.
+# The label is everything up to an opening paren or a comma; synonyms are the
+# comma-separated tokens inside the parenthetical.
+_VALUE_ENTRY = re.compile(
+    r"(?P<label>[^,()]+?)\s*"
+    r"(?:\(\s*synonyms?\s*:\s*(?P<synonyms>[^)]*)\))?\s*(?:,|$)",
+    re.IGNORECASE,
+)
 
 
 def _columns_by_name(slice_obj: Dict[str, Any]) -> Dict[str, List[str]]:
@@ -123,60 +148,210 @@ def find_slice_ambiguities(*, question: str, slice_obj: Dict[str, Any]
     return {"ambiguous": bool(items), "items": items, "resolved": resolved}
 
 
-def _representable_role_groups(slice_obj: Dict[str, Any]) -> set:
-    """Return the role GROUPS the slice can demonstrably represent.
+def _normalize_role_word(word: str) -> str:
+    """Collapse a role label/word to a comparison key.
 
-    Evidence is read from column metadata only — NO data scan. A group is
-    representable when some column NAME or DESCRIPTION contains one of the group's
-    member tokens (the metadata-agent writes enumerations as ``Values: Owner,
-    Insured, ...`` and the slice carries that description verbatim, so an Owner/
-    Insured value or an ``owner_party_id`` column both count).
+    Lower-cases, strips surrounding whitespace, and removes internal spaces so a
+    spaced phrase and its closed compound collapse to the SAME key (``policy
+    holder`` → ``policyholder``). This is what lets the derived synonym list cover
+    the spacing variant the old code special-cased with a literal
+    ``if "policy holder" in q``.
+    """
+    return re.sub(r"\s+", "", (word or "").strip().lower())
 
-    A column merely named ``*role*`` is intentionally NOT treated as generic
-    evidence: the curated ``relation.relationship_role`` (Primary/Secondary) is an
-    interpersonal role, not a policy party-role, so trusting any ``role`` column
-    would mask the exact gap this guard targets. Specific token evidence is
-    required.
+
+def _role_vocabulary(
+    slice_obj: Dict[str, Any]
+) -> Tuple[Dict[str, str], Dict[str, Set[str]]]:
+    """Derive the policy-role vocabulary from the slice column descriptions.
+
+    Scans every ``columns[].description`` for the metadata-agent's role
+    enumeration convention (``Values: A (synonyms: B, C), D`` /
+    ``Role values include: …``) and returns the runtime equivalents of the two
+    deleted module constants:
+
+      * ``word_to_group`` — ``{normalized_word: canonical_group}``. Each canonical
+        value is its own group; every synonym maps to that same group. Both forms
+        are normalized via :func:`_normalize_role_word` AND expanded across number
+        inflection (``owners`` → ``owner``) so question words match regardless of
+        plurality or spacing.
+      * ``group_tokens`` — ``{canonical_group: {evidence_tokens}}``. The tokens
+        searched for in column name/description text as evidence that the slice can
+        represent a group; the canonical label plus all its synonyms.
+
+    Returns two empty dicts when NO column declares a role enumeration — the
+    signal :func:`detect_unsupported_relationship` uses to become a no-op (design
+    §4c): absent supporting metadata, do not invent a domain-specific fast-fail.
 
     Args:
         slice_obj: The parsed Phase 3 slice (``tables``/``columns``/``joins``).
 
     Returns:
-        The subset of ``{"owner", "insured"}`` the slice can represent.
+        ``(word_to_group, group_tokens)`` derived from the slice metadata.
     """
-    groups: set = set()
+    word_to_group: Dict[str, str] = {}
+    group_tokens: Dict[str, Set[str]] = {}
+
     for col in slice_obj.get("columns", []) or []:
         if not isinstance(col, dict):
             continue
-        text = f"{(col.get('name') or '')} {(col.get('description') or '')}".lower()
-        for group, tokens in _ROLE_GROUP_TOKENS.items():
-            if any(tok in text for tok in tokens):
+        desc = col.get("description") or ""
+        if not desc:
+            continue
+        lead = _ENUM_LEAD_IN.search(desc)
+        if not lead:
+            continue
+        # Take the enumeration body up to the first sentence terminator after the
+        # lead-in. A trailing ``.`` ends the value list (the convention writes a
+        # clarifying sentence after it, e.g. "Each value is a distinct …").
+        body = desc[lead.end():]
+        body = re.split(r"[.;]", body, maxsplit=1)[0]
+        for entry in _VALUE_ENTRY.finditer(body):
+            label = (entry.group("label") or "").strip()
+            canonical = _normalize_role_word(label)
+            if not canonical:
+                continue
+            synonyms_raw = entry.group("synonyms") or ""
+            synonyms = [s for s in (
+                _normalize_role_word(s) for s in synonyms_raw.split(",")
+            ) if s]
+            # The canonical value names its own group; record the label + every
+            # synonym as a question word mapping to that group, and as an evidence
+            # token for representability.
+            tokens = group_tokens.setdefault(canonical, set())
+            tokens.add(canonical)
+            for word in [canonical, *synonyms]:
+                # Map the word and its number inflections to the group so a plural
+                # question word ("policyholders") still resolves.
+                for variant in inflection_variants(word) | {word}:
+                    word_to_group[variant] = canonical
+                tokens.add(word)
+
+    return word_to_group, group_tokens
+
+
+def _representable_role_groups(
+    slice_obj: Dict[str, Any], group_tokens: Dict[str, Set[str]]
+) -> Set[str]:
+    """Return the role GROUPS the slice can demonstrably represent.
+
+    Evidence is read from column metadata only — NO data scan. A group is
+    representable when some column NAME or DESCRIPTION contains one of the group's
+    evidence tokens (the canonical label or a synonym derived by
+    :func:`_role_vocabulary`). An ``Owner`` enumeration value or an
+    ``owner_party_id`` column both count.
+
+    A column merely named ``*role*`` is intentionally NOT treated as generic
+    evidence: the curated ``relation.relationship_role`` (Primary/Secondary) is an
+    interpersonal role, not a policy party-role, so trusting any ``role`` column
+    would mask the exact gap this guard targets. Specific token evidence — drawn
+    from the slice's own enumeration — is required.
+
+    Args:
+        slice_obj: The parsed Phase 3 slice (``tables``/``columns``/``joins``).
+        group_tokens: ``{group: {evidence_tokens}}`` from :func:`_role_vocabulary`.
+
+    Returns:
+        The subset of ``group_tokens`` keys the slice can represent.
+    """
+    groups: Set[str] = set()
+    for col in slice_obj.get("columns", []) or []:
+        if not isinstance(col, dict):
+            continue
+        raw = f"{(col.get('name') or '')} {(col.get('description') or '')}".lower()
+        # Search BOTH the raw lower-cased text and a space-normalized form so a
+        # space-stripped evidence token ("policyholder") still matches a spaced
+        # column phrase ("policy holder"). Normalizing the haystack can only ADD
+        # matches, biasing toward "representable" — the safe direction, since a
+        # FALSE gap would be a spurious fast-fail (the thing design §4c forbids).
+        norm = _normalize_role_word(raw)
+        for group, tokens in group_tokens.items():
+            if any(tok in raw or tok in norm for tok in tokens):
                 groups.add(group)
     return groups
 
 
+def _referenced_role_groups(
+    question: str, word_to_group: Dict[str, str]
+) -> Set[str]:
+    """Return the distinct role GROUPS ``question`` references via the vocabulary.
+
+    Matches each significant question term to a derived role group (number
+    inflection / spacing already folded into the vocabulary keys), then also scans
+    the space-normalized question for any multi-word synonym the per-term
+    tokenizer would have split (e.g. a synonym authored as ``policy holder``).
+    """
+    q = (question or "").lower()
+    referenced: Set[str] = set()
+    for term in _query_terms(q):
+        group = word_to_group.get(_normalize_role_word(term))
+        if group:
+            referenced.add(group)
+    q_norm = _normalize_role_word(q)
+    for word, group in word_to_group.items():
+        if word in q_norm:
+            referenced.add(group)
+    return referenced
+
+
+def _unsupported_reason(
+    *, missing_groups: List[str], other_groups: List[str], tables: List[str]
+) -> str:
+    """Build the user-facing degrade reason from derived role labels + tables.
+
+    Generated from the missing role label(s), the comparison role(s), and the
+    slice tables scanned — no hard-coded, insurance-specific prose literal.
+
+    Args:
+        missing_groups: Referenced role groups absent from the slice.
+        other_groups: The remaining referenced role group(s) to compare against.
+        tables: The slice table_ids scanned (for the schema-in-scope phrasing).
+    """
+    scope = ", ".join(sorted(tables)) or "in scope"
+    missing_str = ", ".join(missing_groups)
+    against = (
+        f" to compare against the {', '.join(other_groups)} role"
+        if other_groups else ""
+    )
+    return (
+        f"The schema in scope ({scope}) has no column representing the "
+        f"{missing_str} role{against}, so this question can't be answered with "
+        "the current data."
+    )
+
+
 def detect_unsupported_relationship(*, question: str, slice_obj: Dict[str, Any]
                                     ) -> Optional[str]:
-    """Return a user-facing reason when the question needs a per-policy party role
-    the slice cannot represent; otherwise ``None``.
+    """Return a user-facing reason when the question needs a per-entity role the
+    slice cannot represent; otherwise ``None``.
 
     Targets the modeling gap behind session ``e7253c91``: "policies where the
-    insured party is also the policyholder" requires comparing an Insured-role and an
-    Owner/Policyholder-role party on the SAME policy, but the curated ``relation``
-    table is party-to-party with interpersonal roles only (no Insured/Owner) and no
-    other table carries a policy party-role. Phase 4 then invents
-    ``relation.relation_role_code = 'Insured'/'Owner'`` and the grounding gate
-    degrades — a wasted generate + 2 grounding rounds.
+    insured party is also the policyholder" requires comparing two DISTINCT roles
+    (e.g. Insured and Owner/Policyholder) on the SAME parent entity.
+
+    The role vocabulary is **derived from the slice itself** (see
+    :func:`_role_vocabulary`), not hard-coded: which words name a role, which are
+    synonyms, and the evidence tokens all come from the curated
+    ``columns[].description`` enumeration the metadata agent authors.
 
     Deliberately CONSERVATIVE to avoid pre-empting answerable questions. It fires
-    ONLY when BOTH hold:
-      1. the question references **two or more distinct** policy-role GROUPS (the
-         same-policy role COMPARISON case — e.g. insured AND owner/policyholder), AND
-      2. **at least one** referenced group has no representation in the slice (no
-         column name/description naming that role).
+    ONLY when ALL hold:
+      0. some slice column DECLARES a role enumeration (else the vocabulary is
+         empty → return ``None``; absent metadata we do not invent a fast-fail), AND
+      1. the question references **two or more distinct** role GROUPS (the
+         same-entity role COMPARISON case), AND
+      2. **at least one** referenced group has no representation in the slice.
 
-    A single-role question, or full role representation in the slice, returns
-    ``None`` and lets Phase 4 proceed — the grounding gate remains the backstop.
+    NOTE ON REACHABILITY (de-layering consequence): because the vocabulary AND the
+    representability evidence are both derived from the SAME ``columns[].description``
+    enumeration, any role the question can *reference* is necessarily *representable*
+    — so condition (2) cannot hold for a slice whose only role evidence is that
+    enumeration. With B1 deployed, gt-00 ("insured is also the policyholder")
+    therefore proceeds to the ``life_participant`` self-join rather than fast-failing;
+    with no enumeration declared it is a no-op. The (1)+(2) branch below is retained
+    as a CORRECT defensive path that would fire only if a future representability
+    evidence channel (e.g. column-name tokens, or ``businessConcepts``) diverged
+    from the enumeration prose. The grounding gate is the backstop in all cases.
 
     Args:
         question: The natural-language user question.
@@ -185,24 +360,23 @@ def detect_unsupported_relationship(*, question: str, slice_obj: Dict[str, Any]
     Returns:
         A user-facing explanation string when unsupported, else ``None``.
     """
-    q = (question or "").lower()
-    # Distinct role GROUPS the question references. Substring match so
-    # "policyholder" / "owner" / "insured" all count; "policy holder" (spaced) too.
-    referenced = {group for word, group in _ROLE_WORD_TO_GROUP.items() if word in q}
-    if "policy holder" in q:
-        referenced.add("owner")
-    if len(referenced) < 2:
-        return None  # not a same-policy role comparison — let Phase 4 try
+    word_to_group, group_tokens = _role_vocabulary(slice_obj)
+    if not word_to_group:
+        return None  # no role enumeration declared — do not invent a fast-fail
 
-    representable = _representable_role_groups(slice_obj)
-    missing_groups = referenced - representable
+    referenced = _referenced_role_groups(question, word_to_group)
+    if len(referenced) < 2:
+        return None  # not a same-entity role comparison — let Phase 4 try
+
+    representable = _representable_role_groups(slice_obj, group_tokens)
+    missing_groups = sorted(referenced - representable)
     if not missing_groups:
         return None  # every referenced role is representable — do not fast-fail
 
-    return (
-        "This data model records party relationships, but it has no policyholder / "
-        "owner role on a policy to compare against the insured party — so this "
-        "question can't be answered with the current schema."
+    return _unsupported_reason(
+        missing_groups=missing_groups,
+        other_groups=sorted(referenced - set(missing_groups)),
+        tables=list(slice_obj.get("tables", []) or []),
     )
 
 

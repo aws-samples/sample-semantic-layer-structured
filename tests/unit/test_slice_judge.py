@@ -27,10 +27,9 @@ def test_vkg_judge_prompt_has_relationship_connectivity_hardening():
     # The VKG judge must reason about connectivity between related entities and
     # must NOT pass a slice the generator could only satisfy by inventing a
     # predicate/role. BUT it must FIRST try derivation/self-join (the dominant
-    # false-negative, gt-00/gt-01): a role derivable from a sibling property
-    # (coverage_type) or a relationship expressible by self-joining an
-    # association class (life_participant, keyed by participant_sk) is
-    # SUFFICIENT — it must not be rejected as "unmodelled".
+    # false-negative, gt-00/gt-01): a role derivable from a sibling
+    # type/category property, or a relationship expressible by self-joining an
+    # association class, is SUFFICIENT — not rejected as "unmodelled".
     p = _JUDGE_PROMPT.lower()
     # Connectivity / path reasoning between related entities.
     assert "connect" in p or "path" in p
@@ -38,11 +37,36 @@ def test_vkg_judge_prompt_has_relationship_connectivity_hardening():
     assert "invent" in p
     # Concept-level completeness override (each requested value maps to a real IRI).
     assert "completeness" in p
-    # Derivation / self-join acceptance — the gt-00/gt-01 over-rejection fix.
+    # Derivation / self-join acceptance — the gt-00/gt-01 over-rejection fix,
+    # expressed GENERICALLY (no layer-specific nouns; see Fix 3'A de-layering).
     assert "deriv" in p
     assert "self-join" in p
-    assert "coverage_type" in p
-    assert "participant_sk" in p
+    # The generic self-join shape: an association/junction class holding both a
+    # parent-record key and a related-entity key plus a row discriminator.
+    assert "association" in p
+    assert "discriminator" in p
+    assert "parent" in p
+    # An equivalent type/category property supplies a requested role.
+    assert "type/category" in p or "category" in p
+
+
+def test_vkg_judge_prompt_is_layer_agnostic():
+    # Fix 3'A: the SliceSufficiency judge is reused for EVERY layer, so it must
+    # NOT hardcode the curated insurance layer's class/column names — that
+    # knowledge belongs in the ontology rdfs:comment annotations the judge reads.
+    p = _JUDGE_PROMPT.lower()
+    for noun in ("coverage_type", "participant_sk", "lifeparticipant",
+                 "rider", "policyholder", "policyparty", "holding_id"):
+        assert noun not in p, f"layer-specific noun leaked into VKG judge: {noun}"
+
+
+def test_rag_judge_prompt_is_layer_agnostic():
+    # Fix 3'A: same for the RAG judge — the most heavily contaminated prompt.
+    p = RAG_JUDGE_PROMPT.lower()
+    for noun in ("party_type", "life_participant", "coverage_type",
+                 "holding.owner_party_id", "policy_owner", "annuity_detail",
+                 "financial_activity", "policy_product", "holding_payout"):
+        assert noun not in p, f"layer-specific noun leaked into RAG judge: {noun}"
 
 
 def test_judge_returns_sufficient_decision():

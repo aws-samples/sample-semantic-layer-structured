@@ -161,10 +161,9 @@ class NeptuneGatewayClient:
                       ontology_id: str = "") -> Dict[str, Any]:
         """Translate a SPARQL query to Athena SQL via the Ontop gateway tool.
 
-        Phase 5 no longer runs the generated SPARQL against the schema-only
-        Neptune graph (it has no instance data). Instead it asks the gateway's
-        ``translate_sparql_to_sql`` tool (Ontop reformulation) to rewrite the
-        grounded SPARQL into SQL against the mapped relational tables, then
+        The Neptune graph is schema-only (no instance data), so Phase 5 asks the
+        gateway's ``translate_sparql_to_sql`` tool (Ontop reformulation) to rewrite
+        the grounded SPARQL into SQL against the mapped relational tables, then
         executes that SQL on Athena (where the real data lives).
 
         Args:

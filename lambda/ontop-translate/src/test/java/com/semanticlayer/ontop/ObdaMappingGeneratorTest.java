@@ -160,4 +160,63 @@ class ObdaMappingGeneratorTest {
         assertFalse(obda.contains("http://x/AdminCode/nocol"),
             "property with no column mapping must be omitted; got:\n" + obda);
     }
+
+    @Test
+    void emitsObjectPropertyAsTargetSubjectIriTemplate() {
+        // gt-03 fix: an owl:ObjectProperty FK (Coverage/hasHolding range=Holding,
+        // mapsToColumn coverage.holding_id) must be emitted as an IRI template matching
+        // the TARGET class's subject template (<.../Holding/{holding_id}>), NOT a bare
+        // literal {holding_id}. With a literal, Ontop reformulates the join to EMPTY.
+        final Map<String, Object> ontology = Map.of(
+            "classes", Map.of(
+                "http://x/Coverage", Map.of("label", "Coverage"),
+                "http://x/Holding", Map.of("label", "Holding")),
+            "properties", Map.of(
+                "http://x/Coverage/coverage_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty"),
+                "http://x/Coverage/hasHolding", Map.of(
+                    "type", "http://www.w3.org/2002/07/owl#ObjectProperty",
+                    "range", "http://x/Holding"),
+                "http://x/Holding/holding_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty")),
+            "mappings", Map.of(
+                "http://x/Coverage", Map.of("table", "normalized.coverage"),
+                "http://x/Coverage/coverage_id", Map.of("column", "coverage.coverage_id"),
+                "http://x/Coverage/hasHolding", Map.of("column", "coverage.holding_id"),
+                "http://x/Holding", Map.of("table", "normalized.holding"),
+                "http://x/Holding/holding_id", Map.of("column", "holding.holding_id")),
+            "databases", List.of(Map.of("name", "normalized", "catalog", "AwsDataCatalog")));
+
+        final String obda = new ObdaMappingGenerator().generate(ontology);
+
+        // FK object property emitted as the target's subject-IRI template.
+        assertTrue(obda.contains("<http://x/Coverage/hasHolding> <http://x/Holding/{holding_id}>"),
+            "ObjectProperty FK must be an IRI template <Holding/{holding_id}>; got:\n" + obda);
+        // It must NOT be a bare literal {holding_id} (the broken form).
+        assertFalse(obda.contains("<http://x/Coverage/hasHolding> {holding_id}"),
+            "ObjectProperty FK must NOT be a bare literal; got:\n" + obda);
+        // Holding's own subject template uses the same column → the join unifies.
+        assertTrue(obda.contains("<http://x/Holding/{holding_id}>"),
+            "Holding subject template should use holding_id; got:\n" + obda);
+        // The datatype property stays a literal.
+        assertTrue(obda.contains("<http://x/Coverage/coverage_id> {coverage_id}"),
+            "DatatypeProperty must stay a bare literal; got:\n" + obda);
+    }
+
+    @Test
+    void bakesKeyPrefixIntoFkIriTemplateFromComment() {
+        // gt-03/gt-04: FK stores UNPREFIXED id but target PK is PREFIXED; the comment
+        // documents CONCAT('PARTY#', fk). The OBDA FK template must bake the prefix
+        // (<Party/PARTY#{party_id}>) so it matches the target subject template.
+        final String obda = new ObdaMappingGenerator()
+            .generate(TestFixtures.coveragePartyPrefixFkOntology());
+        // Prefix transform → computed source column + FK template referencing it.
+        assertTrue(obda.contains("CONCAT('PARTY#', party_id) AS party_id__ref"),
+            "source must add a computed prefix-transform column; got:\n" + obda);
+        assertTrue(obda.contains("<http://x/Coverage/hasParty> <http://x/Party/{party_id__ref}>"),
+            "FK template must reference the computed prefixed column; got:\n" + obda);
+        // must NOT be the raw-column form that never unifies with the prefixed PK
+        assertFalse(obda.contains("<http://x/Coverage/hasParty> <http://x/Party/{party_id}>"),
+            "FK template must not use the raw unprefixed column; got:\n" + obda);
+    }
 }

@@ -9,6 +9,7 @@
     "test": "jest",
     "cdk": "cdk",
     "synth": "cdk synth",
+    "predeploy": "npm run build && npm test && cd .. && python -m pytest tests/unit/ -q",
     "deploy": "cdk deploy --all",
     "diff": "cdk diff",
     "destroy": "cdk destroy --all"

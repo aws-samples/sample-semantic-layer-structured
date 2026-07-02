@@ -49,7 +49,13 @@ def parse_chat_stream_sse(body: str) -> Dict[str, Any]:
     return {
         "answer": "".join(answer_parts),
         "sql": totals.get("sql", "") or "",
+        # The SQL that ACTUALLY executed ("" on a degraded/gate-rejected run, where
+        # ``sql`` above is the rejected query) + the terminal degrade reason. Lets
+        # the eval distinguish executed-vs-generated SQL and explain 0-row turns.
+        "executed_sql": totals.get("executedSql", "") or "",
+        "degraded": totals.get("degraded"),
         "rows": totals.get("rows", []) or [],
+        "row_count": totals.get("rowCount"),
         "usage": totals.get("usage", {}) or {},
         "runtime_ms": totals.get("runtimeMs"),
         "clarification": totals.get("clarification"),
@@ -69,7 +75,7 @@ def run_key(session_id: str, turn_idx: int) -> str:
 
 
 def scenario_id_for(row: Dict[str, Any], index: int) -> str:
-    """Explicit multiturn.scenario_id if present, else the legacy gt-row-NN id."""
+    """Explicit multiturn.scenario_id if present, else a gt-row-NN fallback id."""
     mt = row.get("multiturn") or {}
     return mt.get("scenario_id") or f"gt-row-{index:02d}"
 
@@ -77,12 +83,12 @@ def scenario_id_for(row: Dict[str, Any], index: int) -> str:
 def parse_multiturn_row(row: Dict[str, Any], *, index: int) -> Dict[str, Any]:
     """Normalize a ground-truth row into a uniform multi-turn spec.
 
-    A row with no ``multiturn`` block becomes a single scripted turn (the legacy
-    behaviour). Returns ``{mode, scenario_id, turns, trajectory_assertions,
-    actor_profile, max_turns, expected_answer, expected_tier}``. ``turns`` is a
-    list of ``{input, ...}`` dicts. ``expected_tier`` is the provenance tier the
-    question should route to (``governed_metric|semantic_sql|vkg|advisory``);
-    it defaults to ``semantic_sql`` for legacy data-query rows that omit it.
+    A row with no ``multiturn`` block becomes a single scripted turn. Returns
+    ``{mode, scenario_id, turns, trajectory_assertions, actor_profile, max_turns,
+    expected_answer, expected_tier}``. ``turns`` is a list of ``{input, ...}``
+    dicts. ``expected_tier`` is the provenance tier the question should route to
+    (``governed_metric|semantic_sql|vkg|advisory``); it defaults to
+    ``semantic_sql`` for plain data-query rows that omit it.
 
     Args:
         row: One ground-truth dataset row.
@@ -99,7 +105,7 @@ def parse_multiturn_row(row: Dict[str, Any], *, index: int) -> Dict[str, Any]:
                 f"non-empty 'turns' list"
             )
     else:
-        # Legacy single-turn row: synthesize one turn from the question.
+        # Plain single-turn row: synthesize one turn from the question.
         turns = [{"input": row["Natural_Language_Question"]}]
     return {
         "mode": mode,
@@ -109,14 +115,15 @@ def parse_multiturn_row(row: Dict[str, Any], *, index: int) -> Dict[str, Any]:
         "actor_profile": mt.get("actor_profile"),
         "max_turns": mt.get("max_turns", 4),
         "expected_answer": row.get("Expected_Answer", ""),
-        # Expected provenance tier for the correct-tier assertion (Step 5). Legacy
-        # data-query rows omit it → default semantic_sql (today's behavior).
+        # Expected provenance tier for the correct-tier assertion (Step 5). Plain
+        # data-query rows omit it → default semantic_sql.
         "expected_tier": row.get("Expected_Tier", "semantic_sql"),
     }
 
 
 def build_chat_payload(*, message: str, session_id: str, ontology_id: str,
-                       turn_idx: int, user_id: str = "eval") -> Dict[str, Any]:
+                       turn_idx: int, user_id: str = "eval",
+                       source: str = "chat") -> Dict[str, Any]:
     """Build the chat-stream payload (the path that reads+persists history).
 
     The chat entrypoint reads ``message`` (NOT ``question``) and dispatches to
@@ -129,6 +136,10 @@ def build_chat_payload(*, message: str, session_id: str, ontology_id: str,
         ontology_id: Semantic-layer id passed through as ``ontologyId``.
         turn_idx: 0-based turn index within the scenario.
         user_id: Caller identity for memory scoping (default ``"eval"``).
+        source: Transport tag persisted on the session (``chat``/``mcp``/
+            ``eval``) so the admin Monitoring tab can distinguish live chat from
+            eval runs. Eval notebooks pass ``"eval"``; default ``"chat"`` keeps
+            existing callers unchanged.
     """
     return {
         "turnId": f"{session_id}-t{turn_idx}-{uuid.uuid4().hex[:8]}",
@@ -137,6 +148,7 @@ def build_chat_payload(*, message: str, session_id: str, ontology_id: str,
         "ontologyId": ontology_id,
         "mode": "semantic-rag",
         "userId": user_id,
+        "source": source,
     }
 
 

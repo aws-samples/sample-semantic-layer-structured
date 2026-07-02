@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project enables the implementation of two alternative semantic layer approaches for structured data:
+This sample architecture illustrates two alternative semantic layer approaches for structured data:
 
 1. **Virtual Knowledge Graph (VKG)**: OWL ontology stored in Amazon Neptune; natural language queries are translated to SQL via ontology mappings
 2. **Semantic RAG**: Semantic metadata stored in Amazon Bedrock Knowledge Base; natural language queries use RAG for context-aware SQL generation
@@ -12,7 +12,7 @@ Both approaches share the same admin workflow up to the point of choosing the se
 > **📊 Background / concepts:** For the _why_ behind this project — the two failure modes of
 > agentic text-to-SQL (grounding vs. delivery), how a semantic layer + ontology and progressive
 > disclosure address them, and the tiered query path — see the companion presentation
-> [`assets/guides/semantic-layer.pdf`](assets/guides/semantic-layer.pdf).
+> [`assets/guides/semantic-layer.pptx`](assets/guides/semantic-layer.pptx).
 
 ### Key Capabilities
 
@@ -21,10 +21,11 @@ Both approaches share the same admin workflow up to the point of choosing the se
 - **AI-Assisted Metadata Generation**: Versioned, iterative semantic layer creation with human in the loop
 - **Natural Language Queries**: Query data across sources using plain English
 - **Multi-Turn Conversational Chat**: Streaming AG-UI chat with persisted session history, per-turn reasoning trace, and follow-up context (DynamoDB-backed transcripts)
-- **MCP Server**: An AgentCore Gateway exposes the query agents as MCP tools (`ListOntologies`, `OntologyQuery`, `MetadataQuery`, `QuerySuggestions`) to Claude Code, Cursor, VS Code, and other MCP clients over OAuth 2.0 — see [`assets/guides/MCP_SERVER.md`](assets/guides/MCP_SERVER.md)
+- **MCP Server**: An AgentCore Gateway exposes the query agents as MCP tools (`ListOntologies`, `OntologyQuery`, `MetadataQuery`, `QuerySuggestions`) to Claude Code, Cowork, Cursor, VS Code, and other MCP clients over OAuth 2.0 — see [`assets/guides/MCP_SERVER.md`](assets/guides/MCP_SERVER.md)
 - **User Feedback**: 👍/👎 ratings + comments per assistant turn, PII-redacted by Guardrails and stored in DynamoDB; surfaced in the admin Feedback tab
 - **Lessons Learned / Long-Term Memory**: Bedrock AgentCore Memory mines durable lessons from chat sessions (SemanticStrategy) and injects them as prior context into future queries; surfaced in the admin Lessons Learned tab
 - **Ground-Truth Evaluations**: Per-layer ground-truth datasets drive AgentCore on-demand + online evaluation runs (accuracy / latency / token metrics) surfaced in the admin Evaluations tab
+- **Production Monitoring**: Read-only admin Monitoring tab reporting how live queries resolved per layer — bucketed by each answer's persisted `provenance.tier` into metric / semantic / advisory / agentic(-not-implemented) resolution layers — plus a correction-language rate (share of user turns that read as a correction) correlated with the count of lessons AgentCore Memory has extracted
 - **Adversarial Red-Teaming**: Automated guardrail red-team suite (Strands Evals, `CrescendoStrategy`) probing the query agents across 5 OWASP-aligned risk categories; run manually today — see [`tests/eval/RED_TEAM_IMPLEMENTATION.md`](tests/eval/RED_TEAM_IMPLEMENTATION.md)
 - **Two-Tier Query Path**: A Tier 1 **governed-metric lookup** first matches the question (Titan-v2 embedding + KNN, cosine ≥ 0.85) against maintained/published metrics and, on a clear match, runs that metric's pre-validated SQL on Athena — returning early. Otherwise it falls through to a Tier 2 deterministic Strands graph (topic router → disambiguation → slice builder → SQL/SPARQL generate+validate → grounding gate + bounded execution) with clarification loops
 - **Maintained Metrics (governed)**: curated metrics (name/description/synonyms + pre-validated SQL) stored in DynamoDB with a DRAFT → APPROVED → PUBLISHED lifecycle; published metrics are embedded for the Tier 1 lookup and authored via the `/metrics` API (gated by `METRICS_TABLE`)
@@ -150,6 +151,7 @@ Semantic RAG) hosts tabbed management surfaces:
 - **Lessons Learned** (`frontend/src/components/LessonsLearnedTab.jsx`): long-term lessons mined from chat sessions by AgentCore Memory
 - **Ground Truth** (`frontend/src/pages/admin/GroundTruthDataset.jsx`): upload/inspect the per-layer evaluation dataset
 - **Evaluations** (`frontend/src/pages/admin/Evaluations.jsx`): AgentCore evaluation runs (accuracy / latency / token metrics)
+- **Monitoring** (`frontend/src/components/MonitoringTab.jsx`): live query-resolution breakdown (metric / semantic / advisory / agentic) bucketed by each answer's persisted `provenance.tier`, plus a correction-language rate correlated with extracted lessons
 - **Supplementary Docs** (`frontend/src/pages/admin/UploadSupplementaryDocs.jsx`): upload extra reference docs into the doc-pipeline → KB
 
 ^1 Optional: If "enableOntologyAgents": false, then this screen is disabled and SemanticRAG is selected as default
@@ -179,11 +181,22 @@ Semantic RAG) hosts tabbed management surfaces:
 
 ## Data Sources
 
+> **🧪 Sample structure, synthetic data.** This is a **reference data model**, not a real
+> dataset. The 12 operational tables follow the **ACORD** insurance data standard (an industry
+> reference schema) and are populated entirely with **synthetic, machine-generated data** — no
+> real customer, policy, or financial records. The data is produced by
+> [`scripts/generate_complete_synthetic_data.py`](scripts/generate_complete_synthetic_data.py)
+> and loaded via [`scripts/load_to_dynamodb.py`](scripts/load_to_dynamodb.py) when
+> `enableAcordSampleData` is set — **on by default** in the committed `cdk.json`; deploy with
+> `-c enableAcordSampleData=false` to skip the synthetic rows (see [Deployment Modes](#deployment-modes)).
+> Adapt the schema and loaders to your own structured sources to reuse the semantic-layer
+> architecture.
+
 ### 1. DynamoDB - Operational Data (12 tables)
 
 `HOLDING`, `PARTY`, `COVERAGE`, `RIDER`, `RELATION`, `FINANCIALACTIVITY`, `FINANCIALSTATEMENT`, `POLICYPRODUCT`, `COVERAGEPRODUCT`, `INVESTPRODUCT`, `TYPE_CODES`, `ADMIN_CODES`
 
-**Access**: Athena with DynamoDB Connector (`lambda:` catalog) or direct DynamoDB reads
+**Access**: Athena with DynamoDB Connector (`lambda:` catalog)
 
 ### 2. S3 Tables (Apache Iceberg) - Analytical Data
 
@@ -203,7 +216,7 @@ DynamoDB Streams → Lambda (PyIceberg) → S3 Tables (Iceberg)
 
 ^2 Optional: Enabled if "enableRealtimeReplication": true
 
-**Batch pipeline** ^3
+**Batch pipeline** (alternative to the real-time CDC pipeline) ^3
 
 ```
 DynamoDB table → Zero-ETL integration → S3 Tables (zetl_<uuid> namespace)
@@ -429,6 +442,25 @@ Evaluations tab triggers **on-demand** batch runs and shows per-evaluator scores
 (`GET /evaluations/{id}`, `POST /evaluations/{id}`). Built-in evaluators include
 ToolParameterAccuracy, ToolSelectionAccuracy, and GoalSuccessRate.
 
+### Production Monitoring (query-resolution signals)
+
+A read-only admin **Monitoring** tab (`GET /monitoring/{id}` → `services/monitoring_service.py`)
+reports two signals about a layer's LIVE query traffic, scoped per layer:
+
+- **Resolution-layer breakdown**: every answered turn is bucketed by its persisted
+  `totals.provenance.tier` into **metric** (Tier 1 governed metric), **semantic** (Tier 2 graph —
+  `semantic_sql` + `vkg` both fold here), **advisory** (schema / "what can I ask" answers), and
+  **agentic** (planned, always 0 — surfaced explicitly rather than hidden). Turns with no
+  recognized tier are skipped so they don't dilute the buckets.
+- **Correction-language rate**: the `correction_language.is_correction` heuristic runs over each
+  persisted user turn; the share that read as a correction ("that's the wrong table") is reported
+  alongside the count of long-term lessons AgentCore Memory has extracted (each correction is a
+  candidate lesson), so the operator can see whether corrections are being captured durably.
+
+Data comes from a bounded `FilterExpression` Scan of the TTL-bounded `chat-sessions` table (no
+GSI on `ontologyId`, no per-turn version → scoped to the layer, all versions). Read-only — no
+agent-runtime change; the REST Lambda already had the needed IAM + catch-all route.
+
 ### Document Pipeline (supplementary docs → KB)
 
 A staged Lambda pipeline (`lambda/doc-pipeline`: chunk → NER → embed → link → index) ingests
@@ -604,7 +636,7 @@ runtimes within `agentcore`, the synthetic-data loader within `dynamodb`). See
 
 #### Lambda REST API Stack (`lambda-rest-api/index.ts`)
 
-- FastAPI container on Lambda; sub-apps mounted at `/ontology`, `/datasource`, `/query`, `/metadata`, `/neptune`, `/lessons` (with `/query` carrying the feedback, chat-session, document, ground-truth, and evaluation sub-routes)
+- FastAPI container on Lambda; sub-apps mounted at `/ontology`, `/datasource`, `/query`, `/metadata`, `/neptune`, `/lessons`, `/feedback`, `/documents`, `/groundtruth`, `/evaluations`, `/monitoring` (with `/query` carrying the chat-session and per-turn feedback sub-routes)
 - **Endpoints** (selected):
   - `POST /ontology/config` — create/update ontology config
   - `GET /ontology/config/{ontology_id}` — get config
@@ -626,6 +658,7 @@ runtimes within `agentcore`, the synthetic-data loader within `dynamodb`). See
   - `GET /lessons/{id}` · `DELETE /lessons/{id}/{recordId}` — AgentCore Memory lessons (admin Lessons tab)
   - `POST /groundtruth/{id}/upload` · `GET /groundtruth/{id}` · `DELETE /groundtruth/{id}` — per-layer ground-truth dataset
   - `GET /evaluations/{id}` · `GET /evaluations/{id}/{runId}` · `POST /evaluations/{id}` · `DELETE /evaluations/{id}/{runId}` — AgentCore evaluation runs
+  - `GET /monitoring/{id}` — per-layer query-resolution + correction-language breakdown (admin Monitoring tab)
   - `POST /documents/{id}/upload` · `GET /documents/{id}` · `GET/DELETE /documents/{id}/{docId}` — supplementary docs → doc-pipeline → KB
   - `/metrics` — governed-metrics CRUD + lifecycle (Tier 1 authoring); mounted only when `METRICS_TABLE` is set
   - Streaming chat is served by the **Chat AgentCore Gateway** (SSE), not this REST API
@@ -726,22 +759,6 @@ Per turn the user can submit 👍/👎 feedback (POST /query/feedback).
 Blocked queries: a canned guardrail message is returned, no agent reasoning invoked.
 ```
 
-### Real-Time CDC Pipeline
-
-```
-DynamoDB write → DynamoDB Stream → Lambda (PyIceberg)
-  → S3 Tables (Iceberg) UPSERT/DELETE
-  → Glue Catalog (auto-updated)
-  → Athena queryable immediately
-
-Glue Zero-ETL batch path (alternative):
-  DynamoDB → Zero-ETL Integration → S3 Tables (zetl_<uuid> namespace)
-                                          ↓ Glue 5.1 MV job (every 6h)
-                                    S3 Tables (normalized namespace)
-                                    40 entity MVs — SELECT * WHERE sk LIKE '...'
-                                    → Athena queryable via normalized.*
-```
-
 ## Project Structure
 
 ```
@@ -796,6 +813,7 @@ semantic-layer/
 │   │   ├── memory_hooks.py       # AgentCore Memory lessons hooks
 │   │   ├── guardrails.py         # PII-redaction shim
 │   │   ├── eval_trigger.py       # emits evaluation.requested on layer completion
+│   │   ├── eval_judges.py        # custom SESSION LLM-as-Judge factory (GoalSuccess / FAF / SqlGrounded)
 │   │   └── knn_index.py / embedding.py / followup.py / prior_results.py / …
 │   ├── Dockerfile.*              # one per runtime (ontology, ontologyquery, …)
 │   └── requirements.txt
@@ -806,13 +824,15 @@ semantic-layer/
 ├── lambda/
 │   ├── rest-api/                # FastAPI application
 │   │   ├── main.py              # app entry point — mounts /ontology /datasource
-│   │   │                        #   /query /metadata /neptune /lessons
+│   │   │                        #   /query /metadata /neptune /lessons /feedback
+│   │   │                        #   /documents /groundtruth /evaluations /monitoring
 │   │   ├── query_api.py         # query + suggestions + chat sessions + feedback
 │   │   ├── feedback_api.py · lessons_api.py · evaluations_api.py
-│   │   ├── groundtruth_api.py · documents_api.py
+│   │   ├── groundtruth_api.py · documents_api.py · monitoring_api.py
 │   │   ├── metadata_api.py · ontology_api.py · datasource_api.py · neptune_api.py
 │   │   └── services/            # guardrail, chat_session, feedback, evaluation,
-│   │                            #   groundtruth, document, agentcore_memory, metric, …
+│   │                            #   groundtruth, document, agentcore_memory, metric,
+│   │                            #   monitoring, correction_language, …
 │   ├── mcp-tools/               # MCP tool dispatch Lambda (4 tools) — Python ARM64
 │   ├── mcp-proxy/               # MCP OAuth 2.0 proxy Lambda (stdlib)
 │   ├── ontop-translate/         # Ontop SPARQL→SQL translate Lambda (Java 21)
@@ -829,10 +849,25 @@ semantic-layer/
 │       │   │                     #   GroundTruthDataset, Evaluations, UploadSupplementaryDocs
 │       │   └── query/            # AskQuestion, LandingPage, ChatView, ChatTranscript,
 │       │                         #   Composer, ReasoningPanel, ResultPanel, FeedbackBar
-│       ├── components/           # FeedbackTab, LessonsLearnedTab, GraphVisualization, OntologyEditor
+│       ├── components/           # FeedbackTab, LessonsLearnedTab, MonitoringTab, GraphVisualization, OntologyEditor
 │       ├── hooks/                # useChatStream, useChatSessions, useNotifications
 │       └── services/
 │           └── api.js
+│
+├── notebooks/                    # AgentCore batch-eval + comparison notebooks
+│   ├── 1_metadata_agent_ac_eval.ipynb        # + 2..5 per-agent ground-truth evals
+│   ├── 6_semantic_rag_vs_vkg.ipynb           # RAG vs VKG comparator
+│   ├── 7_raw_dynamodb_vs_normalized_s3_eval.ipynb
+│   ├── 8_semantic-layer-with-ontology-rag-vs-without_eval.ipynb
+│   └── 9_neptune_gateway_testing.ipynb · 10_mcp_server_testing.ipynb
+│
+├── data/                         # Synthetic data + evaluation artifacts
+│   ├── complete_synthetic_data/  # generated ACORD sample rows
+│   ├── ontology-docs/ · ontology-sources/    # VKG pattern inputs
+│   └── eval/
+│       ├── groundtruth_dataset.json          # 16 GT rows + 4 multi-turn scenarios
+│       ├── results/                          # raw *_batch_eval_*.json + *_kmean_*.json
+│       └── results-analysis/                 # dated markdown deep-dives
 │
 └── scripts/
     ├── generate_complete_synthetic_data.py
@@ -876,10 +911,6 @@ them with `=true`:
 | `enableBatchReplication`    | `true`  | Glue Zero-ETL integrations + normalized-views (alternative to realtime replication)                                                                                                                                                                                                        |
 | `enableOboPassthrough`      | `false` | On-behalf-of (OBO) identity exchange: the REST API swaps the caller's Cognito JWT for short-lived STS creds via AgentCore Identity (fail-closed). Phase-0 rollout — wired + tested but agents do not yet consume the creds; enable only after per-group Lake Formation grants are in place |
 
-> The AG-UI multi-turn streaming chat is **always on** — it is the only natural-language query
-> UI. The chat gateway and chat-sessions table are always deployed; there is no `enableChatUi`
-> flag.
-
 **Capability matrix:**
 
 | Mode                               | VKG admin | Semantic RAG admin | NL Query (VKG) | NL Query (Semantic RAG) | Sample data |
@@ -919,8 +950,13 @@ cdk bootstrap aws://ACCOUNT-ID/REGION
 cd cdk && npm install && npm run build
 
 # Deploy all stacks (17 always-on + up to 4 conditional)
-cdk deploy --all
+npm run deploy
 ```
+
+> **Use `npm run deploy`, not bare `cdk deploy --all`.** The `predeploy` npm hook
+> runs the `tsc` build, the CDK Jest suite, and the Python unit suite first, aborting
+> the deploy on any failure. A bare `npx cdk deploy` skips this gate (npm lifecycle
+> hooks only fire for `npm run`). See [Testing](#testing).
 
 Deployment takes approximately 40-60 minutes (includes CodeBuild jobs for ARM64 container images).
 
@@ -930,6 +966,96 @@ Deployment takes approximately 40-60 minutes (includes CodeBuild jobs for ARM64 
 2. **Upload Ontology Patterns**: Copy VKG design patterns to the Bedrock KB source bucket and trigger ingestion (if using VKG mode)
 3. **Access Application**: Get CloudFront URL from stack outputs
 4. **(Optional) Connect an MCP client**: follow [`assets/guides/MCP_SERVER.md`](assets/guides/MCP_SERVER.md) to add the MCP server to Claude Code / Cursor / VS Code via the OAuth proxy URL
+
+## Testing
+
+Full details (suite layout, integration-test env vars, troubleshooting) are in
+[`tests/README.md`](tests/README.md). Quick reference:
+
+```bash
+# One-time: install test/dev deps (kept out of the Lambda runtime requirements)
+pip install -r agents/requirements.txt -r requirements-dev.txt
+
+# Python unit suite (repo root is on sys.path via pyproject.toml)
+pytest tests/unit/ -v
+
+# With coverage (matches the CI gate; floor enforced at 66%, ratcheting toward 80%)
+mkdir -p data/ontology-docs        # placeholder for synth-based tests
+pytest tests/unit/ --cov --cov-report=term-missing --cov-fail-under=66
+```
+
+Tests are enforced at three points (**GitLab CI is the only authoritative gate**;
+the others are bypassable local conveniences):
+
+1. **GitLab CI** (`.gitlab-ci.yml`) — runs `python-unit` (with coverage gate),
+   `frontend` (Jest), and `cdk` (Jest) on every push. Integration tests need live
+   AWS and are excluded. Enable _"Pipelines must succeed"_ in the GitLab project to
+   block merges on a red pipeline.
+2. **Local `pre-push` hook** (`.githooks/pre-push`) — runs the unit suite before a
+   push; opt in once with `git config core.hooksPath .githooks`, bypass with
+   `git push --no-verify`.
+3. **`npm run deploy` gate** — the `predeploy` hook runs `tsc` + CDK Jest + the
+   Python unit suite before deploying.
+
+## Evaluation & Benchmarks
+
+Beyond the in-app **Evaluations** admin tab (which triggers AgentCore on-demand/online runs against
+the per-layer ground truth), the repo ships a reproducible offline benchmark suite under
+[`notebooks/`](notebooks/) with its datasets, raw results, and written analyses under
+[`data/eval/`](data/eval/). These are how the architectural claims in this README were measured.
+
+### Evaluation notebooks (`notebooks/`)
+
+Each agent/comparison notebook drives Amazon Bedrock **AgentCore Batch Evaluations**
+(`bedrock_agentcore.evaluation.BatchEvaluationRunner`) server-side against a **deployed** runtime,
+scoring with the custom SESSION LLM-as-judge evaluators (`GoalSuccess`, `FinalAnswerFaithfulness`,
+`SqlGrounded`) plus AgentCore built-ins. Run with the project venv kernel (see
+[`notebooks/.env.example`](notebooks/.env.example) for the required layer/runtime IDs).
+
+| Notebook                                             | What it evaluates                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `1_metadata_agent_ac_eval`                           | Metadata **generation** agent (Semantic RAG enrichment), batch eval                  |
+| `2_metadata_query_agent_ondemand_groundtruth_eval`   | Metadata **query** agent (Semantic RAG), server-side ground-truth batch eval         |
+| `3_evaluation_analyzer`                              | Turns a batch run's per-query records into a ranked list of prompt fixes             |
+| `4_ontology_agent_ac_eval`                           | Ontology **generation** agent (VKG), batch eval                                      |
+| `5_ontology_queryagent_ac_eval`                      | Ontology **query** agent (VKG), server-side ground-truth batch eval                  |
+| `6_semantic_rag_vs_vkg`                              | Side-by-side comparator: Semantic RAG vs. VKG query agents (loads nb2 + nb5 results) |
+| `7_raw_dynamodb_vs_normalized_s3_eval`               | Same agent over **raw DynamoDB** tables vs. **normalized S3/Iceberg** tables         |
+| `8_semantic-layer-with-ontology-rag-vs-without_eval` | VKG built **with** vs. **without** ontology-pattern RAG                              |
+| `9_neptune_gateway_testing`                          | Neptune AgentCore Gateway tool smoke tests                                           |
+| `10_mcp_server_testing`                              | Deployed MCP server (Gateway + OAuth proxy) end-to-end smoke tests                   |
+
+### Datasets, results & analyses (`data/eval/`)
+
+- **`groundtruth_dataset.json`** — 16 ground-truth rows (`Natural_Language_Question` /
+  `Expected_Answer` / `Expected_SQL_Query` / `Expected_SQL_Result`) + 4 multi-turn scenarios, shared
+  by all query-agent notebooks. `normalized_layer_enrichment_brief.md` is the enrichment brief used
+  to seed the normalized layer.
+- **`results/`** — raw per-run JSON emitted by the notebooks: `*_batch_eval_*.json` (full per-query
+  records) and `*_kmean_*.json` (k=3 mean/std aggregates, self-contained with generated SQL +
+  ground-truth expectation per scenario).
+- **`results-analysis/`** — dated markdown deep-dives that interpret each run.
+
+### Headline findings
+
+Query-agent scores are `GoalSuccess` (the quality signal), k=3 mean over the 16 GT rows + 4
+multi-turn scenarios. `SqlGrounded` reads 1.00 across arms because it scores vacuously on SQL-free
+rows — read GoalSuccess, not SqlGrounded.
+
+- **Normalization is the dominant accuracy lever** — a Semantic-RAG layer over the **normalized
+  S3/Iceberg** tables scores **~0.75** GoalSuccess vs. **~0.10** over the **raw single-table-design
+  DynamoDB** tables; same agent, same questions, only the data modeling differs
+  (`2026-06-28-raw-vs-normalized-goalsuccess-zero-analysis.md`).
+- **Semantic RAG ≈ VKG on quality; RAG is cheaper + faster** — RAG **0.75** vs. VKG **0.71**
+  GoalSuccess (a statistical dead heat), but RAG is ~1.6× faster (26s vs. 41s avg) and uses fewer
+  tokens. VKG emits SQL on more rows (11/16 vs. 9/16); the two fail on _different_ rows, so they are
+  complementary (`2026-06-28-rag-vs-vkg.md`).
+- **Ontology-pattern RAG is net-neutral for VKG generation** — building the VKG **with** vs.
+  **without** the ontology-pattern KB gave **0.71** vs. **0.75** GoalSuccess (within noise) at ~1.3×
+  the wall-clock (`2026-06-28-vkg-without-vs-vkg with.md`).
+- **Opus 4.8 vs. Sonnet 4.6 query-agent swap was within noise** — a one-off A/B (since reverted;
+  production runs Sonnet 4.6) showed +0.08 RAG / +0.02 VKG GoalSuccess, inside the run-to-run band
+  (`2026-06-29-opus48-vs-sonnet46-model-swap-ab.md`).
 
 ## Security Considerations
 
@@ -1021,7 +1147,7 @@ The following table provides a sample cost breakdown for deploying this solution
 | SSM Parameter Store              | Standard parameters (service endpoints, ARNs)                                                                                            | Free       |
 | **Total (Moderate Usage)**       | **Monthly Cost for All Services**                                                                                                        | **~$236**  |
 
-> **Note — Cost Drivers:** Amazon Neptune is the largest single cost (~$50/month for a db.t3.medium cluster). Amazon Bedrock AgentCore Runtime (5 runtimes, ~$40/month) and Bedrock model inference (Opus 4.8 at $5/$25 per M tokens for the build-time ontology/metadata agents, Sonnet 4.6 at $3/$15 per M for the query-time agents, ~$43/month combined assuming ~15% of token volume is the low-frequency Opus build path) are the next largest. The Ontop translate Lambda's **provisioned concurrency = 1** adds ~$14/month standing cost in VKG mode (one always-warm JVM) regardless of query volume — drop it to on-demand (cold starts) or set PC=0 if that trade-off is acceptable. AgentCore Memory and Evaluation add a few dollars at low volume. The Knowledge Base backend uses **S3 Vectors** (not OpenSearch Serverless), keeping vector storage and query costs negligible (~$5/month for both KBs combined). For intermittent or dev/test VKG usage, Neptune Serverless can reduce the Neptune cost further.
+> **Note — Cost Drivers:** Amazon Neptune is the largest single cost (~$50/month for a db.t3.medium cluster). Amazon Bedrock AgentCore Runtime (5 runtimes, ~$40/month) and Bedrock model inference (Opus 4.8 at $5/$25 per M tokens for the build-time ontology/metadata agents, Sonnet 4.6 at $3/$15 per M for the query-time agents, ~~$43/month combined assuming ~15% of token volume is the low-frequency Opus build path) are the next largest. The Ontop translate Lambda's **provisioned concurrency = 1** adds ~$14/month standing cost in VKG mode (one always-warm JVM) regardless of query volume — drop it to on-demand (cold starts) or set PC=0 if that trade-off is acceptable. AgentCore Memory and Evaluation add a few dollars at low volume. The Knowledge Base backend uses **S3 Vectors** (not OpenSearch Serverless), keeping vector storage and query costs negligible (~~$5/month for both KBs combined). For intermittent or dev/test VKG usage, Neptune Serverless can reduce the Neptune cost further.
 
 ## License
 
@@ -1034,40 +1160,3 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## Authors
 
 - Felix Huthmacher, Senior Applied AI Architect [github - fhuthmacher](https://github.com/fhuthmacher)
-
-## Changelog
-
-Highlights of the changes since the last published release (≈Apr–Jun 2026; 370+ files
-touched across `agents/`, `lambda/`, `frontend/`, `cdk/`, `notebooks/`, and `tests/`):
-
-- **Virtual Knowledge Graph (VKG) query path.** New `ontop-translate` Java 21 / ARM64 Lambda
-  on the Neptune AgentCore Gateway translates SPARQL→Athena SQL (OBDA mappings generated from
-  the ontology), so the VKG agent grounds answers in the live graph and executes on Athena.
-  Includes Phase-2 over-clarification fixes, Ontop GROUP-BY-expression handling, and a
-  best-coverage ontology-layer selector.
-- **Four-tier intent router + provenance.** A Haiku-4.5 router classifies each question into
-  `governed_metric` → `semantic_sql` → `vkg` → `advisory`, with an inline advisory module
-  (governed-metric lookup + layer Q&A grounded on ontology annotations). Every response now
-  carries a provenance object, surfaced as a `ProvenanceBadge` in the chat transcript.
-- **Tier 1 governed metrics.** Admin "Governed Metrics" tab for authoring maintained metrics;
-  KNN ≥0.85 lookups short-circuit to a direct Athena query and emit a phase event so the UI
-  shows the SQL + results.
-- **AgentCore Memory (lessons learned).** 5-part-namespace SemanticStrategy memory mines
-  lessons from chat sessions and injects prior results / recall-driven disambiguation.
-- **Query-agent accuracy fixes.** Clarification-loop fixes (inflection handling, confident-pick
-  binding, stable re-ask options, accumulated resolutions), multi-hop bridge-join slice
-  expansion, relationship-aware sufficiency judging, and column semantic-role hints
-  (prefer label over code). Metadata-agent KB docs are now validated against the real schema.
-- **Server-side evaluation harness.** Notebooks 1–11 reworked for AgentCore Batch Evaluations
-  with SESSION-level LLM-as-judge evaluators (GoalSuccessRate, FinalAnswerFaithfulness,
-  SqlGrounded, ToolCallOrdering). Comparison notebooks (raw-DDB vs normalized-S3, SemanticRAG
-  vs VKG, OntologyRAG on/off) now run **k=3** and report mean ± std; results + analysis summary
-  live under `data/eval/`.
-- **Security hardening.** Security-scan remediation pass, `.trivyignore` triage, JWT-inbound
-  (CUSTOM_JWT) runtimes with M2M/SPA OAuth clients, Bedrock Guardrails (PII), and account-ID
-  redaction in notebook outputs and saved eval artifacts.
-- **MCP + developer experience.** `ListOntologies` MCP tool and caller-chain tool descriptions;
-  Cowork (Claude Desktop) MCP quickstart; Settings "Connectivity" panel; copy/download buttons
-  for SQL/SPARQL/results and the Phase-3 schema slice in the reasoning panel.
-- **Cost estimate refreshed.** Bedrock model line now blends Opus 4.8 ($5/$25 per M tokens,
-  build-time) with Sonnet 4.6 ($3/$15 per M, query-time); see the Cost Estimation section.

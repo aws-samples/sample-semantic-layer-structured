@@ -20,9 +20,9 @@
  *
  * The Cognito group → role binding is typically set on the Identity
  * Pool's `CfnIdentityPoolRoleAttachment` `roleMappings.rules` table,
- * but doing that in the auth stack here would require a wider
- * refactor. For now we expose the role ARNs as outputs and wire them
- * into the identity pool via a small custom resource.
+ * but doing that in the auth stack here would couple it too tightly.
+ * Instead we expose the role ARNs as outputs and wire them into the
+ * identity pool via a small custom resource.
  */
 import {
   Aws,

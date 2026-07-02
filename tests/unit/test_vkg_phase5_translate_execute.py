@@ -110,6 +110,142 @@ def test_phase5_counts_repair_usage(monkeypatch):
     assert out["usage"].get("outputTokens") == 7
 
 
+class _SeqGateway:
+    """Gateway whose translate_sql returns scripted results in sequence.
+
+    Each call pops the next entry from ``results`` (a list of dicts or
+    Exceptions). Records every SPARQL it was asked to translate so a test can
+    assert the repaired SPARQL was re-submitted.
+    """
+
+    def __init__(self, results):
+        self._results = list(results)
+        self.sparqls = []
+        self.calls = 0
+
+    def translate_sql(self, *, sparql, ontology_json, ontology_id=""):
+        self.sparqls.append(sparql)
+        self.calls += 1
+        item = self._results.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return dict(item)
+
+    def run_select(self, *, sparql):
+        raise AssertionError("Phase 5 called run_select instead of translate_sql")
+
+
+def test_phase5_repairs_sparql_translation_once_then_succeeds(monkeypatch):
+    """A first translate FAILURE ({"error"}) triggers one SPARQL repair, and the
+    repaired SPARQL is re-translated successfully (Fix 1)."""
+    from agents.ontology_query_agent import main
+
+    gw = _SeqGateway([
+        {"error": "It is not possible to reuse the projection alias ?month in GROUP BY"},
+        {"sql": "SELECT month, SUM(amt) FROM normalized.financial_activity GROUP BY month",
+         "database": "normalized", "catalog": "AwsDataCatalog"},
+    ])
+    monkeypatch.setattr(main, "_run_athena_sql",
+                        lambda **k: {"columns": ["month", "_col1"],
+                                     "rows": [["2024-01", "100"]],
+                                     "over_limit": False, "state_change_reason": ""})
+    monkeypatch.setattr(main, "_render_answer", lambda **k: "Jan total was 100.")
+
+    def fake_sparql_repair(*, sparql, error, usage_sink=None):
+        if usage_sink is not None:
+            for key, val in {"inputTokens": 3, "outputTokens": 9,
+                             "totalTokens": 12}.items():
+                usage_sink[key] = usage_sink.get(key, 0) + val
+        return "SELECT (SUBSTR(?d,1,7) AS ?month) (SUM(?amt) AS ?t) WHERE { ?x a <http://x/FA> } GROUP BY (SUBSTR(?d,1,7))"
+
+    monkeypatch.setattr(main, "_repair_sparql_for_translation", fake_sparql_repair)
+    deps = main._build_phase_deps(gateway=gw, ontology_json={"mappings": {}})
+    out = deps.run_execution("SELECT (SUBSTR(?d,1,7) AS ?month) ... GROUP BY ?month")
+    assert out["rows"] == [["2024-01", "100"]]
+    assert gw.calls == 2  # original failed, repaired re-translated
+    assert gw.sparqls[1].startswith("SELECT (SUBSTR")  # repaired SPARQL re-submitted
+    # The translation-repair tokens are folded into the returned usage.
+    assert out["usage"].get("totalTokens") == 12
+
+
+def test_phase5_degrades_when_sparql_translation_repair_exhausted(monkeypatch):
+    """If the repaired SPARQL ALSO fails to translate, degrade after 2 attempts."""
+    from agents.ontology_query_agent import main
+
+    gw = _SeqGateway([
+        {"error": "Ontop translation failed"},
+        {"error": "Ontop translation failed again"},
+    ])
+    monkeypatch.setattr(
+        main, "_run_athena_sql",
+        lambda **k: (_ for _ in ()).throw(AssertionError("should not run Athena")),
+    )
+    monkeypatch.setattr(main, "_repair_sparql_for_translation",
+                        lambda **k: "SELECT (COUNT(?a) AS ?n) WHERE { ?a a <http://x/C> }")
+    deps = main._build_phase_deps(gateway=gw, ontology_json={"mappings": {}})
+    out = deps.run_execution("SELECT (COUNT(?a) AS ?n) WHERE { ?a a <http://x/C> }")
+    assert out["degraded"] == "sparql_translation_failed"
+    assert gw.calls == 2  # original + one repaired retry, then give up
+    assert out["rows"] == []
+
+
+def test_phase5_degrades_when_sparql_translation_repair_returns_empty(monkeypatch):
+    """A blank SPARQL repair must degrade WITHOUT a second translate call."""
+    from agents.ontology_query_agent import main
+
+    gw = _SeqGateway([{"error": "Ontop translation failed"}])
+    monkeypatch.setattr(
+        main, "_run_athena_sql",
+        lambda **k: (_ for _ in ()).throw(AssertionError("should not run Athena")),
+    )
+    monkeypatch.setattr(main, "_repair_sparql_for_translation", lambda **k: "   ")
+    deps = main._build_phase_deps(gateway=gw, ontology_json={"mappings": {}})
+    out = deps.run_execution("SELECT (COUNT(?a) AS ?n) WHERE { ?a a <http://x/C> }")
+    assert out["degraded"] == "sparql_translation_failed"
+    assert gw.calls == 1  # blank repair short-circuits before re-translating
+
+
+def test_phase5_degrades_when_sparql_translation_repair_raises(monkeypatch):
+    """A raised SPARQL-repair Bedrock call degrades, not crashes."""
+    from agents.ontology_query_agent import main
+
+    gw = _SeqGateway([{"error": "Ontop translation failed"}])
+    monkeypatch.setattr(
+        main, "_run_athena_sql",
+        lambda **k: (_ for _ in ()).throw(AssertionError("should not run Athena")),
+    )
+
+    def _boom(**k):
+        raise RuntimeError("ThrottlingException")
+
+    monkeypatch.setattr(main, "_repair_sparql_for_translation", _boom)
+    deps = main._build_phase_deps(gateway=gw, ontology_json={"mappings": {}})
+    out = deps.run_execution("SELECT (COUNT(?a) AS ?n) WHERE { ?a a <http://x/C> }")
+    assert out["degraded"] == "sparql_translation_failed"
+    assert gw.calls == 1
+
+
+def test_repair_sparql_for_translation_strips_fences(monkeypatch):
+    """The REAL _repair_sparql_for_translation strips fences + embeds error+SPARQL."""
+    main = _patch_repair_agent(
+        monkeypatch, content=[{"text": "```sparql\nSELECT ?x WHERE { ?x a <http://x/C> }\n```"}],
+    )
+    out = main._repair_sparql_for_translation(
+        sparql="SELECT (X AS ?x) WHERE {} GROUP BY ?x",
+        error="alias reuse in GROUP BY",
+    )
+    assert out == "SELECT ?x WHERE { ?x a <http://x/C> }"  # fence stripped
+    assert "alias reuse in GROUP BY" in _FakeRepairAgent.last_prompt
+    assert "GROUP BY ?x" in _FakeRepairAgent.last_prompt
+
+
+def test_repair_sparql_for_translation_empty_on_malformed(monkeypatch):
+    """A degenerate completion yields "" and does NOT raise."""
+    main = _patch_repair_agent(monkeypatch, content=[])
+    out = main._repair_sparql_for_translation(sparql="SELECT bad", error="err")
+    assert out == ""
+
+
 def test_phase5_degrades_when_translate_raises(monkeypatch):
     """A raised translate_sql (e.g. non-JSON gateway body) degrades, not crashes."""
     from agents.ontology_query_agent import main
@@ -318,6 +454,54 @@ def test_phase5_answer_renderer_produces_llm_answer_and_counts_usage(monkeypatch
     assert "15" in _FakeRepairAgent.last_prompt
     # Real renderer usage was counted.
     assert sink == {"inputTokens": 11, "outputTokens": 4, "totalTokens": 15}
+
+
+def test_build_domain_context_from_config():
+    """_build_domain_context stitches name + useCases/dataSources into one line."""
+    from agents.ontology_query_agent import main
+    ctx = main._build_domain_context({
+        "name": "Curated Insurance Layer",
+        "useCasesDescription": "life insurance and annuity policy analytics",
+        "dataSourcesDescription": "ACORD-derived party/policy/coverage tables",
+    })
+    assert ctx.startswith("DOMAIN CONTEXT:")
+    assert "Curated Insurance Layer" in ctx
+    assert "annuity" in ctx
+    assert "never a generic/world-knowledge sense" in ctx
+
+
+def test_build_domain_context_empty_when_no_description():
+    """No description fields → empty string (prompts read unchanged)."""
+    from agents.ontology_query_agent import main
+    assert main._build_domain_context({}) == ""
+    assert main._build_domain_context({"useCasesDescription": "   "}) == ""
+
+
+def test_render_answer_injects_domain_context(monkeypatch):
+    """The domain descriptor is prepended to the answer system prompt (Fix 2)."""
+    from agents.ontology_query_agent import main
+
+    captured = {}
+
+    class _Agent:
+        def __init__(self, *, model, system_prompt, tools):
+            captured["system_prompt"] = system_prompt
+
+        def __call__(self, prompt):
+            return types.SimpleNamespace(message={"content": [{"text": "There are 15 parties."}]})
+
+    monkeypatch.setattr(main, "_build_query_model", lambda: object())
+    monkeypatch.setattr(main, "Agent", _Agent)
+    monkeypatch.setattr(main, "_extract_usage_summary", lambda r: {})
+    out = main._render_answer(
+        question="how many parties", columns=["n"], rows=[["15"]],
+        over_limit=False, usage_sink={},
+        domain_context="DOMAIN CONTEXT: this is an insurance layer.",
+    )
+    assert out == "There are 15 parties."
+    # The domain line precedes the standard answer prompt.
+    assert captured["system_prompt"].startswith("DOMAIN CONTEXT: this is an insurance layer.")
+    assert "report the result" in captured["system_prompt"].lower()
 
 
 def test_phase5_answer_renderer_falls_back_to_deterministic_on_error(monkeypatch):

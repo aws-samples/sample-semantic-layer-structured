@@ -436,40 +436,100 @@ def execute_sql_query(sql_query: str, database_name: str, catalog_id: str) -> st
         logger.info(f"QueryExecutionContext: {query_context}")
         logger.info(f"Workgroup     : {workgroup}")
 
-        # Start query execution
-        response = athena_client.start_query_execution(
-            QueryString=sql_query,
-            QueryExecutionContext=query_context,
-            ResultConfiguration={'OutputLocation': s3_output_location},
-            WorkGroup=workgroup
-        )
-
-        query_execution_id = response['QueryExecutionId']
-        logger.info(f"Query submitted: execution_id={query_execution_id}")
-
-        # Wait for query completion
+        # Start + poll a single Athena execution. Returns
+        # ('SUCCEEDED', execution_id, '') on success, ('FAILED', execution_id, reason)
+        # on a query-level failure, or ('TIMED_OUT', execution_id, '') if it never
+        # settled. A boto error from start_query_execution itself is raised as a
+        # transient-or-not classification by the caller (it may be the connector
+        # cold-starting before the query is even accepted).
         import time
-        max_wait_time = 600
-        wait_interval = 2
-        elapsed_time = 0
 
-        while elapsed_time < max_wait_time:
-            response = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
-            status = response['QueryExecution']['Status']['State']
+        def _start_and_poll() -> tuple:
+            resp = athena_client.start_query_execution(
+                QueryString=sql_query,
+                QueryExecutionContext=query_context,
+                ResultConfiguration={'OutputLocation': s3_output_location},
+                WorkGroup=workgroup,
+            )
+            qid = resp['QueryExecutionId']
+            logger.info(f"Query submitted: execution_id={qid}")
+            max_wait_time = 600
+            wait_interval = 2
+            elapsed = 0
+            while elapsed < max_wait_time:
+                ex = athena_client.get_query_execution(QueryExecutionId=qid)
+                st = ex['QueryExecution']['Status']['State']
+                if st == 'SUCCEEDED':
+                    logger.info("Query succeeded")
+                    return 'SUCCEEDED', qid, ''
+                if st in ('FAILED', 'CANCELLED'):
+                    reason = ex['QueryExecution']['Status'].get('StateChangeReason', 'Unknown error')
+                    return 'FAILED', qid, reason
+                time.sleep(wait_interval)  # nosemgrep: arbitrary-sleep — intentional polling interval for Athena query status
+                elapsed += wait_interval
+            return 'TIMED_OUT', qid, ''
 
-            if status == 'SUCCEEDED':
-                logger.info(f"Query succeeded")
+        # Bounded deterministic retry for TRANSIENT connector failures (e.g. the
+        # DynamoDB federated connector Lambda cold-starting:
+        # 409 CodeArtifactUserPendingException / "Lambda is initializing"). These
+        # are infrastructure errors the LLM cannot fix by rewriting SQL, so the tool
+        # owns the retry. Deterministic SQL errors (SCHEMA/COLUMN_NOT_FOUND, syntax)
+        # and the ProjectionExpression-size error are NOT retried — re-running the
+        # identical query would just loop.
+        from .athena_errors import is_transient_error, is_projection_size_error
+        _MAX_ATTEMPTS = 3
+        _BACKOFFS = [2, 5, 10]  # seconds before attempts 2 and 3 (index 0 unused)
+        query_execution_id = ''
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                outcome, query_execution_id, error_msg = _start_and_poll()
+            except Exception as start_err:  # noqa: BLE001 — start may fail on cold connector
+                reason = str(start_err)
+                if attempt < _MAX_ATTEMPTS and is_transient_error(reason):
+                    delay = _BACKOFFS[min(attempt, len(_BACKOFFS) - 1)]
+                    logger.info(f"execute_sql_query: transient start error "
+                                f"(attempt {attempt}/{_MAX_ATTEMPTS}), retrying in "
+                                f"{delay}s: {reason[:160]}")
+                    time.sleep(delay)  # nosemgrep: arbitrary-sleep — bounded retry backoff
+                    continue
+                logger.error(f"Error starting SQL query: {reason}")
+                return json.dumps({"error": str(start_err), "sql_query": sql_query,
+                                   "database_name": database_name, "catalog_id": catalog_id})
+
+            if outcome == 'SUCCEEDED':
                 break
-            elif status in ['FAILED', 'CANCELLED']:
-                error_msg = response['QueryExecution']['Status'].get('StateChangeReason', 'Unknown error')
-                logger.error(f"Query failed: {error_msg}")
-                return json.dumps({"error": f"Query failed: {error_msg}", "query_execution_id": query_execution_id})
+            if outcome == 'TIMED_OUT':
+                return json.dumps({"error": "Query timed out", "query_execution_id": query_execution_id})
 
-            time.sleep(wait_interval)  # nosemgrep: arbitrary-sleep — intentional polling interval for Athena query status
-            elapsed_time += wait_interval
-
-        if elapsed_time >= max_wait_time:
-            return json.dumps({"error": "Query timed out", "query_execution_id": query_execution_id})
+            # outcome == 'FAILED'
+            if is_projection_size_error(error_msg):
+                # SELECT * / COUNT(*) over a wide federated (DynamoDB) table exceeded
+                # the connector's ProjectionExpression size limit. Retrying is futile;
+                # surface an ACTIONABLE error so the agent narrows the projection.
+                logger.error(f"Query failed (projection-size limit): {error_msg}")
+                return json.dumps({
+                    "error": ("Query failed: the table is a wide federated source and "
+                              "SELECT */COUNT(*) exceeded its projection-size limit. "
+                              "Re-issue selecting only the explicit columns needed "
+                              "(use COUNT(<key column>) instead of COUNT(*))."),
+                    "athena_error": error_msg,
+                    "query_execution_id": query_execution_id,
+                })
+            if attempt < _MAX_ATTEMPTS and is_transient_error(error_msg):
+                delay = _BACKOFFS[min(attempt, len(_BACKOFFS) - 1)]
+                logger.info(f"execute_sql_query: transient query failure "
+                            f"(attempt {attempt}/{_MAX_ATTEMPTS}), retrying in "
+                            f"{delay}s: {error_msg[:160]}")
+                time.sleep(delay)  # nosemgrep: arbitrary-sleep — bounded retry backoff
+                continue
+            # Deterministic failure (or retries exhausted) — surface it.
+            logger.error(f"Query failed: {error_msg}")
+            return json.dumps({"error": f"Query failed: {error_msg}", "query_execution_id": query_execution_id})
+        else:
+            # Loop exhausted without a SUCCEEDED break (all attempts were transient).
+            return json.dumps({"error": "Query failed after retries: connector "
+                               "repeatedly unavailable (transient).",
+                               "query_execution_id": query_execution_id})
 
         # Get query results
         paginator = athena_client.get_paginator('get_query_results')
@@ -606,38 +666,30 @@ def _build_query_model() -> BedrockModel:
     from strands.models.bedrock import CacheConfig
     return BedrockModel(
         model_id=QUERY_MODEL_ID,
-        temperature=0.0,
-        max_tokens=4000,
+        # NOTE: `temperature` is intentionally omitted — Sonnet 5 has adaptive
+        # thinking ON by default and Bedrock rejects `temperature`/`top_p`/`top_k`
+        # when thinking is active, surfacing as a ValidationException on
+        # ConverseStream (same class of issue as Opus 4.8). max_tokens raised from
+        # 4000: adaptive thinking tokens share the OUTPUT budget, so headroom is
+        # needed to avoid stop_reason="max_tokens" before the SQL/answer emits.
+        max_tokens=8000,
         boto_session=get_boto_session(),
         cache_config=CacheConfig(strategy="auto"),
     )
 
 
 def _build_judge_model() -> BedrockModel:
-    """BedrockModel used by the supervisor judge + decomposer (Sonnet 4.6).
+    """BedrockModel used by the supervisor judge + decomposer (Sonnet 5).
 
     Judge emits a small structured-output decision (~200–500 tokens) per
-    attempt — we use Sonnet 4.6 here even when the worker is on Opus to keep
-    per-query spend bounded.
+    attempt — we keep it on the same Sonnet model as the worker to bound spend.
     """
     return BedrockModel(
         model_id=QUERY_MODEL_ID,
-        temperature=0.0,
-        max_tokens=1500,
-        boto_session=get_boto_session(),
-    )
-
-
-def _build_router_model() -> BedrockModel:
-    """BedrockModel for the intent router (Haiku 4.5 — NOT the query model).
-
-    The router runs before Tier 1 on every chat turn, so it must be cheap and
-    low-latency. A bare, short structured-output call: no tools, no cache.
-    """
-    return BedrockModel(
-        model_id=ROUTER_MODEL_ID,
-        temperature=0.0,
-        max_tokens=100,
+        # `temperature` omitted — Sonnet 5 adaptive thinking is on by default and
+        # is incompatible with temperature (see _build_query_model). max_tokens
+        # raised from 1500 so adaptive thinking tokens don't truncate the verdict.
+        max_tokens=4000,
         boto_session=get_boto_session(),
     )
 
@@ -648,16 +700,31 @@ def _router_classify_fn(question: str) -> Dict[str, Any]:
     Used as the ``classify_fn`` injected into ``classify_intent`` for the
     model gray-zone (the regex fast-path handles obvious cases with no call).
 
+    Calls Bedrock ``converse`` directly via boto3 — NOT through a Strands
+    ``Agent`` — on purpose. A Strands ``Agent`` auto-emits a harvested
+    ``strands.telemetry.tracer`` model-invoke span whose OUTPUT is this router's
+    raw ``{"intent": ...}`` JSON. The AgentCore SESSION eval judges then see that
+    intermediate routing JSON in the conversation ``{context}`` and can mistake
+    it for the assistant's turn (e.g. scoring a correctly-clarified turn as "the
+    agent returned JSON, not a clarifying question"). A bare ``converse`` call is
+    not instrumented as a model span, so the routing JSON never enters telemetry.
+    The router is also cheap/low-latency by design: no tools, no cache.
+
     :param question: The contextualized user question.
     :returns: ``{"intent": str, "confidence": float}`` parsed from the model,
         or ``{"intent": "data_query", "confidence": 0.0}`` on any parse failure
         (the caller's conservative default).
     """
-    agent = Agent(model=_build_router_model(), system_prompt=ROUTER_PROMPT)
-    response = agent(question)
+    client = get_boto_session().client("bedrock-runtime")
     try:
-        text = response.message['content'][0]['text'].strip()
-    except (KeyError, IndexError, TypeError):
+        response = client.converse(
+            modelId=ROUTER_MODEL_ID,
+            system=[{"text": ROUTER_PROMPT}],
+            messages=[{"role": "user", "content": [{"text": question}]}],
+            inferenceConfig={"temperature": 0.0, "maxTokens": 100},
+        )
+        text = response["output"]["message"]["content"][0]["text"].strip()
+    except Exception:  # noqa: BLE001 — fail-soft: any router error → conservative data_query
         return {"intent": "data_query", "confidence": 0.0}
     # Strip a ```json fence if the model wrapped its object.
     if text.startswith('```'):
@@ -731,11 +798,9 @@ def _summarize_metric_rows(*, metric_id: str, columns: List[str],
                            rows: List[list]) -> str:
     """Build a natural-language answer from a governed-metric result.
 
-    The Tier 1 path previously answered with a bare "Metric X returned N rows
-    across M columns" — which is not an answer to the user's question. Mirror the
-    VKG agent's `_summarize_select`: shape a useful sentence from the result
-    itself (scalar / single record / multi-row), so the user sees the value(s),
-    not just a count.
+    Mirror the VKG agent's `_summarize_select`: shape a useful sentence from the
+    result itself (scalar / single record / multi-row), so the user sees the
+    value(s) rather than a bare "Metric X returned N rows across M columns" count.
 
     Args:
         metric_id: The governed metric id (for the multi-row fallback label).
@@ -889,6 +954,13 @@ def _build_phase_deps(*, kb_id: str, recall_resolver=None) -> PhaseDeps:
     router = RagTopicRouter(
         retrieve_fn=retrieve_kb_context_structured,
         kb_id_for=lambda ns: kb_id or _kb_id_for(ns),
+        # top_k=20: tried 40 (whole 40-table namespace) to fix gt-04's "Missing:
+        # party" — but it did NOT help (party still ranks below the effective
+        # score_floor/min_candidates cutoff for a payout-phrased question, slice
+        # still capped at ~16 sources without party) AND it regressed other rows by
+        # widening the candidate pool (0.75→0.62). gt-04 is a hard semantic-retrieval
+        # miss (party is distant from the question text), not a top_k breadth issue.
+        # Reverted to 20.
         top_k=20,
     )
     judge = build_slice_judge(
@@ -1036,7 +1108,7 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
         # is the user's selection. Match it to one offered option; on a single
         # match, re-run the ORIGINAL standalone question (not the bare reply) and
         # carry a resolution that Phase 1 uses to prune the rival candidates so
-        # Phase 2 no longer re-fires the identical clarification. Fail-soft: no
+        # Phase 2 does not re-fire the identical clarification. Fail-soft: no
         # pending clarification / no unique match → resolution is None and the
         # turn proceeds through normal contextualization. See
         # agents/shared/clarification.py.
@@ -1472,6 +1544,9 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             answer=result_text,
             operation_label='final_answer',
             conversation_history=_history,
+            # Carry the Phase-3 schema slice so the SqlGrounded judge can verify the
+            # executed SQL against it from this (now turn-anchoring) invoke_agent span.
+            retrieved_schema=getattr(wf, 'slice_text', None),
         )
 
         # Provenance sources: the slice tables resolved by the Tier 2 graph
@@ -1784,7 +1859,8 @@ def _chat_stream(payload: Dict[str, Any], context):
             _chat_sessions.get_or_create(session_id=session_id,
                                          ontology_id=payload.get('ontologyId', ''),
                                          mode=payload.get('mode', 'semantic-rag'),
-                                         user_id=user_id)
+                                         user_id=user_id,
+                                         source=payload.get('source', 'chat'))
         except SessionOwnershipError:
             cw_metrics.emit('chat.session.ownership_violation',
                             dimensions={'agent': 'metadata'})
@@ -1828,9 +1904,8 @@ def _chat_stream(payload: Dict[str, Any], context):
         def _run_with_callback(callback, hook=None, phase_sink=None) -> Dict[str, Any]:
             # The deterministic Tier 2 graph streams exclusively through the
             # per-phase trace sink (its phase nodes call it directly); it has no
-            # model tool-loop, so the Strands ``callback`` / ``hook`` channels —
-            # which only ever fed the removed legacy ReAct agent — are accepted
-            # for the ``stream_agent_run`` contract but no longer wired anywhere.
+            # model tool-loop, so the Strands ``callback`` / ``hook`` channels are
+            # accepted for the ``stream_agent_run`` contract but not otherwise wired.
             global _STREAMING_PHASE_SINK
             _STREAMING_PHASE_SINK = phase_sink
             try:
@@ -1924,8 +1999,14 @@ def _chat_stream(payload: Dict[str, Any], context):
         'usage': metadata.get('usage') or {},
         'runtimeMs': metadata.get('runtimeMs') or 0,
         # Answer-source label so the UI renders a per-tier trust badge. Present
-        # on every Tier 1/2 response dict; None-safe for any legacy path.
+        # on every Tier 1/2 response dict; None-safe when a path omits it.
         'provenance': result.get('provenance') if isinstance(result, dict) else None,
+        # Executed-vs-generated distinction for the eval harness: ``executedSql`` is
+        # "" on a degraded/gate-rejected run (``sql`` above is then the rejected
+        # query), and ``degraded`` names the terminal reason. Lets the eval record
+        # the SQL that ACTUALLY ran + why a turn produced no rows.
+        'executedSql': (result.get('executed_sql', '') if isinstance(result, dict) else ''),
+        'degraded': (result.get('degraded') if isinstance(result, dict) else None),
     }
     # Carry the pending-clarification record (if this turn asked one) into the
     # persisted totals so the NEXT turn can resolve the user's selection.

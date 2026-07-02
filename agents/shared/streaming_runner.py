@@ -53,9 +53,8 @@ def _make_callback(
       - ``reasoningText`` / ``reasoning_text`` / ``reasoningContent.text``
         (extended-thinking output)
 
-    The synthetic ``toolUse=`` / ``toolResult=`` kwargs are kept for
-    backwards compat with the unit tests that drive the runner without
-    a real Strands agent.
+    The synthetic ``toolUse=`` / ``toolResult=`` kwargs let the unit tests drive
+    the runner without a real Strands agent.
     """
     open_calls: Dict[str, str] = {}
 
@@ -136,8 +135,7 @@ def make_phase_sink(emitter: AGUIEmitter, evt_queue: "queue.Queue[Any]"):
     ``useChatStream``'s ``streamingPhases``) so the runner can include
     ``phaseTimeline`` in the ``totals`` payload passed to ``on_result``.
     This lets a reloaded session render the phase trace identically to a
-    live stream (previously only ``rowCount`` was persisted, losing the
-    result table on reload).
+    live stream, including the full result table (not just ``rowCount``).
 
     Args:
         emitter: The per-turn AGUIEmitter.
@@ -209,7 +207,7 @@ def stream_agent_run(
     Args:
         emitter: AGUIEmitter scoped to the current turn.
         run_agent: Callable invoked in a worker thread. Called with
-            ``run_agent(callback)`` for backwards compat with tests, OR
+            ``run_agent(callback)`` (the form the tests use), OR
             ``run_agent(callback, hook=...)`` when the agent factory can
             wire a Strands HookProvider for real tool args/results.
         poll_interval: Seconds to wait on each queue.get; tuning knob.
@@ -385,6 +383,11 @@ def stream_agent_run(
         'runtimeMs': metadata.get('runtimeMs') or 0,
         'phaseTimeline': phase_timeline,
         'provenance': provenance,
+        # Executed-vs-generated distinction for the eval harness (mirrors the
+        # metadata chat path): ``executedSql`` is "" on a degraded/gate-rejected
+        # run; ``degraded`` names the terminal reason.
+        'executedSql': (result.get('executed_sql', '') if isinstance(result, dict) else ''),
+        'degraded': (result.get('degraded') if isinstance(result, dict) else None),
     }
     # Carry the pending-clarification record (the standalone question + offered
     # options) into the persisted totals when this turn asked a clarification,

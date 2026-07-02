@@ -87,9 +87,8 @@ const _acordCtx = app.node.tryGetContext('enableAcordSampleData');
 const enableAcordSampleData = _acordCtx === true || _acordCtx === 'true';
 
 // NOTE: the AG-UI multi-turn streaming chat is always on — it is the only
-// natural-language query UI (the legacy single-input page + /query/chat proxy
-// were removed). There is no enableChatUi flag; the chat gateway + chat-sessions
-// table are always deployed.
+// natural-language query UI. There is no enableChatUi flag; the chat gateway +
+// chat-sessions table are always deployed.
 
 // OBO identity passthrough (item #4) — defaults to false (Phase 0/1 of
 // rollout). Set `-c enableOboPassthrough=true` after LF grants are

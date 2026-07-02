@@ -80,12 +80,16 @@ Optional configuration in `bin/app.ts`:
 Deploy all stacks with automated setup:
 
 ```bash
-# Build
-npm run build
-
-# Deploy all stacks (includes automated triggers)
-cdk deploy --all --require-approval never
+# Deploy all stacks (includes automated triggers).
+# `npm run deploy` runs the `predeploy` gate first (tsc build + CDK Jest +
+# Python unit suite), then `cdk deploy --all`. Prefer it over a bare
+# `cdk deploy --all`, which skips the test gate.
+npm run deploy
 ```
+
+> To skip CDK's interactive approval prompts in automation, run the underlying
+> command directly: `npm run build && npm test && cdk deploy --all --require-approval never`
+> (this preserves the test gate while bypassing prompts).
 
 This will:
 

@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ViewKnowledgeGraph from "../pages/admin/ViewKnowledgeGraph";
-import { neptuneAPI } from "../services/api";
+import { neptuneAPI, metricsAPI } from "../services/api";
 
 jest.mock("../services/api");
 jest.mock("../components/OntologyEditor", () => () => (
@@ -33,6 +33,38 @@ jest.mock("@cloudscape-design/components", () => ({
   ColumnLayout: ({ children }) => <div>{children}</div>,
   StatusIndicator: ({ children }) => <div>{children}</div>,
   Badge: ({ children }) => <span>{children}</span>,
+  // GovernedMetricsTab (rendered un-mocked inside the admin tabs) also imports
+  // these — without stubs they resolve to undefined ("Element type is invalid").
+  Form: ({ children }) => <form>{children}</form>,
+  FormField: ({ children, label }) => (
+    <div>
+      {label}
+      {children}
+    </div>
+  ),
+  Input: ({ value, onChange, ...props }) => (
+    <input
+      value={value}
+      onChange={(e) =>
+        onChange && onChange({ detail: { value: e.target.value } })
+      }
+      {...props}
+    />
+  ),
+  Textarea: ({ value, onChange, ...props }) => (
+    <textarea
+      value={value}
+      onChange={(e) =>
+        onChange && onChange({ detail: { value: e.target.value } })
+      }
+      {...props}
+    />
+  ),
+  Select: ({ selectedOption, ...props }) => (
+    <select {...props}>{selectedOption?.label}</select>
+  ),
+  Modal: ({ children, visible }) => (visible ? <div>{children}</div> : null),
+  Spinner: () => <div>Loading</div>,
   Table: ({ items, empty, columnDefinitions }) => (
     <table>
       <tbody>
@@ -90,6 +122,9 @@ beforeEach(() => {
   neptuneAPI.getGraphStats = jest
     .fn()
     .mockResolvedValue({ success: true, data: mockGraphStats });
+  // GovernedMetricsTab calls metricsAPI.list(ontologyId) on mount and reads
+  // res.success; without this stub the auto-mock returns undefined and throws.
+  metricsAPI.list = jest.fn().mockResolvedValue({ success: true, data: [] });
 });
 
 afterEach(() => {

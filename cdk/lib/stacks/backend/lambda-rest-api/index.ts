@@ -450,17 +450,14 @@ export class LambdaRestApiStack extends CommonStack {
     //
     // Resolution: keep chat SSE on the API Gateway HTTP API path. With
     // sse-starlette the events arrive in chunks; if buffering becomes a
-    // measurable UX issue post-deploy we'll move to Cognito-Identity-Pool
-    // SigV4 signing on the frontend (substantial refactor) or front the
-    // chat endpoint with CloudFront + Lambda@Edge.
-    //
-    // The frontend's streamChat continues to hit ${REACT_APP_API_URL}/query/chat.
+    // measurable UX issue, the options are Cognito-Identity-Pool SigV4 signing on
+    // the frontend or fronting the chat endpoint with CloudFront + Lambda@Edge.
 
     // Grant Lambda permission to pull from the build ECR repository
     lambdaBuild.repository.grantPull(lambdaRole);
 
     // Grant the REST Lambda read on the M2M client secret so it can mint the
-    // OAuth Bearer token used to invoke the JWT-inbound runtimes (replaces SigV4).
+    // OAuth Bearer token used to invoke the JWT-inbound runtimes.
     if (props.m2mClientSecret) {
       props.m2mClientSecret.grantRead(lambdaRole);
     }
@@ -625,19 +622,16 @@ export class LambdaRestApiStack extends CommonStack {
     // Then add authenticated routes for other methods.
     //
     // The frontend calls the execute-api URL directly via REACT_APP_API_URL
-    // (see frontend/src/services/api.js). There is no /api/* prefix routing —
-    // we previously had a `/api/{proxy+}` catch-all here for a CloudFront
-    // rewrite path that was never wired up; it was removed because each route
-    // adds AWS::Lambda::Permission entries that count against Lambda's 20KB
-    // resource-policy limit, and we hit that limit when adding /lessons +
-    // /documents routes below.
+    // (see frontend/src/services/api.js). There is no /api/* prefix routing.
+    //
     // Single catch-all route. FastAPI's main.py mounts every sub-app
     // (/ontology, /datasource, /query, /neptune, /metadata, /lessons,
     // /documents, /status), and the Lambda is the sole integration target,
     // so a single `/{proxy+}` matches all of them. This shape uses only 2
     // AWS::Lambda::Permission statements (OPTIONS + ANY) regardless of how
-    // many sub-apps mount, which keeps us well under Lambda's 20KB
-    // resource-policy limit (we previously hit it at 43 statements).
+    // many sub-apps mount — essential because each per-route permission counts
+    // against Lambda's 20KB resource-policy limit (~43 statements is enough to
+    // exceed it).
     const directRoutes: string[] = ['/{proxy+}'];
 
     directRoutes.forEach((path) => {

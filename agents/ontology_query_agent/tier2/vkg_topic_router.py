@@ -39,8 +39,7 @@ class VkgTopicRouter:
         """Initialize the router.
 
         Args:
-            endpoint: Unused — kept for backwards compatibility with the
-                OSS-era constructor signature. Pass ``""``.
+            endpoint: Reserved; not used by the router. Pass ``""``.
             knn: ``agents.shared.knn_index`` module (or stand-in).
             embed_fn: Callable that turns a question string into a vector.
             neptune_lexical: Object exposing

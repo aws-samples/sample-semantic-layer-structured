@@ -9,7 +9,6 @@ This service provides methods for:
 """
 
 import logging
-import json
 import os
 import re
 import uuid

@@ -19,8 +19,8 @@ aws-opentelemetry-distro==0.17.1
 pydantic==2.12.5  # Data validation for models
 
 # Authentication and security
-PyJWT==2.12.1  # JWT token validation
-cryptography==46.0.6  # Cryptographic functions for JWT
+PyJWT==2.13.0  # JWT token validation
+cryptography==48.0.1  # Cryptographic functions for JWT
 
 # HTTP client
 aiohttp==3.13.3  # Async HTTP client (required by smithy-http)

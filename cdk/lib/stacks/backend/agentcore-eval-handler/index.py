@@ -112,6 +112,26 @@ def _evaluator_list(props: dict) -> list:
     return evaluators
 
 
+def _ensure_log_group(log_group_name: str) -> None:
+    """Idempotently create the runtime's CloudWatch log group if it is absent.
+
+    The eval config's data source is the runtime's OTLP log group
+    (``/aws/bedrock-agentcore/runtimes/<runtimeId>-DEFAULT``). AgentCore creates
+    that group LAZILY — only on the runtime's first invocation — so on a truly
+    fresh deploy (runtimes provisioned but never invoked) it does not exist yet
+    and ``create_online_evaluation_config`` fails validation with
+    "One or more specified log groups do not exist". Pre-creating it here makes
+    the config create deterministic instead of racing that lazy creation; when
+    AgentCore later writes to the same group name it simply reuses this one.
+    """
+    logs = boto3.client('logs')
+    try:
+        logs.create_log_group(logGroupName=log_group_name)
+        print(f"Created log group {log_group_name}")
+    except logs.exceptions.ResourceAlreadyExistsException:
+        pass
+
+
 def _create_config(client, props: dict) -> dict:
     """Create an online evaluation config from CFN resource properties.
 
@@ -129,6 +149,9 @@ def _create_config(client, props: dict) -> dict:
     Returns:
         The create_online_evaluation_config API response (includes the id).
     """
+    # Ensure the runtime log group exists before referencing it — on a fresh
+    # deploy AgentCore has not created it yet (lazy, on first invocation).
+    _ensure_log_group(props['LogGroupName'])
     return client.create_online_evaluation_config(
         onlineEvaluationConfigName=props['ConfigName'],
         description=props.get('Description', ''),
@@ -246,8 +269,16 @@ def _is_complete_config_event(event: dict, client) -> dict:
         # Update (or Create with the name still mid-delete): wait for the name to free.
         return {'IsComplete': False}
     except Exception as e:
-        if 'permissions' in str(e).lower():
+        msg = str(e).lower()
+        if 'permissions' in msg:
             # IAM propagation delay right after role creation — let the waiter retry.
+            return {'IsComplete': False}
+        if 'log group' in msg and 'do not exist' in msg:
+            # The runtime OTLP log group is created lazily by AgentCore and is
+            # only eventually visible to the eval control plane. _create_config
+            # pre-creates it, but the eval service's view can still lag, so this
+            # ValidationException is transient — let the waiter poll until the
+            # group is visible rather than hard-failing the stack on a fresh deploy.
             return {'IsComplete': False}
         raise
 

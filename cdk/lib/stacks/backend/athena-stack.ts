@@ -7,6 +7,7 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as kms from 'aws-cdk-lib/aws-kms';
 import * as sam from 'aws-cdk-lib/aws-sam';
 import * as lakeformation from 'aws-cdk-lib/aws-lakeformation';
+import { LfAdminRegistration } from '../../common/constructs/lf-admin-registration';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { DataLakeStack } from './data-lake-stack';
@@ -166,7 +167,11 @@ export class AthenaStack extends cdk.Stack {
 
     // Create spill bucket for query results that exceed Lambda memory
     this.spillBucket = new s3.Bucket(this, 'SpillBucket', {
-      bucketName: `${connectorName}-spill`,
+      // Suffix with the account id so the globally-unique bucket name doesn't
+      // collide with a same-named bucket in another AWS account (S3 bucket
+      // namespace is global). Matches the `-${this.account}` convention every
+      // other bucket in this app uses.
+      bucketName: `${connectorName}-spill-${this.account}`,
       encryptionKey: encryptionKey,
       bucketKeyEnabled: true, // Reduce KMS costs
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -346,47 +351,55 @@ export class AthenaStack extends cdk.Stack {
     // traditional Glue databases. Attempting to grant LF permissions on S3 Tables namespaces
     // results in "Database not found" errors.
 
-    const lfAdmins: lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty[] = [
-      {
-        dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
-      },
-      {
-        dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
-      },
-      { dataLakePrincipalIdentifier: props.dataLakeStack.lfGrantSingletonRoleArn },
-      ...(props.additionalLakeFormationAdmins ?? []).map((arn) => ({
-        dataLakePrincipalIdentifier: arn,
-      })),
+    // Additively register LF admins via a read-modify-write custom resource
+    // (CfnDataLakeSettings is a per-account singleton that collides across
+    // stacks on a fresh deploy). The additive merge also makes the historical
+    // "carry forward ALL prior admins" concern automatic. See LfAdminRegistration.
+    const lfAdmins: string[] = [
+      `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
+      `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
+      props.dataLakeStack.lfGrantSingletonRoleArn,
+      ...(props.additionalLakeFormationAdmins ?? []),
     ];
 
-    new lakeformation.CfnDataLakeSettings(this, 'AthenaDataLakeAdminSettings', {
-      admins: lfAdmins,
+    const athenaLfAdmins = new LfAdminRegistration(this, 'AthenaDataLakeAdminSettings', {
+      adminArns: lfAdmins,
     });
 
     // LF permission: athenaExecutionRole — DESCRIBE on DynamoDB database
-    new lakeformation.CfnPermissions(this, 'AthenaLFDynamoDBDatabasePermissions', {
-      dataLakePrincipal: { dataLakePrincipalIdentifier: this.athenaExecutionRole.roleArn },
-      resource: {
-        databaseResource: {
-          catalogId: this.account,
-          name: props.glueCatalogStack.dynamodbDatabase.ref,
+    const athenaLfDbPerms = new lakeformation.CfnPermissions(
+      this,
+      'AthenaLFDynamoDBDatabasePermissions',
+      {
+        dataLakePrincipal: { dataLakePrincipalIdentifier: this.athenaExecutionRole.roleArn },
+        resource: {
+          databaseResource: {
+            catalogId: this.account,
+            name: props.glueCatalogStack.dynamodbDatabase.ref,
+          },
         },
-      },
-      permissions: ['DESCRIBE'],
-    });
+        permissions: ['DESCRIBE'],
+      }
+    );
+    athenaLfDbPerms.node.addDependency(athenaLfAdmins);
 
     // LF permission: athenaExecutionRole — SELECT + DESCRIBE on all DynamoDB tables
-    new lakeformation.CfnPermissions(this, 'AthenaLFDynamoDBTablePermissions', {
-      dataLakePrincipal: { dataLakePrincipalIdentifier: this.athenaExecutionRole.roleArn },
-      resource: {
-        tableResource: {
-          catalogId: this.account,
-          databaseName: props.glueCatalogStack.dynamodbDatabase.ref,
-          tableWildcard: {},
+    const athenaLfTablePerms = new lakeformation.CfnPermissions(
+      this,
+      'AthenaLFDynamoDBTablePermissions',
+      {
+        dataLakePrincipal: { dataLakePrincipalIdentifier: this.athenaExecutionRole.roleArn },
+        resource: {
+          tableResource: {
+            catalogId: this.account,
+            databaseName: props.glueCatalogStack.dynamodbDatabase.ref,
+            tableWildcard: {},
+          },
         },
-      },
-      permissions: ['SELECT', 'DESCRIBE'],
-    });
+        permissions: ['SELECT', 'DESCRIBE'],
+      }
+    );
+    athenaLfTablePerms.node.addDependency(athenaLfAdmins);
 
     // Apply cdk-nag suppressions for Athena connector spill bucket
     // S1: Server access logging disabled on spill bucket — logging is not required for temporary query spill data

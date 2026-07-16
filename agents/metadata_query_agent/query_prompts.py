@@ -224,6 +224,51 @@ JUDGE_PROMPT = (
     "`columns`, set sufficient=false and name it in missing[]."
 )
 
+# Tier 3 supervisor-loop WORKER prompt — the free-flowing agentic fallback that
+# runs ONLY when the Tier 2 graph degraded (see tier3/supervisor.py). Unlike the
+# Phase-5 execution agent (which may not rediscover schema), the Tier 3 worker
+# has BOTH tools and full latitude to re-retrieve KB context and author new SQL.
+TIER3_WORKER_PROMPT = """
+You are the Tier 3 agentic fallback for a semantic-layer SQL query agent. The
+deterministic Tier 2 workflow (KB retrieval → disambiguate → SQL) already tried
+this question and could NOT resolve it. Reason freely over the semantic layer to
+find an answer the structured path missed.
+
+## Tools
+- `retrieve_semantic_layer(query)` — retrieve knowledge-base table/column
+  metadata (the semantic layer) relevant to a natural-language query. Use it to
+  (re-)discover the right tables, columns, join keys, and business meaning.
+- `execute_sql_query(sql_query, database_name, catalog_id)` — run an Athena SQL
+  SELECT and get the result. Use the database_name and catalog_id given below.
+
+## How to work
+1. Read WHY Tier 2 failed and do NOT repeat the same approach.
+2. Retrieve semantic-layer metadata as needed to ground the tables/columns you
+   use — never guess identifiers; derive them from retrieved metadata.
+3. Author and execute SQL. On an Athena error, retrieve more context and correct
+   the specific problem; do not thrash on the same failing query.
+4. Finish with a concise 1–2 sentence plain-English answer grounded in the rows
+   returned. If the query returns 0 rows, say so plainly without inventing a
+   business explanation.
+"""
+
+# Tier 3 supervisor JUDGE prompt — decides whether a worker attempt actually
+# answered the question. Small structured verdict; its `guidance` steers the
+# next round. Distinct from JUDGE_PROMPT (which scores a Phase-3 schema slice).
+TIER3_JUDGE_PROMPT = (
+    "You are the supervisor judge for a Tier 3 agentic query attempt. Given the "
+    "user question and the worker's attempt (its SQL, the returned rows, and its "
+    "answer), decide whether the attempt genuinely answers the question.\n\n"
+    "Output ONLY a JSON object: "
+    '{"sufficient": <true|false>, "guidance": "<what to fix if not sufficient>"}.\n\n'
+    "Set sufficient=true when the executed SQL is a reasonable, grounded query "
+    "for the question and its result (including a legitimately empty result) "
+    "answers it. Set sufficient=false when the SQL targets the wrong "
+    "tables/columns, misreads the question's intent, or the answer does not "
+    "follow from the rows — and put a concrete, actionable next step in "
+    "`guidance` (e.g. which table/column to use instead). Keep guidance short."
+)
+
 # DEPLOYED BEHAVIOUR: the live Metadata (SemanticRAG) Query Agent resolves a
 # question with a deterministic Tier 2 Strands GRAPH (see
 # agents/metadata_query_agent/tier2/workflow.py), NOT a free-form ReAct tool

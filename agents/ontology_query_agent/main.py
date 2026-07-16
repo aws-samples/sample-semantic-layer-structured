@@ -25,7 +25,7 @@ except ImportError:
     _otel_context = None  # type: ignore
 from typing import Dict, Any, List, Optional
 from boto3.dynamodb.conditions import Key
-from strands import Agent
+from strands import Agent, tool
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client
@@ -36,6 +36,14 @@ from .query_prompts import (
     QUERY_MODEL_ID,
     ROUTER_MODEL_ID,
     ROUTER_PROMPT,
+    TIER3_WORKER_PROMPT,
+    TIER3_JUDGE_PROMPT,
+)
+from .tier3 import (
+    JudgeVerdict,
+    WorkerAttempt,
+    parse_judge_verdict,
+    run_supervisor_loop,
 )
 try:
     from agents.shared.prior_results import (
@@ -1723,6 +1731,233 @@ def tier2_resolve(question: str, namespace: str, *, ontology_id: str = "",
         return ctx
 
 
+# ----------------------------------------------------------------------------
+# Tier 3 — supervisor-loop agentic fallback (runs only when Tier 2 degrades)
+# ----------------------------------------------------------------------------
+def _tier2_failure_context(wf: WorkflowContext) -> str:
+    """Summarize why Tier 2 degraded, to seed the Tier 3 worker.
+
+    Names the terminal reason, the specific Phase-3 gap detail when present, and
+    the last-generated (failed) SPARQL so the worker does not repeat the approach
+    that already failed.
+    """
+    parts = [f"Tier 2 degraded terminal: {wf.degraded or 'unknown'}"]
+    detail = getattr(wf, "degraded_detail", None)
+    if detail:
+        parts.append(f"Detail: {detail}")
+    last_sparql = wf.sparql_query or (wf.execution_result or {}).get("sparql_query", "")
+    if last_sparql:
+        parts.append(f"Last SPARQL Tier 2 produced (did not succeed):\n{last_sparql}")
+    if wf.candidates:
+        locals_ = [c.rstrip("/#").rsplit("/", 1)[-1].rsplit("#", 1)[-1] for c in wf.candidates[:8]]
+        parts.append("Candidate ontology concepts Tier 2 considered: " + ", ".join(locals_))
+    return "\n".join(parts)
+
+
+def _make_tier3_judge():
+    """Build the Tier 3 supervisor judge callable ``(question, attempt) -> JudgeVerdict``.
+
+    One structured Bedrock ``converse`` call per verdict on the judge model. Any
+    error yields a not-sufficient verdict so a judge failure never falsely
+    accepts an attempt (fail-soft toward keeping the Tier 2 answer).
+    """
+    def _judge(question: str, attempt: WorkerAttempt) -> JudgeVerdict:
+        preview_rows = attempt.results[:10]
+        prompt = (
+            f"{TIER3_JUDGE_PROMPT}\n\n"
+            f"── Question ──\n{question}\n\n"
+            f"── Worker SPARQL ──\n{attempt.query or '(none)'}\n\n"
+            f"── Rows (first 10 of {len(attempt.results)}) ──\n"
+            f"{json.dumps(preview_rows, default=str)[:2000]}\n\n"
+            f"── Worker answer ──\n{attempt.answer or '(none)'}"
+        )
+        try:
+            client = get_boto_session().client("bedrock-runtime")
+            resp = client.converse(
+                modelId=JUDGE_MODEL_ID,
+                messages=[{"role": "user", "content": [{"text": prompt}]}],
+                inferenceConfig={"maxTokens": 500},
+            )
+            text = resp["output"]["message"]["content"][0]["text"]
+        except Exception as e:  # noqa: BLE001 — fail-soft: don't falsely accept
+            logger.warning("[tier3] judge call failed (%s) — treating as not sufficient", e)
+            return JudgeVerdict(sufficient=False)
+        return parse_judge_verdict(text)
+
+    return _judge
+
+
+def _run_tier3_supervisor(
+    *, question: str, wf: WorkflowContext, ontology_id: str, namespace: str,
+    domain_context: str = "",
+):
+    """Drive the Tier 3 supervisor loop for a degraded Tier 2 VKG run.
+
+    Opens its OWN Neptune gateway MCP session (Tier 2's closed on return), builds
+    a free-flowing worker agent with ontology-retrieval + SPARQL-execution tools
+    bound to that session, and runs the bounded loop. Fail-soft: any setup error
+    returns ``None`` so the caller keeps the Tier 2 answer. Returns the
+    :class:`SupervisorOutcome` otherwise (honored only when ``accepted`` is True).
+    """
+    mcp = _neptune_gateway_mcp()
+    if mcp is None:
+        logger.info("[tier3] no gateway configured — keeping Tier 2 answer")
+        return None
+    try:
+        with mcp:
+            gateway = NeptuneGatewayClient(mcp_client=mcp)
+            ontology_json = gateway.fetch_ontology(ontology_id=ontology_id or namespace)
+            if not ontology_json or "error" in ontology_json:
+                logger.info("[tier3] ontology fetch failed — keeping Tier 2 answer")
+                return None
+            router = _GatewayTopicRouter(ontology_json=ontology_json)
+
+            @tool
+            def retrieve_ontology(query: str) -> str:
+                """Retrieve ontology classes/predicates relevant to a query.
+
+                Args:
+                    query: A natural-language description of the concepts to look
+                        up in the ontology.
+                """
+                try:
+                    iris = router.find_candidates(question=query, namespace=namespace)
+                except Exception as exc:  # noqa: BLE001 — worker treats empty as known
+                    logger.warning("[tier3] retrieve_ontology failed (non-fatal): %s", exc)
+                    return json.dumps({"candidates": []})
+                out = []
+                for iri in iris:
+                    meta = (ontology_json.get("classes", {}).get(iri)
+                            or ontology_json.get("properties", {}).get(iri) or {})
+                    out.append({
+                        "iri": iri,
+                        "label": meta.get("label", ""),
+                        "comment": (meta.get("comment", "") or "")[:300],
+                    })
+                return json.dumps({"candidates": out})
+
+            @tool
+            def execute_sparql(sparql: str) -> str:
+                """Execute a SPARQL 1.1 SELECT and return the result rows.
+
+                Translates the SPARQL to SQL (Ontop) and runs it on Athena, the
+                same path Tier 2 Phase 5 uses.
+
+                Args:
+                    sparql: A SPARQL 1.1 SELECT query using full angle-bracketed
+                        IRIs copied verbatim from the ontology.
+                """
+                try:
+                    translated = gateway.translate_sql(
+                        sparql=sparql, ontology_json=ontology_json,
+                        ontology_id=ontology_id or namespace,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    return json.dumps({"error": f"translation raised: {exc}"})
+                if not translated.get("sql") or translated.get("error"):
+                    return json.dumps({
+                        "error": translated.get("error") or "SPARQL→SQL translation failed",
+                    })
+                try:
+                    result = _run_athena_sql(
+                        sql=translated["sql"],
+                        database_name=translated.get("database", ""),
+                        catalog_id=translated.get("catalog", ""),
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    return json.dumps({"error": f"execution raised: {exc}"})
+                if result.get("state_change_reason"):
+                    return json.dumps({"error": result["state_change_reason"]})
+                return json.dumps({
+                    "sparql_query": sparql,
+                    "sql": translated["sql"],
+                    "columns": result.get("columns", []),
+                    "rows": result.get("rows", []),
+                })
+
+            _domain_preamble = (f"{domain_context.strip()}\n\n" if domain_context.strip()
+                                else "")
+            worker_agent = Agent(
+                model=_build_query_model(),
+                system_prompt=_domain_preamble + TIER3_WORKER_PROMPT,
+                tools=[retrieve_ontology, execute_sparql],
+            )
+
+            def _worker(task: str) -> WorkerAttempt:
+                """Run one worker attempt; normalize the tool's cached result."""
+                response = worker_agent(task)
+                try:
+                    answer = response.message["content"][0]["text"]
+                except (KeyError, IndexError, TypeError):
+                    answer = str(response)
+                usage = {}
+                try:
+                    usage = _extract_usage_summary(response)
+                except Exception:  # noqa: BLE001 — best-effort telemetry
+                    usage = {}
+                # The worker signals its result through the execute_sparql tool's
+                # return; re-read the last tool result off the agent's messages.
+                last = _last_tool_json(response)
+                if not isinstance(last, dict) or not last:
+                    return WorkerAttempt(answer=answer,
+                                         error="worker produced no SPARQL result",
+                                         usage=usage)
+                if "error" in last:
+                    return WorkerAttempt(answer=answer, query=last.get("sparql_query", ""),
+                                         error=str(last["error"]), usage=usage)
+                return WorkerAttempt(
+                    answer=answer,
+                    query=last.get("sparql_query", ""),
+                    results=last.get("rows", []),
+                    columns=last.get("columns", []),
+                    usage=usage,
+                )
+
+            return run_supervisor_loop(
+                question=question,
+                failure_context=_tier2_failure_context(wf),
+                worker_fn=_worker,
+                judge_fn=_make_tier3_judge(),
+            )
+    except Exception as e:  # noqa: BLE001 — Tier 3 is a best-effort fallback
+        logger.warning("[tier3] supervisor driver error (%s) — keeping Tier 2 answer", e)
+        return None
+
+
+def _last_tool_json(response: Any) -> Dict[str, Any]:
+    """Extract the last ``execute_sparql`` tool result (parsed JSON) from a run.
+
+    The worker signals its outcome through the tool's JSON return rather than its
+    prose, so the deterministic success/error signal is read from the agent's
+    message trace — mirroring how the metadata worker reads its cached SQL result.
+    Returns ``{}`` when no tool result is found or it is unparseable.
+    """
+    messages = getattr(response, "messages", None)
+    if messages is None:
+        return {}
+    for msg in reversed(messages):
+        content = msg.get("content", []) if isinstance(msg, dict) else []
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            tool_result = block.get("toolResult")
+            if not tool_result:
+                continue
+            for item in tool_result.get("content", []):
+                text = item.get("text") if isinstance(item, dict) else None
+                if not text:
+                    continue
+                try:
+                    parsed = json.loads(text)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if isinstance(parsed, dict) and (
+                    "rows" in parsed or "error" in parsed or "sparql_query" in parsed
+                ):
+                    return parsed
+    return {}
+
+
 def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
     """
     Resolve one question through the Tier 1 metric lookup → Tier 2 graph cascade.
@@ -2029,6 +2264,42 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
         # the identical text.
         result_text = _vkg_final_answer_text(wf)
 
+        # --- Tier 3: supervisor-loop agentic fallback -------------------------
+        # Runs ONLY when Tier 2 degraded (wf.degraded set). Escalation is
+        # deterministic: a clean Tier 2 run — including an empty result set —
+        # never reaches here. Fail-soft: Tier 3 only REPLACES the answer when its
+        # supervisor judge accepts an attempt; otherwise the honest Tier 2
+        # degraded answer above stands. ``executionMode`` reports which tier
+        # actually produced the answer the user sees.
+        execution_mode = 'workflow'
+        effective_degraded = wf.degraded
+        if wf.degraded is not None:
+            _write_step('tier3_agentic')
+            outcome = _run_tier3_supervisor(
+                question=question, wf=wf, ontology_id=id, namespace=namespace,
+                domain_context=_build_domain_context(config),
+            )
+            if outcome is not None and outcome.accepted:
+                execution_mode = 'agentic'
+                effective_degraded = None
+                result_text = outcome.answer or result_text
+                sparql_query = outcome.query or sparql_query
+                columns = outcome.columns or columns
+                rows = outcome.results or rows
+                results_list = [
+                    {col: (row[i] if i < len(row) else '') for i, col in enumerate(columns)}
+                    for row in rows
+                ]
+                logger.info(
+                    "Session %s — Tier 3 recovered answer in %d round(s)",
+                    session_id, outcome.rounds,
+                )
+            elif outcome is not None:
+                logger.info(
+                    "Session %s — Tier 3 did not recover (%s); keeping Tier 2 answer",
+                    session_id, outcome.reason,
+                )
+
         over_limit = bool(exec_result.get('over_limit'))
         summarization = (
             f"Query returned {len(rows)} row(s) across {len(columns)} column(s)"
@@ -2081,12 +2352,19 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             # The field is named sql_query for both modes (the frontend/REST
             # read this single name regardless of VKG vs Semantic-RAG).
             "sql_query": sparql_query,
+            # Which tier produced the answer the user sees: 'workflow' (Tier 2)
+            # or 'agentic' (Tier 3 supervisor loop recovered a degraded run).
+            "executionMode": execution_mode,
             "results": results_list,
             "n_quads": n_quads,
             "reasoning": {
                 "interpretation": f"Resolved {len(wf.candidates)} candidate IRI(s) via topic routing",
                 "graphTraversal": graph_traversal,
-                "dataSourceSelection": "Neptune (SPARQL via gateway)",
+                "dataSourceSelection": (
+                    "Neptune (SPARQL via gateway, Tier 3 agentic)"
+                    if execution_mode == 'agentic'
+                    else "Neptune (SPARQL via gateway)"
+                ),
                 # The EXECUTED Athena SQL (Ontop reformulation of the grounded
                 # SPARQL), distinct from the top-level ``sql_query`` field which
                 # carries the SPARQL lineage. Task 11 surfaces it here so the
@@ -2106,7 +2384,7 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             "provenance": build_provenance(
                 tier="vkg",
                 sources=prov_sources,
-                degraded=wf.degraded,
+                degraded=effective_degraded,
             ),
         }
 

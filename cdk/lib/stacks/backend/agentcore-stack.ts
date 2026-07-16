@@ -14,6 +14,7 @@ import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ArmBuildConstruct } from '../../common/constructs/arm-build-construct';
+import { LfAdminRegistration } from '../../common/constructs/lf-admin-registration';
 import { AgentCoreNeptuneGateway } from './agentcore/neptune-gateway-construct';
 import { runtimeFingerprint } from './runtime-fingerprint';
 import { NeptuneStack } from './neptune-stack';
@@ -1764,9 +1765,11 @@ export class AgentCoreStack extends cdk.Stack {
     // ============================================================
     // Lake Formation: preserve infrastructure admins
     //
-    // This CfnDataLakeSettings supersedes AthenaStack's
-    // AthenaDataLakeAdminSettings (last writer wins per account/region).
-    // ALL prior admins must be carried forward here.
+    // Additively register LF admins via a read-modify-write custom resource
+    // instead of CfnDataLakeSettings — the latter is a per-account singleton
+    // (physical id = account id) so multiple stacks declaring it collide on a
+    // fresh deploy. The additive merge also makes the historical "carry forward
+    // ALL prior admins" concern automatic. See LfAdminRegistration.
     //
     // Agent roles are NOT listed as LF admins — they receive narrow
     // CfnPermissions grants above (DESCRIBE on databases, SELECT +
@@ -1774,21 +1777,15 @@ export class AgentCoreStack extends cdk.Stack {
     // (semantic_layer_iceberg), the queryAgentRole is granted via
     // QueryLFIcebergDatabasePermissions / QueryLFIcebergTablePermissions.
     // ============================================================
-    new lakeformation.CfnDataLakeSettings(this, 'AgentCoreLFAdminSettings', {
-      admins: [
+    new LfAdminRegistration(this, 'AgentCoreLFAdminSettings', {
+      adminArns: [
         // CDK bootstrap roles (must be preserved)
-        {
-          dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
-        },
-        {
-          dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
-        },
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
         // AwsCustomResource singleton role (established by DataLakeStack's S3TablesLFRegistration)
-        { dataLakePrincipalIdentifier: props.dataLakeStack.lfGrantSingletonRoleArn },
+        props.dataLakeStack.lfGrantSingletonRoleArn,
         // Human/SSO admin roles forwarded from app.ts
-        ...(props.additionalLakeFormationAdmins ?? []).map((arn) => ({
-          dataLakePrincipalIdentifier: arn,
-        })),
+        ...(props.additionalLakeFormationAdmins ?? []),
       ],
     });
 

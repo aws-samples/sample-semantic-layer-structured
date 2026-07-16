@@ -102,8 +102,13 @@ def on_event(event, context):  # noqa: ARG001
     physical_id = f"cloud-resource-id-{runtime_id}"
 
     if request_type == "Delete":
-        # Nothing to undo — leave env vars in place.
-        return {"PhysicalResourceId": physical_id}
+        # Nothing to undo — leave env vars in place. Echo back the EXISTING
+        # physical id CFN sent us rather than recomputing one: on a rollback the
+        # runtime_id (hence the recomputed `cloud-resource-id-{runtime_id}`) can
+        # differ from the physical id CFN assigned on create, and CFN rejects a
+        # Delete that changes the physical id ("cannot change the physical
+        # resource ID during deletion") — which wedges the whole stack rollback.
+        return {"PhysicalResourceId": event.get("PhysicalResourceId", physical_id)}
 
     logs_client = boto3.client("logs", region_name=region)
     client = boto3.client("bedrock-agentcore-control", region_name=region)
@@ -171,12 +176,34 @@ def on_event(event, context):  # noqa: ARG001
     # FULL-REPLACE payload: REQUIRED fields + env (restored above). Anything not
     # included here is reset on the runtime, so build up the complete intended
     # state before the single update call.
+    #
+    # Strip requireServiceS3Endpoint from the echoed networkConfiguration:
+    # get_agent_runtime returns it, but UpdateAgentRuntime REJECTS it for any
+    # runtime created after 2026-06-11 ("cannot modify requireServiceS3Endpoint")
+    # → the env-var injection fails → the whole agentcore stack rolls back. We
+    # only ever inject env vars here (never touch networking), so dropping this
+    # read-only field is safe and leaves networking unchanged.
+    #
+    # The field is NESTED (e.g. networkConfiguration.vpcConfig / networkModeConfig
+    # carries it, not the top level), and the exact nesting is version-dependent,
+    # so strip it RECURSIVELY wherever it appears rather than popping one known key.
+    def _strip_key(obj: Any, key: str) -> Any:
+        if isinstance(obj, dict):
+            return {k: _strip_key(v, key) for k, v in obj.items() if k != key}
+        if isinstance(obj, list):
+            return [_strip_key(v, key) for v in obj]
+        return obj
+
+    network_config = _strip_key(
+        dict(r["networkConfiguration"] or {}), "requireServiceS3Endpoint"
+    )
+
     update_kwargs: dict[str, Any] = {
         "agentRuntimeId": runtime_id,
         "environmentVariables": env,
         "roleArn": r["roleArn"],
         "agentRuntimeArtifact": r["agentRuntimeArtifact"],
-        "networkConfiguration": r["networkConfiguration"],
+        "networkConfiguration": network_config,
     }
 
     # authorizerConfiguration — AUTHORITATIVE from CFN props (CUSTOM_JWT). When the

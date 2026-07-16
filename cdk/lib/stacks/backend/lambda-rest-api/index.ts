@@ -21,6 +21,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { CommonStack } from '../../../common/constructs/stack';
 import { ArmBuildConstruct } from '../../../common/constructs/arm-build-construct';
+import { LfAdminRegistration } from '../../../common/constructs/lf-admin-registration';
 import { MCP_INVOKE_SCOPE } from '../../../common/auth-constants';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -328,24 +329,22 @@ export class LambdaRestApiStack extends CommonStack {
     // lakeformation:GrantPermissions on federated sub-catalog paths fails via
     // AwsCustomResource; the LF admin pattern is the only working workaround.
     //
-    // This supersedes AgentCoreLFAdminSettings — ALL prior admins must be carried forward.
-    new lakeformation.CfnDataLakeSettings(this, 'LambdaApiLFAdminSettings', {
-      admins: [
+    // Additively register LF admins via a read-modify-write custom resource
+    // instead of CfnDataLakeSettings — the latter is a per-account singleton
+    // (physical id = account id) so multiple stacks declaring it collide on a
+    // fresh deploy. The additive merge also makes the historical "carry forward
+    // ALL prior admins" concern automatic. See LfAdminRegistration.
+    new LfAdminRegistration(this, 'LambdaApiLFAdminSettings', {
+      adminArns: [
         // CDK bootstrap roles (must be preserved)
-        {
-          dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
-        },
-        {
-          dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
-        },
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
         // AwsCustomResource singleton role (DataLakeStack)
-        { dataLakePrincipalIdentifier: props.lfGrantSingletonRoleArn },
+        props.lfGrantSingletonRoleArn,
         // Lambda REST API role — lists all Glue databases/tables including s3tablescatalog
-        { dataLakePrincipalIdentifier: lambdaRole.roleArn },
+        lambdaRole.roleArn,
         // Human/SSO admin roles forwarded from app.ts
-        ...(props.additionalLakeFormationAdmins ?? []).map((arn) => ({
-          dataLakePrincipalIdentifier: arn,
-        })),
+        ...(props.additionalLakeFormationAdmins ?? []),
       ],
     });
 

@@ -8,6 +8,7 @@ import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { DynamoDBStack } from './dynamodb-stack';
 import { GlueCrawlerTrigger } from './glue-catalog/crawler-trigger-construct';
+import { LfAdminRegistration } from '../../common/constructs/lf-admin-registration';
 
 export interface GlueCatalogStackProps extends cdk.StackProps {
   projectName: string;
@@ -95,22 +96,19 @@ export class GlueCatalogStack extends cdk.Stack {
     // the CDK bootstrap CloudFormation execution role and any extra ARNs supplied
     // via props.additionalLakeFormationAdmins.
     // ============================================================================
-    const adminArns: lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty[] = [
+    const adminArns: string[] = [
       // CDK CloudFormation execution role (created by cdk bootstrap)
-      { dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}` },
+      `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
       // Catch-all for any CDK bootstrap file-publishing / deploy roles
-      { dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}` },
+      `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
+      ...(props.additionalLakeFormationAdmins ?? []),
     ];
 
-    if (props.additionalLakeFormationAdmins) {
-      props.additionalLakeFormationAdmins.forEach((arn) => {
-        adminArns.push({ dataLakePrincipalIdentifier: arn });
-      });
-    }
-
-    new lakeformation.CfnDataLakeSettings(this, 'DataLakeSettings', {
-      admins: adminArns,
-    });
+    // Additively register LF admins via a read-modify-write custom resource.
+    // CfnDataLakeSettings is a per-account singleton whose physical id is the
+    // account id, so multiple stacks declaring it collide on a fresh deploy.
+    // See LfAdminRegistration for details.
+    const lfAdmins = new LfAdminRegistration(this, 'DataLakeSettings', { adminArns });
 
     // Database for DynamoDB tables (operational data)
     this.dynamodbDatabase = new glue.CfnDatabase(this, 'DynamoDBDatabase', {
@@ -147,6 +145,8 @@ export class GlueCatalogStack extends cdk.Stack {
       permissions: ['CREATE_TABLE', 'DESCRIBE', 'ALTER'],
     });
     crawlerLFDatabasePermissions.node.addDependency(this.dynamodbDatabase);
+    // Grants require the deploy role to already be an LF admin (registered above).
+    crawlerLFDatabasePermissions.node.addDependency(lfAdmins);
 
     // Table-level (wildcard): allows the crawler to update/overwrite table metadata on
     // subsequent crawls and to drop stale entries when deleteBehavior triggers removal
@@ -164,6 +164,7 @@ export class GlueCatalogStack extends cdk.Stack {
       permissions: ['DESCRIBE', 'ALTER', 'DROP'],
     });
     crawlerLFTablePermissions.node.addDependency(this.dynamodbDatabase);
+    crawlerLFTablePermissions.node.addDependency(lfAdmins);
 
     // Crawler for DynamoDB tables - crawl all tables for operational queries
     this.dynamodbCrawler = new glue.CfnCrawler(this, 'DynamoDBCrawler', {

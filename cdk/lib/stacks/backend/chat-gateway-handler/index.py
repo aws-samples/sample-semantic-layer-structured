@@ -376,6 +376,33 @@ TARGET_SPECS = (
 # user's identity — chat history then persisted under 'anonymous'.)
 TARGET_CREDENTIAL_TYPE = 'JWT_PASSTHROUGH'
 
+# Bound the self-heal recreate loop for a target that lands in FAILED with a
+# recoverable (IAM-propagation) reason. The isComplete poller is stateless
+# across polls, so the attempt count is persisted in the target's `description`
+# ("recreate:N"). Once a target has been recreated this many times and STILL
+# fails, treat it as a real failure and raise — otherwise the loop recreates
+# forever and the custom resource times out (~30 min → "Operation timed out").
+MAX_TARGET_RECREATE_ATTEMPTS = 4
+_RECREATE_TAG = 'recreate:'
+
+# Bridges the recreate count from _targets_ready (which decides to delete a
+# recoverable-FAILED target) to _ensure_targets (which recreates it on the next
+# poll and stamps the incremented count into the new target's description).
+# {target_name: next_recreate_count}. In-process only; the durable count lives
+# in the target's description on AWS, so a cold poll re-reads it from there.
+_pending_recreate = {}
+
+
+def _recreate_count(detail):
+    """Parse the ``recreate:N`` self-heal counter from a target's description."""
+    desc = (detail or {}).get('description') or ''
+    if _RECREATE_TAG in desc:
+        try:
+            return int(desc.split(_RECREATE_TAG, 1)[1].split()[0])
+        except (ValueError, IndexError):
+            return 0
+    return 0
+
 
 def _ensure_targets(gateway_id, props):
     """Idempotently create the runtime targets with the desired credential type.
@@ -456,16 +483,22 @@ def _ensure_targets(gateway_id, props):
         # Absent (or just deleted on a prior poll) — create with the right mode.
         # A ConflictException here means a prior poll's async delete hasn't fully
         # settled yet; swallow it and let the next poll retry (idempotent).
+        # ``_pending_recreate`` carries the running recreate count (set by
+        # _targets_ready before it deletes a recoverable-FAILED target) so the
+        # new target's description records how many self-heals it has had — the
+        # bound that stops an infinite recreate→FAIL→recreate loop.
+        recreate_n = _pending_recreate.pop(name, 0)
         try:
             client.create_gateway_target(
                 gatewayIdentifier=gateway_id,
                 name=name,
+                description=f'{_RECREATE_TAG}{recreate_n}',
                 credentialProviderConfigurations=[{'credentialProviderType': TARGET_CREDENTIAL_TYPE}],
                 targetConfiguration={
                     'http': {'agentcoreRuntime': {'arn': runtime_arn, 'qualifier': 'DEFAULT'}}
                 },
             )
-            print(f"Created target {name} ({TARGET_CREDENTIAL_TYPE}) -> {runtime_arn}")
+            print(f"Created target {name} ({TARGET_CREDENTIAL_TYPE}, {_RECREATE_TAG}{recreate_n}) -> {runtime_arn}")
         except ClientError as e:
             if e.response['Error']['Code'] == 'ConflictException':
                 print(f"Target {name} create conflict (prior delete still settling); "
@@ -503,8 +536,39 @@ def _targets_ready(gateway_id):
             print(f"get_gateway_target({target_id}) full response: {resp}")
         print(f"Target {name} ({target_id}) status: {status}")
         if status == 'FAILED':
-            # Include statusReasons so the real failure is visible in
-            # CloudFormation + CloudWatch rather than a bare FAILED.
+            reasons = resp.get('statusReasons') or []
+            reason_text = ' '.join(str(r) for r in reasons)
+            # A target can land in FAILED transiently while the gateway role's
+            # IAM grant (GetAgentRuntime, used to resolve the target's runtime
+            # fields) is still propagating — the SAME config reaches READY on a
+            # recreate once the grant is visible. Self-heal that specific,
+            # recoverable failure: delete the FAILED target so the next
+            # _ensure_targets poll recreates it, rather than hard-failing the
+            # whole stack. Mirrors the gateway-level FAILED->recreate retry.
+            recoverable = (
+                'GetAgentRuntime' in reason_text
+                or 'Access denied' in reason_text
+                or 'Failed to resolve runtime fields' in reason_text
+            )
+            attempts = _recreate_count(resp)
+            if recoverable and attempts < MAX_TARGET_RECREATE_ATTEMPTS:
+                print(f"Target {name} ({target_id}) FAILED with a recoverable "
+                      f"reason ({reason_text!r}); recreate attempt "
+                      f"{attempts + 1}/{MAX_TARGET_RECREATE_ATTEMPTS} — deleting")
+                # Hand the incremented count to _ensure_targets so the recreated
+                # target records it (bounds the loop across stateless polls).
+                _pending_recreate[name] = attempts + 1
+                try:
+                    client.delete_gateway_target(
+                        gatewayIdentifier=gateway_id, targetId=target_id
+                    )
+                except ClientError as e:
+                    if e.response['Error']['Code'] != 'ResourceNotFoundException':
+                        raise
+                return False  # not ready; next poll recreates + re-checks
+            # Either non-recoverable, or the self-heal budget is exhausted (the
+            # failure is persistent, not a propagation blip) — fail loud with the
+            # real statusReasons rather than recreate forever until CFN times out.
             raise Exception(
                 f"Target {name} ({target_id}) FAILED: "
                 f"statusReasons={resp.get('statusReasons')}"

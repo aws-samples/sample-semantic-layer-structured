@@ -1,3 +1,21 @@
+"""Model identifiers and prompt strings for the Metadata (SemanticRAG) Query Agent.
+
+This module centralizes the model IDs and model-facing prompt text used by the
+agent's deterministic Tier 2 query workflow. It defines:
+
+- ``QUERY_MODEL_ID`` / ``ROUTER_MODEL_ID`` — the model identifiers for the query
+  model and the cheap, fast intent-router classifier.
+- ``ROUTER_PROMPT`` — the intent classifier prompt that emits a structured
+  advisory/data_query/metric_named verdict.
+- ``EXECUTION_PROMPT`` — the Phase 5 execution agent prompt for running a
+  pre-validated Athena SQL SELECT query and reporting the result.
+- ``JUDGE_PROMPT`` — the Phase 3 slice-sufficiency judge prompt that decides
+  whether a retrieved schema slice is enough to answer the user's question.
+
+The trailing comment documents the deployed Tier 2 graph phases and clarifies
+that there is no agent-wide system prompt on this path.
+"""
+
 QUERY_MODEL_ID='global.anthropic.claude-sonnet-5'
 
 # Intent-router classifier model. Deliberately NOT the query model: this runs on

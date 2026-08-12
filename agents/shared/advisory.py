@@ -169,11 +169,12 @@ def _parse_kb_context(raw: Any) -> List[Dict[str, Any]]:
 
     The suggestions agent's ``retrieve_kb_context`` returns a JSON STRING shaped
     ``{"context": [{"content", "metadata", "score"}, ...]}``; a query-agent
-    wrapper may hand back the dict directly. Accept either. Returns ``[]`` on any
-    parse failure or an error payload — the caller treats empty as "KB empty".
+    wrapper may hand back the dict directly. Accept either. Returns ``[]`` on an
+    error payload — the caller treats empty as "KB empty".
 
     :param raw: The kb_retrieve return value (JSON string or dict).
     :returns: A list of context chunk dicts (possibly empty).
+    :raises ValueError: If ``raw`` is a string that is not valid JSON.
     """
     if raw is None:
         return []
@@ -181,9 +182,9 @@ def _parse_kb_context(raw: Any) -> List[Dict[str, Any]]:
     if isinstance(raw, str):
         try:
             payload = json.loads(raw)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
             logger.warning("advisory: kb_retrieve returned non-JSON string")
-            return []
+            raise ValueError("advisory: kb_retrieve returned non-JSON string") from exc
     if not isinstance(payload, dict):
         return []
     if payload.get("error"):

@@ -60,10 +60,13 @@ _agentcore_runtime_arn_cache = None  # Cache for runtime ARN
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
-# Remove any existing handlers to avoid duplicates
-if root_logger.handlers:
-    for handler in root_logger.handlers:
-        root_logger.removeHandler(handler)
+# Remove any existing handlers to avoid duplicates.
+# Iterate over a copy of the list: removeHandler() mutates root_logger.handlers
+# in place, so iterating the live list skips elements and leaves stale handlers
+# behind (e.g. AWS Lambda's pre-installed root handler), producing duplicate
+# CloudWatch log lines.
+for existing_handler in list(root_logger.handlers):
+    root_logger.removeHandler(existing_handler)
 
 # Add stdout handler with consistent formatting
 handler = logging.StreamHandler(sys.stdout)

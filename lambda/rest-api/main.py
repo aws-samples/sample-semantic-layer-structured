@@ -60,10 +60,12 @@ _agentcore_runtime_arn_cache = None  # Cache for runtime ARN
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 
-# Remove any existing handlers to avoid duplicates
-if root_logger.handlers:
-    for handler in root_logger.handlers:
-        root_logger.removeHandler(handler)
+# Remove any existing handlers to avoid duplicates.
+# Iterate over a copy of the list: removeHandler() mutates root_logger.handlers
+# in place, so iterating the live list skips elements and leaves handlers behind
+# (e.g. on warm-start re-import), causing duplicate CloudWatch log lines.
+for handler in list(root_logger.handlers):
+    root_logger.removeHandler(handler)
 
 # Add stdout handler with consistent formatting
 handler = logging.StreamHandler(sys.stdout)

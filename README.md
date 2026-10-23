@@ -962,10 +962,68 @@ Deployment takes approximately 40-60 minutes (includes CodeBuild jobs for ARM64 
 
 ### Post-Deployment
 
-1. **Create Cognito Users**: Get User Pool ID from CDK outputs, create an admin user and add it to the `Admin` group (query-only users go in `Users`)
+1. **Create Cognito Users**: Get User Pool ID from CDK outputs, create an admin user and add it to the `Admin` group (query-only users go in `Users`). See [User Roles](#user-roles) for the role model and group-management commands.
 2. **Upload Ontology Patterns**: Copy VKG design patterns to the Bedrock KB source bucket and trigger ingestion (if using VKG mode)
 3. **Access Application**: Get CloudFront URL from stack outputs
 4. **(Optional) Connect an MCP client**: follow [`assets/guides/MCP_SERVER.md`](assets/guides/MCP_SERVER.md) to add the MCP server to Claude Code / Cursor / VS Code via the OAuth proxy URL
+
+### User Roles
+
+A user's role is their **Cognito User Pool group membership**. The Auth stack
+([`cdk/lib/stacks/backend/auth/index.ts`](cdk/lib/stacks/backend/auth/index.ts))
+provisions two groups on deploy; every user belongs to one of them:
+
+| Role (group) | Intended for          | Capabilities                                                                                                                          |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `Admin`      | Semantic-layer owners | Full admin flow — describe intent, select data sources, review metadata, build the VKG / Semantic-RAG layer, manage metrics/feedback |
+| `Users`      | End users / analysts  | Query only — conversational NL chat over the published layers (no admin pages)                                                        |
+
+The group is carried into every ID/access token as the standard
+`cognito:groups` claim. The HTTP API Gateway JWT authorizer validates the
+token and the claim is available to the REST API; on the browser side the
+token is decoded in [`frontend/src/App.js`](frontend/src/App.js).
+
+> **Note:** the groups are the **configuration point** for role-based access,
+> but this sample does **not** yet hard-gate admin routes on group membership —
+> neither the React router nor [`lambda/rest-api/auth.py`](lambda/rest-api/auth.py)
+> rejects a `Users`-group caller from admin endpoints today. Treat the groups as
+> the place to wire enforcement from, not as an enforced boundary. See
+> [Security Considerations → Authentication & Authorization](#authentication--authorization).
+
+**Assign, revoke, and inspect roles** with the Cognito admin APIs (substitute
+the User Pool ID from the `*-UserPoolId` stack output):
+
+```bash
+# Resolve the User Pool ID from the Auth stack outputs
+USER_POOL_ID=$(aws cloudformation describe-stacks \
+  --query "Stacks[].Outputs[?contains(OutputKey, 'UserPoolId')].OutputValue" \
+  --output text | head -n1)
+
+# Promote a user to Admin
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id "$USER_POOL_ID" --username user@example.com --group-name Admin
+
+# Move a user back to query-only (remove from Admin, add to Users)
+aws cognito-idp admin-remove-user-from-group \
+  --user-pool-id "$USER_POOL_ID" --username user@example.com --group-name Admin
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id "$USER_POOL_ID" --username user@example.com --group-name Users
+
+# Inspect a user's current group(s)
+aws cognito-idp admin-list-groups-for-user \
+  --user-pool-id "$USER_POOL_ID" --username user@example.com
+```
+
+A group change takes effect on the user's **next sign-in or token refresh** —
+the `cognito:groups` claim is baked into the token at issue time, so an
+already-signed-in user must re-login (or wait for the 1-hour access-token
+refresh) to pick up the new role.
+
+To change the role model itself (rename groups, add a new role, change the
+default), edit the `UserPoolGroup` definitions in the Auth stack and redeploy.
+If you enable the On-Behalf-Of path (`-c enableOboPassthrough=true`), group
+membership also drives per-group AWS Lake Formation grants — see
+[Deployment Modes](#deployment-modes).
 
 ## Testing
 

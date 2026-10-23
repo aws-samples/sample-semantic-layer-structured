@@ -962,10 +962,80 @@ Deployment takes approximately 40-60 minutes (includes CodeBuild jobs for ARM64 
 
 ### Post-Deployment
 
-1. **Create Cognito Users**: Get User Pool ID from CDK outputs, create an admin user and add it to the `Admin` group (query-only users go in `Users`)
+1. **Create Cognito Users & assign roles**: Get User Pool ID from CDK outputs, create an admin user and add it to the `Admin` group (query-only users go in `Users`) — see [User Roles](#user-roles)
 2. **Upload Ontology Patterns**: Copy VKG design patterns to the Bedrock KB source bucket and trigger ingestion (if using VKG mode)
 3. **Access Application**: Get CloudFront URL from stack outputs
 4. **(Optional) Connect an MCP client**: follow [`assets/guides/MCP_SERVER.md`](assets/guides/MCP_SERVER.md) to add the MCP server to Claude Code / Cursor / VS Code via the OAuth proxy URL
+
+### User Roles
+
+User roles are modeled as two **Cognito User Pool groups** provisioned by the Auth stack
+([`cdk/lib/stacks/backend/auth/index.ts`](cdk/lib/stacks/backend/auth/index.ts)). A user's role **is**
+their group membership — there is no separate roles database to configure; you manage roles with the
+Cognito admin APIs. The membership is carried in the `cognito:groups` claim of the user's JWT.
+
+| Role (group) | Intended for          | Capabilities                                                                                                              |
+| ------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `Admin`      | Semantic-layer owners | The full admin flow: build/manage semantic layers, data sources, maintained metrics, ground-truth datasets, evaluations, monitoring, feedback and lessons-learned — plus everything a `Users` member can do |
+| `Users`      | Business/end users    | Query only: the conversational chat and query-suggestion surfaces                                                         |
+
+Users with **no** group membership still authenticate successfully; treat them as query-only
+(no admin privileges) and assign them to a group to grant access.
+
+#### Assigning roles
+
+Role assignment is a post-deployment, per-user operation. Get the User Pool ID from the `semantic-layer-auth`
+stack outputs, then add the user to the appropriate group:
+
+```bash
+# Get the User Pool ID
+USER_POOL_ID=$(aws cloudformation describe-stacks \
+  --stack-name semantic-layer-auth \
+  --query 'Stacks[0].Outputs[?contains(OutputKey, `UserPoolId`)].OutputValue' \
+  --output text)
+
+# Grant a user the Admin role (semantic-layer management)
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id "$USER_POOL_ID" \
+  --username admin@example.com \
+  --group-name Admin
+
+# Grant a user the Users role (query only)
+aws cognito-idp admin-add-user-to-group \
+  --user-pool-id "$USER_POOL_ID" \
+  --username analyst@example.com \
+  --group-name Users
+
+# Revoke a role (remove from a group)
+aws cognito-idp admin-remove-user-from-group \
+  --user-pool-id "$USER_POOL_ID" \
+  --username analyst@example.com \
+  --group-name Users
+
+# Inspect a user's current roles
+aws cognito-idp admin-list-groups-for-user \
+  --user-pool-id "$USER_POOL_ID" \
+  --username analyst@example.com \
+  --query 'Groups[].GroupName'
+```
+
+> A user must sign out and back in (or let their 1-hour access token expire and refresh) for a
+> group change to take effect, since the role is read from the JWT issued at sign-in.
+
+#### How roles flow through the stack
+
+- **Identity**: every request carries a Cognito JWT. The HTTP API Gateway JWT authorizer validates
+  it, and [`lambda/rest-api/auth.py`](lambda/rest-api/auth.py) decodes the `sub`/`email`/`cognito:username`
+  claims; the `cognito:groups` claim is available on the same token for role checks.
+- **Current enforcement**: the groups are provisioned and surfaced end-to-end in the token, and the
+  deployment guidance is to put admins in `Admin` and everyone else in `Users`. Hard role-gating of
+  individual admin routes/UI is **not yet wired** in this sample — the groups are the configuration
+  point for it. Keep this in mind if you deploy beyond a trusted demo audience.
+- **Changing the role model**: the two groups are defined in the Auth stack. To rename them, add
+  further roles, or attach per-group IAM/Lake Formation scopes, edit
+  [`cdk/lib/stacks/backend/auth/index.ts`](cdk/lib/stacks/backend/auth/index.ts) and redeploy
+  `semantic-layer-auth`. Fine-grained, per-group data access via Lake Formation is staged behind
+  the `enableOboPassthrough` flag — see [Deployment Modes](#deployment-modes).
 
 ## Testing
 

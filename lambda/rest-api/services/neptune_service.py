@@ -293,7 +293,7 @@ class NeptuneService:
                 'entities': [],
                 'relationships': [],
                 'properties': [],
-                'error': str(e)
+                'error': 'Neptune graph operation failed; see server logs for details'
             }
 
     def get_graph_stats(self, id: str) -> Dict[str, Any]:
@@ -341,7 +341,7 @@ class NeptuneService:
                 'totalClasses': 0,
                 'totalProperties': 0,
                 'classDistribution': [],
-                'error': str(e)
+                'error': 'Neptune graph operation failed; see server logs for details'
             }
 
     def get_graph_classes(self, id: str) -> Dict[str, Any]:
@@ -365,7 +365,7 @@ class NeptuneService:
             return {
                 'id': id,
                 'classes': [],
-                'error': str(e)
+                'error': 'Neptune graph operation failed; see server logs for details'
             }
 
     def delete_graph(self, id: str) -> Dict[str, Any]:
@@ -389,7 +389,7 @@ class NeptuneService:
             return {
                 'success': False,
                 'id': id,
-                'error': str(e)
+                'error': 'Neptune graph operation failed; see server logs for details'
             }
 
     def get_graph_properties(self, id: str) -> Dict[str, Any]:
@@ -413,7 +413,7 @@ class NeptuneService:
             return {
                 'id': id,
                 'properties': [],
-                'error': str(e)
+                'error': 'Neptune graph operation failed; see server logs for details'
             }
 
     # ================================================================

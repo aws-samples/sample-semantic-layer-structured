@@ -364,7 +364,7 @@ class MetadataService:
                 logger.info(f"KB metadata key not found: {key}")
                 return {'success': False, 'error': 'Metadata not yet generated for this table'}
             logger.error(f"Error reading KB metadata for {database_name}.{table_name}: {e}")
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': 'Failed to read metadata document; see server logs for details'}
 
         logger.info(f"Loaded KB metadata from {key}")
         parsed = self._parse_metadata_markdown(content)

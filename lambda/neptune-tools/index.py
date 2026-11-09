@@ -10,7 +10,7 @@ import logging
 import requests
 import re
 from collections import defaultdict
-from typing import Dict, Any
+from typing import Dict, Any, List
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 
@@ -23,11 +23,76 @@ logging.getLogger('boto3').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
 
 
+# Grammar accepted by tool_persist_to_neptune, one quad per physical line:
+#   <subject> <predicate> (<iri>|"literal"[^^<datatype>|@lang]) <graph> .
+#
+# The literal alternative MUST allow backslash escapes — a description that
+# contains a double quote or a newline is escaped by the producer as \" / \n and
+# is perfectly legal N-Quads. An earlier `"[^"]*"` rejected every such line, and
+# because unmatched lines were skipped silently, descriptions quoting anything
+# (e.g. sets "expansions" or "editions") vanished from the graph. The language-tag
+# suffix is accepted for parity with the frontend parser in
+# frontend/src/components/OntologyEditor.jsx, which reads these same lines back.
+#
+# The IRI class is SPARQL's IRIREF production, NOT the laxer `[^>]+` that N-Quads
+# alone permits. Every line that matches is interpolated into an INSERT DATA
+# query, so accepting an IRI SPARQL cannot lex just moves the failure downstream:
+# a column named "academic year" produced <.../frpm/academic year>, which the old
+# pattern accepted and Neptune then rejected with a MalformedQueryException whose
+# column number pointed at the vocabulary host, naming neither the line nor the
+# column. Rejecting it here reports the offending line instead.
+#
+# MUST stay identical to _NQUAD_PATTERN in
+# agents/semantic_layer_creation_agent/neptune_load.py, which pre-validates against
+# this grammar before sending.
+IRIREF = r'<[^\x00-\x20<>"{}|^`\\]+>'
+NQUAD_PATTERN = re.compile(
+    rf'^({IRIREF})\s+({IRIREF})\s+'
+    rf'({IRIREF}|"(?:[^"\\]|\\.)*"(?:\^\^{IRIREF}|@[A-Za-z][A-Za-z0-9-]*)?)'
+    rf'\s+({IRIREF})\s*\.\s*$'
+)
+
+
 def _validate_ontology_id(ontology_id: str) -> str:
     """Validate ontology_id is safe for use in SPARQL query construction."""
     if not re.match(r'^[a-zA-Z0-9_\-]+$', str(ontology_id)):
         raise ValueError(f"Invalid ontology_id format: {ontology_id!r}")
     return ontology_id
+
+
+# Characters that would let a database/table name break OUT of the
+# ``"<db>.<table>"`` SPARQL string literal (or the surrounding WHERE clause) in
+# tool_delete_table_triples and rewrite the query to delete the whole graph.
+# A double-quote closes the literal; backslash starts an escape; braces and
+# newlines restructure the clause. Everything else — including hyphens and dots,
+# which DynamoDB-connector table names legitimately use (e.g.
+# ``semantic-layer-admin-codes``) — is SAFE inside a double-quoted literal.
+_SPARQL_LITERAL_BREAKERS = re.compile(r'["\\{}\r\n]')
+
+
+def _validate_sql_identifier(value: str, *, field: str) -> str:
+    """Validate a database/table identifier before interpolating it into a SPARQL
+    string literal.
+
+    Rejects only the characters that can break out of the ``"<db>.<table>"`` literal
+    (``"``, ``\\``, ``{``, ``}``, CR, LF). A previous allowlist of ``[A-Za-z0-9_]``
+    was too strict — it rejected legitimate hyphenated DynamoDB-connector table names
+    (e.g. ``semantic-layer-admin-codes``), silently leaving their triples in Neptune
+    on removal. Hyphens/dots are harmless inside a double-quoted SPARQL literal.
+
+    Args:
+        value: The identifier to validate (database or table name).
+        field: Human-readable field name for the error message.
+
+    Returns:
+        The validated identifier unchanged.
+
+    Raises:
+        ValueError: if the identifier is empty or contains a literal-breaking char.
+    """
+    if not value or _SPARQL_LITERAL_BREAKERS.search(str(value)):
+        raise ValueError(f"Invalid {field} for SPARQL interpolation: {value!r}")
+    return value
 
 
 def get_neptune_endpoint() -> str:
@@ -121,32 +186,87 @@ def execute_sparql_query(query: str) -> Dict[str, Any]:
 VIRTUAL_KG_VOCAB = "https://semantic-layer.aws/virtual-kg/"
 
 
-def _resolve_graph_uri(ontology_id: str) -> str:
-    """Discover the named-graph URI for a given ontology_id.
+def _resolve_graph_uris(ontology_id: str) -> List[str]:
+    """Discover EVERY named-graph URI for an ontology_id, newest first.
 
-    The agent stores triples under a graph URI of the form:
-        http://{ontology_name}/ontology/{ontology_id}
-    where {ontology_name} is the user-supplied name (e.g. "demo").
+    The agent stores triples under a graph URI of the form
+    ``http://{slug-of-ontology-name}/ontology/{ontology_id}``, and the name
+    carries a build timestamp (``bird-bird_card_games-ontology-20260806-084812``).
+    So a REBUILD of the same layer id lands in a DIFFERENT graph and the old one
+    survives — as of 2026-08-09 every rebuilt BIRD layer had 3 graphs in Neptune.
     Rather than looking up the name from DynamoDB, we query Neptune for any
     named graph whose URI contains the UUID — this works for any name.
+
+    Sorting by the URI descending puts the newest build first, because the
+    embedded timestamp is fixed-width ``YYYYMMDD-HHMMSS`` and therefore sorts
+    lexicographically in chronological order. Without an explicit order Neptune
+    may return any of them, which silently serves a STALE ontology: the
+    2026-08-06 rebuild of every BIRD layer was invisible because resolution kept
+    returning the 2026-08-04 graph.
+
+    Governed rules live in a SIBLING graph ``<ontology graph>/rules`` whose
+    URI also contains the UUID. It is excluded both in SPARQL and again in
+    Python — returning it here would make ontology reads silently resolve to
+    rule triples.
+
+    Args:
+        ontology_id: The layer id embedded in the graph URI.
+
+    Returns:
+        All matching ontology graph URIs, newest build first, never including a
+        ``/rules`` graph. Empty if none exist.
     """
     sparql_query = f"""
     SELECT DISTINCT ?g
     WHERE {{
         GRAPH ?g {{ ?s ?p ?o }}
         FILTER(CONTAINS(STR(?g), "{ontology_id}"))
+        FILTER(!STRENDS(STR(?g), "/rules"))
     }}
-    LIMIT 1
+    ORDER BY DESC(?g)
     """
     try:
         result = execute_sparql_query(sparql_query)
         bindings = result.get('results', {}).get('bindings', [])
-        if bindings:
-            return bindings[0]['g']['value']
+        # Defence in depth: never hand back a rules graph even if the FILTER
+        # above is ever edited away. Order from the SPARQL ORDER BY is kept, so
+        # the newest build stays first.
+        return [
+            b['g']['value']
+            for b in bindings
+            if not b['g']['value'].endswith('/rules')
+        ]
     except Exception as e:
-        logger.warning(f"Could not discover graph URI for {ontology_id}: {e}")
-    # Unreachable in normal operation, but keeps every call-site safe
-    raise ValueError(f"No named graph found in Neptune for ontology_id '{ontology_id}'")
+        logger.warning(f"Could not discover graph URIs for {ontology_id}: {e}")
+        return []
+
+
+def _resolve_graph_uri(ontology_id: str) -> str:
+    """Return the NEWEST named-graph URI for an ontology_id.
+
+    Args:
+        ontology_id: The layer id embedded in the graph URI.
+
+    Returns:
+        The most recently built graph's URI.
+
+    Raises:
+        ValueError: No graph exists for this ontology_id.
+    """
+    uris = _resolve_graph_uris(ontology_id)
+    if not uris:
+        raise ValueError(
+            f"No named graph found in Neptune for ontology_id '{ontology_id}'"
+        )
+    if len(uris) > 1:
+        # Loud, because a stale graph silently serving an old ontology is exactly
+        # the failure this ordering fixes; the count tells an operator to clean up.
+        logger.warning(
+            f"{len(uris)} named graphs exist for '{ontology_id}' (superseded "
+            f"rebuilds were never dropped) — serving the newest, {uris[0]}. "
+            f"Older: {uris[1:]}"
+        )
+    return uris[0]
 
 
 def tool_discover_named_graphs() -> str:
@@ -290,7 +410,18 @@ def tool_get_ontology_from_neptune(ontology_id: str) -> str:
 
                 # Parse traceability mappings
                 elif 'mapsToTable' in predicate:
-                    ontology_info['mappings'][subject] = {'table': obj}
+                    # setdefault-then-assign, NOT a fresh dict: hasPrimaryKey may
+                    # arrive for this same class BEFORE mapsToTable (both are
+                    # class-subject predicates and 'hasPrimaryKey' sorts before
+                    # 'mapsToTable' under ORDER BY ?predicate), and overwriting
+                    # would silently drop the verified key.
+                    ontology_info['mappings'].setdefault(subject, {})['table'] = obj
+                # Verified primary key for a class, stamped at build time by a
+                # uniqueness probe. The translator prefers this over its column-name
+                # heuristic for the OBDA subject template (= row identity) and only
+                # emits a uniqueConstraint when it is present.
+                elif 'hasPrimaryKey' in predicate:
+                    ontology_info['mappings'].setdefault(subject, {})['primaryKey'] = obj
                 elif 'mapsToColumn' in predicate:
                     if subject in ontology_info['mappings']:
                         ontology_info['mappings'][subject]['column'] = obj
@@ -319,83 +450,154 @@ def tool_get_ontology_from_neptune(ontology_id: str) -> str:
         return json.dumps({"error": str(e)})
 
 
+def _sparql_update(update_query: str) -> "requests.Response":
+    """POST a SPARQL Update (DROP/DELETE) to the Neptune SPARQL endpoint with
+    SigV4 auth. Single write path shared by delete_graph + delete_table_triples.
+
+    Args:
+        update_query: A SPARQL update string (DROP GRAPH / DELETE ...).
+
+    Returns:
+        The requests.Response from the Neptune SPARQL endpoint.
+    """
+    neptune_endpoint = get_neptune_endpoint()
+    region = os.environ.get('AWS_REGION', 'us-east-1')
+    sparql_url = (f"{neptune_endpoint}:8182/sparql" if ':8182' not in neptune_endpoint
+                  else f"{neptune_endpoint}/sparql")
+    headers = {'Content-Type': 'application/sparql-update', 'Accept': 'application/json'}
+    credentials = boto3.Session().get_credentials()
+    request = AWSRequest(method='POST', url=sparql_url, data=update_query, headers=headers)
+    SigV4Auth(credentials, 'neptune-db', region).add_auth(request)
+    return requests.post(sparql_url, headers=dict(request.headers),
+                         data=update_query, timeout=30)
+
+
 def tool_delete_graph(ontology_id: str) -> str:
-    """Delete (drop) all triples in the named graph for a given ontology_id"""
+    """Drop EVERY named graph belonging to an ontology_id.
+
+    Deliberately drops all matches rather than only the newest: a rebuild mints a
+    new graph URI (the name carries a build timestamp) and nothing used to remove
+    the previous one, so layers accumulated superseded graphs that resolution could
+    pick up. Deleting one at a time would leave a layer looking half-deleted.
+
+    Args:
+        ontology_id: The layer/ontology id embedded in the graph URIs.
+
+    Returns:
+        JSON string {success, ontology_id, graphs_deleted, triples_deleted, ...}.
+    """
     try:
         ontology_id = _validate_ontology_id(ontology_id)
-        graph_uri = _resolve_graph_uri(ontology_id)
+        graph_uris = _resolve_graph_uris(ontology_id)
 
-        # Count triples before deletion so we can report how many were removed
-        count_query = (f"""
-        SELECT (COUNT(*) AS ?tripleCount)
-        FROM <{graph_uri}>
-        WHERE {{ ?s ?p ?o . }}
-        """)  # nosec B608 - ontology_id validated by _validate_ontology_id; JWT-authenticated endpoint
-        count_result = execute_sparql_query(count_query)
-        bindings = count_result.get('results', {}).get('bindings', [])
-        triple_count = int(bindings[0].get('tripleCount', {}).get('value', 0)) if bindings else 0
-
-        if triple_count == 0:
+        if not graph_uris:
             return json.dumps({
                 "success": True,
                 "ontology_id": ontology_id,
-                "graph_uri": graph_uri,
+                "graphs_deleted": 0,
                 "triples_deleted": 0,
-                "message": f"Graph '{graph_uri}' was already empty or did not exist",
+                "message": f"No named graph exists for '{ontology_id}' — nothing to delete",
             })
 
-        # Execute DROP GRAPH via SPARQL Update endpoint
-        neptune_endpoint = get_neptune_endpoint()
-        region = os.environ.get('AWS_REGION', 'us-east-1')
+        deleted: List[str] = []
+        failures: List[str] = []
+        triples_deleted = 0
 
-        if ':8182' not in neptune_endpoint:
-            sparql_url = f"{neptune_endpoint}:8182/sparql"
-        else:
-            sparql_url = f"{neptune_endpoint}/sparql"
+        for graph_uri in graph_uris:
+            # Count triples before deletion so we can report how many were removed
+            count_query = (f"""
+            SELECT (COUNT(*) AS ?tripleCount)
+            FROM <{graph_uri}>
+            WHERE {{ ?s ?p ?o . }}
+            """)  # nosec B608 - ontology_id validated by _validate_ontology_id; JWT-authenticated endpoint
+            count_result = execute_sparql_query(count_query)
+            bindings = count_result.get('results', {}).get('bindings', [])
+            triple_count = (int(bindings[0].get('tripleCount', {}).get('value', 0))
+                            if bindings else 0)
 
-        drop_query = f"DROP SILENT GRAPH <{graph_uri}>"  # nosec B608 - ontology_id validated by _validate_ontology_id; JWT-authenticated endpoint
+            # Execute DROP GRAPH via the shared SigV4 SPARQL Update write path
+            drop_query = f"DROP SILENT GRAPH <{graph_uri}>"  # nosec B608 - ontology_id validated by _validate_ontology_id; JWT-authenticated endpoint
+            response = _sparql_update(drop_query)
 
-        headers = {
-            'Content-Type': 'application/sparql-update',
-            'Accept': 'application/json',
-        }
+            if response.status_code == 200:
+                deleted.append(graph_uri)
+                triples_deleted += triple_count
+            else:
+                failures.append(f"{graph_uri}: HTTP {response.status_code} {response.text}")
 
-        session = boto3.Session()
-        credentials = session.get_credentials()
-
-        request = AWSRequest(
-            method='POST',
-            url=sparql_url,
-            data=drop_query,
-            headers=headers,
-        )
-        SigV4Auth(credentials, 'neptune-db', region).add_auth(request)
-
-        response = requests.post(
-            sparql_url,
-            headers=dict(request.headers),
-            data=drop_query,
-            timeout=30,
-        )
-
-        if response.status_code == 200:
-            return json.dumps({
-                "success": True,
-                "ontology_id": ontology_id,
-                "graph_uri": graph_uri,
-                "triples_deleted": triple_count,
-                "message": f"Deleted {triple_count} triples from graph '{graph_uri}'",
-            })
-        else:
+        if failures:
+            # Partial deletion is a failure: a surviving graph can still be served.
             return json.dumps({
                 "success": False,
                 "ontology_id": ontology_id,
-                "graph_uri": graph_uri,
-                "message": f"HTTP {response.status_code}: {response.text}",
+                "graphs_deleted": deleted,
+                "triples_deleted": triples_deleted,
+                "message": f"Failed to drop {len(failures)} graph(s): {'; '.join(failures)}",
             })
+
+        return json.dumps({
+            "success": True,
+            "ontology_id": ontology_id,
+            "graph_uri": deleted[0],  # retained for callers that read a single URI
+            "graphs_deleted": deleted,
+            "triples_deleted": triples_deleted,
+            "message": (f"Deleted {triples_deleted} triples from {len(deleted)} "
+                        f"graph(s) for '{ontology_id}'"),
+        })
 
     except Exception as e:
         logger.error(f"Error deleting graph: {str(e)}")
+        return json.dumps({"success": False, "error": str(e)})
+
+
+def tool_delete_table_triples(ontology_id: str, database_name: str,
+                              table_name: str) -> str:
+    """Delete only the triples for one table within a layer's named graph.
+
+    Scopes on the vkg:mapsToTable literal "<database>.<table>" so a removed table's
+    class, its properties, and FK edges are dropped without touching sibling tables.
+
+    Args:
+        ontology_id: The layer/ontology id (validated; selects the named graph).
+        database_name: The table's database (part of the mapsToTable literal).
+        table_name: The table name (part of the mapsToTable literal).
+
+    Returns:
+        JSON string {success, ontology_id, table_name} or {success:false, ...}.
+    """
+    try:
+        ontology_id = _validate_ontology_id(ontology_id)
+        # Validate db/table BEFORE interpolation — a quote/brace/newline in either
+        # would break out of the "<db>.<table>" literal and could rewrite the WHERE
+        # clause to delete the whole graph (C2). Glue names that are Athena-queryable
+        # pass this. Validation is inside the try so a bad identifier returns
+        # {success: false} (fail-soft), matching how cleanup_removed treats it.
+        database_name = _validate_sql_identifier(database_name, field="database_name")
+        table_name = _validate_sql_identifier(table_name, field="table_name")
+        graph_uri = _resolve_graph_uri(ontology_id)
+        maps_to = f"{database_name}.{table_name}"          # real object literal form
+        pred = f"<{VIRTUAL_KG_VOCAB}mapsToTable>"
+        # Delete the class node that maps to this table, plus any subject whose
+        # predicate/object references that class (its properties + FK ObjectProperties).
+        sparql = f"""
+        WITH <{graph_uri}>
+        DELETE {{ ?s ?p ?o }}
+        WHERE {{
+          ?s ?p ?o .
+          {{ ?s {pred} "{maps_to}" . }}
+          UNION
+          {{ ?cls {pred} "{maps_to}" . ?s ?anyp ?cls . }}
+        }}
+        """  # nosec B608 - ontology_id + db/table validated above
+        resp = _sparql_update(sparql)
+        if resp.status_code == 200:
+            return json.dumps({"success": True, "ontology_id": ontology_id,
+                               "table_name": table_name})
+        return json.dumps({"success": False,
+                           "message": f"HTTP {resp.status_code}: {resp.text}"})
+    except Exception as e:  # noqa: BLE001
+        logger.warning("delete_table_triples failed for %s.%s: %s",
+                       ontology_id, table_name, e)
         return json.dumps({"success": False, "error": str(e)})
 
 
@@ -785,22 +987,36 @@ def tool_persist_to_neptune(nquad_data: str) -> str:
 
         # Parse n-quads and group by named graph
         graph_batches = defaultdict(list)
-        nquad_pattern = re.compile(
-            r'^(<[^>]+>)\s+(<[^>]+>)\s+(<[^>]+>|"[^"]*"(?:\^\^<[^>]+>)?)\s+(<[^>]+>)\s*\.\s*$'
-        )
 
         total_triples = 0
+        rejected = []
         for line in nquad_data.strip().split('\n'):
             line = line.strip()
             if not line:
                 continue
 
-            match = nquad_pattern.match(line)
+            match = NQUAD_PATTERN.match(line)
             if match:
                 subject, predicate, obj, graph = match.groups()
                 triple = f"{subject} {predicate} {obj} ."
                 graph_batches[graph].append(triple)
                 total_triples += 1
+            else:
+                rejected.append(line)
+
+        # Fail loudly instead of inserting the subset that parsed: a partially
+        # materialized graph reported as success is indistinguishable from a clean
+        # load, and callers (e.g. the Hybrid creation agent) treat success as
+        # "everything I sent is now in Neptune".
+        if rejected:
+            return json.dumps({
+                "success": False,
+                "message": (
+                    f"{len(rejected)} of {len(rejected) + total_triples} n-quads lines "
+                    f"are not valid N-Quads; nothing was persisted. "
+                    f"First offender: {rejected[0][:200]!r}"
+                )
+            })
 
         if not graph_batches:
             return json.dumps({
@@ -947,6 +1163,17 @@ def lambda_handler(event, context):
                     'body': json.dumps({"error": "ontology_id is required"})
                 }
             result = tool_delete_graph(ontology_id)
+
+        elif tool_name == 'delete_table_triples':
+            ontology_id = arguments.get('ontology_id')
+            database_name = arguments.get('database_name')
+            table_name = arguments.get('table_name')
+            if not ontology_id or not database_name or not table_name:
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps({"error": "ontology_id, database_name, table_name are required"})
+                }
+            result = tool_delete_table_triples(ontology_id, database_name, table_name)
 
         elif tool_name == 'execute_sparql_query':
             sparql_query = arguments.get('sparql_query')

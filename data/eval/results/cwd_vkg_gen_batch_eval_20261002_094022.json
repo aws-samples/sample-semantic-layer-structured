@@ -1,0 +1,74 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-9p5fpw8oav",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_ontology-9p5fpw8oav",
+  "batch_evaluation_id": "cwd_vkg_gen_batch_1f02a86c-d28f8b438f",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:batch-evaluate/cwd_vkg_gen_batch_1f02a86c-d28f8b438f",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_cf9c22a9-dji6nH8ImS"
+  ],
+  "custom_evaluators": {
+    "OntologyQuality": "OntologyQuality_cf9c22a9-dji6nH8ImS"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": "1.000",
+      "Evaluated": 1,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "OntologyQuality_cf9c22a9-dji6nH8ImS",
+      "AvgScore": "1.000",
+      "Evaluated": 1,
+      "Failed": 0
+    }
+  ],
+  "per_scenario_events": [
+    {
+      "scenario_id": "cwd_acme",
+      "evaluator": "OntologyQuality_cf9c22a9",
+      "score": 1.0,
+      "label": "good",
+      "explanation": "For the Premium table, get_single_table_schema returned a single column: policy_amount_identifier. The agent's append_nquads calls created exactly one owl:Class (Premium) with a business-meaningful rdfs:comment, label, and mapsToTable, plus businessPurpose/businessConcepts/referenceTables annotations. The sole column, policy_amount_identifier, was modeled as an owl:DatatypeProperty with rdfs:domain/range and a meaningful comment. Then in Phase 2, append_fk_triples added the pre-generated FK as an owl:ObjectProperty (hasPolicyAmount) with correct domain (Premium) and range (PolicyAmount), matching the only FK-like column in the table (policy_amount_identifier references Policy_Amount). This covers all three axes well: full coverage (1 column, 1 property), correct FK relationship modeling, and strong annotation quality (detailed comments, not just column name restatements). The only minor imperfection in the broader session is the Lake Formation permission failure in update_glue_metadata_from_ontology, but that's an external AWS permission issue, not an ontology quality problem, and the agent correctly reported it per NOTE in the instructions (though it didn't fully align with the 'expected and not an error' framing for S3 Tables catalogs \u2014 however the task only asks us to score the ontology itself). The ontology content itself is excellent given the trivial single-column table."
+    },
+    {
+      "scenario_id": "cwd_acme",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The task was specifically for PHASE 2 \u2014 TABLE Premium (cwd_acme), requiring: (1) append_fk_triples with the exact N-Quads block, (2) verify success, (3) persist_file_to_neptune, (4) verify success, (5) update_glue_metadata_from_ontology.\n\nLooking at the conversation, the agent did process the Premium table as part of a larger Phase 1 workflow, and at the end called append_fk_triples for Premium with the hasPolicyAmount ObjectProperty (matching the provided N-Quads), which returned success:true. Then persist_file_to_neptune was called and returned success:true (25 triples persisted). Then update_glue_metadata_from_ontology was called but returned an AccessDeniedException error.\n\nThe success assertions require: OWL ontology generated (yes), FK relationships as owl:ObjectProperty (yes - hasPolicyAmount added), per-table N-Quad fragments persisted via save_intermediate_ontology (yes, done for Premium), and final DynamoDB status 'completed' (not explicitly shown but update_progress showed 100%).\n\nThe specific task instructions were followed: append_fk_triples returned success:true, persist_file_to_neptune returned success:true. The Glue failure is noted in the summary but the task instructions indicate this is expected behavior for DynamoDB connector catalogs. The agent correctly reported the outcome."
+    }
+  ],
+  "scenario_runs": {
+    "cwd_acme": {
+      "layer_id": "vkg-cwd_acme",
+      "session_id": "cwd_acme-51949a96-9984-4915-85c2-9e83c6afebdc",
+      "status": "completed",
+      "num_tables": 13,
+      "tables": [
+        "Agreement_Party_Role",
+        "Catastrophe",
+        "Claim",
+        "Claim_Amount",
+        "Claim_Coverage",
+        "Expense_Payment",
+        "Expense_Reserve",
+        "Loss_Payment",
+        "Loss_Reserve",
+        "Policy",
+        "Policy_Amount",
+        "Policy_Coverage_Detail",
+        "Premium"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 1359.3
+    }
+  },
+  "performance": {
+    "scenarios": 1,
+    "avg_build_seconds": 1359.3,
+    "total_build_seconds": 1359.3
+  }
+}

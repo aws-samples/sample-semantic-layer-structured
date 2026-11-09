@@ -193,11 +193,18 @@ def test_skip_unknown_role() -> None:
     assert session.written == []
 
 
-def test_register_hooks_subscribes_both_events() -> None:
+def test_register_hooks_subscribes_both_events(monkeypatch: pytest.MonkeyPatch) -> None:
     """Lightweight check that ``register_hooks`` calls add_callback twice.
 
     Uses a fake registry with a stubbed ``strands.hooks`` module so we don't
     need the real Strands package installed.
+
+    The ``sys.modules`` entries are installed via ``monkeypatch.setitem`` so
+    they are torn down when the test finishes. Without that teardown this test
+    leaks an *incomplete* ``strands.hooks`` stub (only two event classes) into
+    every later test in the same process — any module that does
+    ``from strands.hooks import AfterToolCallEvent`` (eg. the ontology / metadata
+    agents, exercised by test_ontology_delta_assembly.py) then fails to import.
     """
     import sys
     import types
@@ -209,7 +216,7 @@ def test_register_hooks_subscribes_both_events() -> None:
     # Mark as a package so `from strands.hooks import ...` resolves.
     if not hasattr(strands_module, "__path__"):
         strands_module.__path__ = []  # type: ignore[attr-defined]
-    sys.modules["strands"] = strands_module
+    monkeypatch.setitem(sys.modules, "strands", strands_module)
 
     strands_hooks_module = types.ModuleType("strands.hooks")
 
@@ -221,7 +228,7 @@ def test_register_hooks_subscribes_both_events() -> None:
 
     strands_hooks_module.MessageAddedEvent = _MessageAddedEvent
     strands_hooks_module.AfterInvocationEvent = _AfterInvocationEvent
-    sys.modules["strands.hooks"] = strands_hooks_module
+    monkeypatch.setitem(sys.modules, "strands.hooks", strands_hooks_module)
 
     guardrail = _FakeGuardrail({"blocked": False, "message": "", "action": "NONE"})
     session = _FakeMemorySession()

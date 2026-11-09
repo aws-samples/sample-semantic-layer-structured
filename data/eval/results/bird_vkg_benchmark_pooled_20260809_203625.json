@@ -1,0 +1,327 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "pooling": "row-weighted mean over per-DB exec_metrics_by_db",
+  "db_ids_requested": [
+    "bird_california_schools",
+    "bird_card_games",
+    "bird_codebase_community",
+    "bird_debit_card_specializing",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_pooled": [
+    "bird_california_schools",
+    "bird_card_games",
+    "bird_codebase_community",
+    "bird_debit_card_specializing",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_missing_results": [],
+  "pooled_exec_metrics": {
+    "ExecutionAccuracy": 0.0448,
+    "RewardVES": 0.0415,
+    "SoftF1": 0.0489
+  },
+  "scored_rows_per_metric": {
+    "ExecutionAccuracy": 446,
+    "RewardVES": 446,
+    "SoftF1": 446
+  },
+  "invoked_rows": 500,
+  "pooled_telemetry_coverage": {
+    "ExecutionAccuracy": 0.892,
+    "RewardVES": 0.892,
+    "SoftF1": 0.892
+  },
+  "low_coverage_dbs": [],
+  "per_db": {
+    "bird_california_schools": {
+      "results_file": "bird_vkg_benchmark_eval_bird_california_schools_20260807_175027.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_california_schools_895b6b6d-1f66484c00",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0833,
+        "ExecutionAccuracy_n": 24,
+        "RewardVES": 0.0729,
+        "RewardVES_n": 24,
+        "SoftF1": 0.0833,
+        "SoftF1_n": 24
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.32,
+        "FinalAnswerFaithfulness": 0.32,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_card_games": {
+      "results_file": "bird_vkg_benchmark_eval_bird_card_games_20260807_182611.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 52,
+      "batch_evaluation_id": "bird_vkg_bench_bird_card_games_6c53ce74-dd1132a25e",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 51,
+        "SoftF1": 0.0,
+        "SoftF1_n": 51,
+        "RewardVES": 0.0,
+        "RewardVES_n": 51
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.0,
+        "FinalAnswerFaithfulness": 0.0,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_codebase_community": {
+      "results_file": "bird_vkg_benchmark_eval_bird_codebase_community_20260807_185245.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 49,
+      "batch_evaluation_id": "bird_vkg_bench_bird_codebase_community_9816dc7b-6cda157673",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "RewardVES": 0.0,
+        "RewardVES_n": 46,
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 46,
+        "SoftF1": 0.0,
+        "SoftF1_n": 46
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.42,
+        "FinalAnswerFaithfulness": 0.4,
+        "SqlGrounded": 0.98
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_debit_card_specializing": {
+      "results_file": "bird_vkg_benchmark_eval_bird_debit_card_specializing_20260809_200508.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_debit_card_speciali_a29be8fe-86ff962474",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 27,
+        "SoftF1": 0.0089,
+        "SoftF1_n": 27,
+        "RewardVES": 0.0,
+        "RewardVES_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.63,
+        "FinalAnswerFaithfulness": 0.55,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_european_football_2": {
+      "results_file": "bird_vkg_benchmark_eval_bird_european_football_2_20260807_193957.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 51,
+      "batch_evaluation_id": "bird_vkg_bench_bird_european_football_2_445f60bf-3750e87f88",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "RewardVES": 0.0319,
+        "RewardVES_n": 47,
+        "ExecutionAccuracy": 0.0426,
+        "ExecutionAccuracy_n": 47,
+        "SoftF1": 0.0426,
+        "SoftF1_n": 47
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.26,
+        "FinalAnswerFaithfulness": 0.26,
+        "SqlGrounded": 0.96
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_financial": {
+      "results_file": "bird_vkg_benchmark_eval_bird_financial_20260807_195549.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 32,
+      "batch_evaluation_id": "bird_vkg_bench_bird_financial_d3f8562a-e1dc9b956d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0741,
+        "ExecutionAccuracy_n": 27,
+        "SoftF1": 0.0741,
+        "SoftF1_n": 27,
+        "RewardVES": 0.0741,
+        "RewardVES_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.47,
+        "FinalAnswerFaithfulness": 0.5,
+        "SqlGrounded": 0.72
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_formula_1": {
+      "results_file": "bird_vkg_benchmark_eval_bird_formula_1_20260807_205753.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 66,
+      "batch_evaluation_id": "bird_vkg_bench_bird_formula_1_a8daa648-5d24bc2363",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 55,
+        "SoftF1": 0.0005,
+        "SoftF1_n": 55,
+        "RewardVES": 0.0,
+        "RewardVES_n": 55
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.27,
+        "FinalAnswerFaithfulness": 0.23,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_student_club": {
+      "results_file": "bird_vkg_benchmark_eval_bird_student_club_20260807_211557.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 48,
+      "batch_evaluation_id": "bird_vkg_bench_bird_student_club_1596dc96-6074794a67",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0476,
+        "ExecutionAccuracy_n": 42,
+        "SoftF1": 0.0476,
+        "SoftF1_n": 42,
+        "RewardVES": 0.0417,
+        "RewardVES_n": 42
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.33,
+        "FinalAnswerFaithfulness": 0.33,
+        "SqlGrounded": 0.92
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_superhero": {
+      "results_file": "bird_vkg_benchmark_eval_bird_superhero_20260807_214050.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 52,
+      "batch_evaluation_id": "bird_vkg_bench_bird_superhero_c8faf5c3-e828e570ac",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "RewardVES": 0.035,
+        "RewardVES_n": 50,
+        "ExecutionAccuracy": 0.04,
+        "ExecutionAccuracy_n": 50,
+        "SoftF1": 0.04,
+        "SoftF1_n": 50
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.52,
+        "FinalAnswerFaithfulness": 0.52,
+        "SqlGrounded": 0.98
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_thrombosis_prediction": {
+      "results_file": "bird_vkg_benchmark_eval_bird_thrombosis_prediction_20260807_221804.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 50,
+      "batch_evaluation_id": "bird_vkg_bench_bird_thrombosis_predicti_3edcfff1-bd9c85d92d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0541,
+        "ExecutionAccuracy_n": 37,
+        "SoftF1": 0.075,
+        "SoftF1_n": 37,
+        "RewardVES": 0.0676,
+        "RewardVES_n": 37
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.43,
+        "FinalAnswerFaithfulness": 0.45,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {}
+    },
+    "bird_toxicology": {
+      "results_file": "bird_vkg_benchmark_eval_bird_toxicology_20260807_223122.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 40,
+      "batch_evaluation_id": "bird_vkg_bench_bird_toxicology_a43f9289-18ef55b0d8",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "SoftF1": 0.2188,
+        "SoftF1_n": 40,
+        "ExecutionAccuracy": 0.2,
+        "ExecutionAccuracy_n": 40,
+        "RewardVES": 0.1812,
+        "RewardVES_n": 40
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.82,
+        "FinalAnswerFaithfulness": 0.87,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {}
+    }
+  },
+  "failed_runs": {}
+}

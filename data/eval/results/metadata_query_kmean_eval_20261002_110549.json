@@ -1,0 +1,639 @@
+{
+  "notebook": "2_metadata_query",
+  "arm_label": "normalized-s3",
+  "agent": "metadata_query_agent",
+  "agent_id": "semantic_layer_dev_metadata_query-N3RkrfEzO3",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_metadata_query-N3RkrfEzO3",
+  "eval_id": "semantic-rag-multi_table_curated_layer-28598e00",
+  "eval_k": 3,
+  "evaluator_ids": [
+    "GoalSuccess_c03a5f9d-oOhGqXE0Dm",
+    "FinalAnswerFaithfulness_c03a5f9d-d08Uxq6aZC",
+    "SqlGrounded_c03a5f9d-y0yFBI624z"
+  ],
+  "custom_evaluators": {
+    "GoalSuccess": "GoalSuccess_c03a5f9d-oOhGqXE0Dm",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_c03a5f9d-d08Uxq6aZC",
+    "SqlGrounded": "SqlGrounded_c03a5f9d-y0yFBI624z"
+  },
+  "mean_scores": {
+    "GoalSuccess": 0.6767,
+    "FinalAnswerFaithfulness": 0.6967,
+    "SqlGrounded": 0.9767
+  },
+  "std_scores": {
+    "GoalSuccess": 0.0094,
+    "FinalAnswerFaithfulness": 0.0377,
+    "SqlGrounded": 0.033
+  },
+  "per_run_scores": [
+    {
+      "run": 1,
+      "batch_id": "query_gt_batch_r1_84fc9df1-9c3013a171",
+      "status": "COMPLETED_WITH_ERRORS",
+      "scores": {
+        "GoalSuccess": 0.67,
+        "FinalAnswerFaithfulness": 0.67,
+        "SqlGrounded": 0.93
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 106.44,
+        "input_tokens": 420195,
+        "output_tokens": 12403,
+        "total_tokens": 1242535
+      }
+    },
+    {
+      "run": 2,
+      "batch_id": "query_gt_batch_r2_8cba7536-0100877077",
+      "status": "COMPLETED_WITH_ERRORS",
+      "scores": {
+        "GoalSuccess": 0.69,
+        "FinalAnswerFaithfulness": 0.75,
+        "SqlGrounded": 1.0
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 61.22,
+        "input_tokens": 464282,
+        "output_tokens": 13105,
+        "total_tokens": 1434403
+      }
+    },
+    {
+      "run": 3,
+      "batch_id": "query_gt_batch_r3_7fbe3cc9-ee67742084",
+      "status": "COMPLETED_WITH_ERRORS",
+      "scores": {
+        "GoalSuccess": 0.67,
+        "FinalAnswerFaithfulness": 0.67,
+        "SqlGrounded": 1.0
+      },
+      "agent_perf": {
+        "turns": 19,
+        "avg_wall_clock_s": 131.23,
+        "input_tokens": 441764,
+        "output_tokens": 10813,
+        "total_tokens": 1192112
+      }
+    }
+  ],
+  "agent_perf_mean": {
+    "avg_wall_clock_s": 99.63,
+    "input_tokens": 442080.3333,
+    "output_tokens": 12107.0,
+    "total_tokens": 1289683.3333
+  },
+  "per_scenario_goal_mean": {
+    "gt-row-03": 1.0,
+    "gt-row-05": 1.0,
+    "gt-row-06": 1.0,
+    "gt-row-08": 1.0,
+    "gt-row-07": 0.0,
+    "gt-row-02": 1.0,
+    "mt-no-spurious-clarify": 1.0,
+    "mt-simulated-party-count": 1.0,
+    "gt-row-14": 1.0,
+    "gt-row-13": 1.0,
+    "gt-row-15": 1.0,
+    "gt-row-00": 0.3333,
+    "mt-parties-clarify": 0.0,
+    "mt-stable-options": 0.0,
+    "gt-row-01": 0.0,
+    "gt-row-04": 0.0
+  },
+  "per_scenario_agent": {
+    "gt-row-02": {
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 90464,
+      "avg_wall_clock_s": 26.28,
+      "generated_sql": "SELECT party_type, COUNT(party_id) AS party_count\nFROM normalized.party\nWHERE is_deleted = false\nGROUP BY party_type\nORDER BY party_count DESC\nLIMIT 5",
+      "executed_sql": "SELECT party_type, COUNT(party_id) AS party_count\nFROM normalized.party\nWHERE is_deleted = false\nGROUP BY party_type\nORDER BY party_count DESC\nLIMIT 5",
+      "degraded": null,
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "party_type": "Organization",
+          "party_count": "7"
+        },
+        {
+          "party_type": "Trust",
+          "party_count": "5"
+        },
+        {
+          "party_type": "Individual",
+          "party_count": "3"
+        }
+      ],
+      "expected_sql": "SELECT p.party_type, COUNT(*) AS party_count\nFROM normalized.party p\nWHERE p.is_deleted = false\nGROUP BY p.party_type\nORDER BY party_count DESC\nLIMIT 5",
+      "expected_row_count": 3,
+      "expected_sample": [
+        {
+          "party_type": "Organization",
+          "party_count": 7
+        },
+        {
+          "party_type": "Trust",
+          "party_count": 5
+        },
+        {
+          "party_type": "Individual",
+          "party_count": 3
+        }
+      ]
+    },
+    "gt-row-03": {
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "emitted_sql": true,
+      "sql_run_fraction": 0.6667,
+      "avg_total_tokens": 94207,
+      "avg_wall_clock_s": 327.17,
+      "generated_sql": "SELECT p.party_id, p.full_name, SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nWHERE h.holding_status = 'Active' AND h.is_deleted = false AND c.is_deleted = false AND p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC",
+      "executed_sql": "SELECT p.party_id, p.full_name, SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nWHERE h.holding_status = 'Active' AND h.is_deleted = false AND c.is_deleted = false AND p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 2,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis",
+          "total_market_value": "317902.53"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker",
+          "total_market_value": "90066.59"
+        }
+      ],
+      "expected_sql": "SELECT\n    p.party_id,\n    p.full_name AS party_name,\n    COUNT(DISTINCT h.holding_id) AS holding_count,\n    SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.coverage c\n    ON h.holding_id = c.holding_id\nJOIN normalized.party p\n    ON CONCAT('PARTY#', c.party_id) = p.party_id\nWHERE h.holding_status = 'Active'\n  AND h.is_deleted = false\n  AND c.is_deleted = false\n  AND p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "expected_row_count": 2,
+      "expected_sample": [
+        {
+          "party_id": "PARTY#PARTY000012",
+          "party_name": "Thomas Jill Davis",
+          "holding_count": "1",
+          "total_market_value": "317902.53"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "party_name": "Jared Xavier Parker",
+          "holding_count": "1",
+          "total_market_value": "90066.59"
+        }
+      ]
+    },
+    "gt-row-00": {
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "emitted_sql": true,
+      "sql_run_fraction": 0.3333,
+      "avg_total_tokens": 68784,
+      "avg_wall_clock_s": 254.76,
+      "generated_sql": "SELECT h.policy_id AS policy_id, p.party_id AS party_id, p.full_name AS insured_and_policyholder_name\nFROM normalized.life_participant lp\nJOIN normalized.holding h ON lp.holding_id = h.holding_id AND h.is_deleted = false\nJOIN normalized.party p ON CONCAT('PARTY#', lp.party_id) = p.party_id AND p.is_deleted = false\nWHERE lp.is_deleted = false\nGROUP BY h.policy_id, p.party_id, p.full_name\nHAVING COUNT(DISTINCT lp.participant_sk) > 1",
+      "executed_sql": "SELECT h.policy_id AS policy_id, p.party_id AS party_id, p.full_name AS insured_and_policyholder_name\nFROM normalized.life_participant lp\nJOIN normalized.holding h ON lp.holding_id = h.holding_id AND h.is_deleted = false\nJOIN normalized.party p ON CONCAT('PARTY#', lp.party_id) = p.party_id AND p.is_deleted = false\nWHERE lp.is_deleted = false\nGROUP BY h.policy_id, p.party_id, p.full_name\nHAVING COUNT(DISTINCT lp.participant_sk) > 1\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 20,
+      "result_sample": [
+        {
+          "policy_id": "POL00000008",
+          "party_id": "PARTY#PARTY000008",
+          "insured_and_policyholder_name": "Matthew Stanley Escobar"
+        },
+        {
+          "policy_id": "POL00000020",
+          "party_id": "PARTY#PARTY000005",
+          "insured_and_policyholder_name": "Melissa Louis Garrett"
+        },
+        {
+          "policy_id": "POL00000006",
+          "party_id": "PARTY#PARTY000006",
+          "insured_and_policyholder_name": "Lauren David Kane"
+        }
+      ],
+      "expected_sql": "SELECT DISTINCT h.holding_id, h.policy_id, lp.party_id AS insured_party_id\nFROM normalized.holding h\nJOIN normalized.life_participant lp \n  ON lp.holding_id = h.holding_id\nJOIN (\n  SELECT holding_id, party_id\n  FROM normalized.life_participant\n  WHERE is_deleted = false\n  GROUP BY holding_id, party_id\n  HAVING COUNT(DISTINCT participant_sk) > 1\n) dup \n  ON dup.holding_id = h.holding_id \n  AND dup.party_id = lp.party_id\nWHERE lp.is_deleted = false \n  AND h.is_deleted = false",
+      "expected_row_count": 20,
+      "expected_sample": [
+        {
+          "holding_id": "POLICY#POL00000011",
+          "policy_id": "POL00000011",
+          "insured_party_id": "PARTY000011"
+        },
+        {
+          "holding_id": "POLICY#POL00000010",
+          "policy_id": "POL00000010",
+          "insured_party_id": "PARTY000010"
+        },
+        {
+          "holding_id": "POLICY#POL00000012",
+          "policy_id": "POL00000012",
+          "insured_party_id": "PARTY000012"
+        }
+      ]
+    },
+    "gt-row-05": {
+      "question": "How many parties are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 105464,
+      "avg_wall_clock_s": 20.34,
+      "generated_sql": "SELECT COUNT(party_id) AS party_count FROM normalized.party WHERE is_deleted = false",
+      "executed_sql": "SELECT COUNT(party_id) AS party_count FROM normalized.party WHERE is_deleted = false\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "party_count": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "gt-row-06": {
+      "question": "List the top 10 coverage products by name.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 90306,
+      "avg_wall_clock_s": 19.85,
+      "generated_sql": "SELECT product_name FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name ASC LIMIT 10",
+      "executed_sql": "SELECT product_name FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name ASC LIMIT 10",
+      "degraded": null,
+      "result_row_count": 5,
+      "result_sample": [
+        {
+          "product_name": "Accidental Death"
+        },
+        {
+          "product_name": "Base Life"
+        },
+        {
+          "product_name": "Child Rider"
+        }
+      ],
+      "expected_sql": "SELECT product_name FROM normalized.coverage_product WHERE is_deleted = false ORDER BY product_name ASC LIMIT 10",
+      "expected_row_count": 5,
+      "expected_sample": [
+        {
+          "product_name": "Accidental Death"
+        },
+        {
+          "product_name": "Base Life"
+        },
+        {
+          "product_name": "Child Rider"
+        }
+      ]
+    },
+    "gt-row-07": {
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 178068,
+      "avg_wall_clock_s": 145.66,
+      "generated_sql": "SELECT\n  p.party_id,\n  p.full_name,\n  SUM(h.market_value) AS total_market_value,\n  ARRAY_JOIN(ARRAY_AGG(DISTINCT COALESCE(hs.fundname, 'N/A')), ', ') AS investment_products\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nLEFT JOIN normalized.holding_subaccount hs ON hs.holding_id = h.holding_id AND hs.deleted = false\nWHERE h.holding_status = 'Active'\n  AND h.is_deleted = false\n  AND c.is_deleted = false\n  AND p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "executed_sql": "SELECT\n  p.party_id,\n  p.full_name,\n  SUM(h.market_value) AS total_market_value,\n  ARRAY_JOIN(ARRAY_AGG(DISTINCT COALESCE(hs.fundname, 'N/A')), ', ') AS investment_products\nFROM normalized.holding h\nJOIN normalized.coverage c ON c.holding_id = h.holding_id\nJOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id\nLEFT JOIN normalized.holding_subaccount hs ON hs.holding_id = h.holding_id AND hs.deleted = false\nWHERE h.holding_status = 'Active'\n  AND h.is_deleted = false\n  AND c.is_deleted = false\n  AND p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "degraded": null,
+      "result_row_count": 2,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis",
+          "total_market_value": "317902.53",
+          "investment_products": "N/A"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker",
+          "total_market_value": "90066.59",
+          "investment_products": "N/A"
+        }
+      ],
+      "expected_sql": "SELECT\n    p.party_id,\n    p.full_name                                                        AS party_name,\n    SUM(h.market_value)                                                AS total_market_value,\n    ARRAY_JOIN(ARRAY_AGG(DISTINCT\n        CASE\n            WHEN hs.fundname IS NOT NULL THEN hs.fundname\n            WHEN pp.product_name IS NOT NULL THEN pp.product_name\n            ELSE 'N/A'\n        END\n    ), ', ')                                                           AS investment_products\nFROM normalized.party p\nJOIN normalized.coverage c\n    ON c.party_id = REPLACE(p.party_id, 'PARTY#', '')\n    AND c.is_deleted = false\nJOIN normalized.holding h\n    ON h.holding_id = c.holding_id\n    AND h.is_deleted = false\nLEFT JOIN normalized.holding_subaccount hs\n    ON hs.holding_id = h.holding_id\n    AND hs.deleted = false\nLEFT JOIN normalized.policy_product pp\n    ON pp.product_code = c.product_code\n    AND pp.is_deleted = false\nWHERE p.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "expected_row_count": 4,
+      "expected_sample": [
+        {
+          "party_id": "PARTY#PARTY000014",
+          "party_name": "Scott Neil Davis",
+          "total_market_value": "651373.05",
+          "investment_products": "N/A, Universal Life"
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "party_name": "Thomas Jill Davis",
+          "total_market_value": "317902.53",
+          "investment_products": "20-Year Term Life"
+        },
+        {
+          "party_id": "PARTY#PARTY000007",
+          "party_name": "Blake Katelyn Myers",
+          "total_market_value": "312549.21",
+          "investment_products": "20-Year Term Life"
+        }
+      ]
+    },
+    "gt-row-08": {
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 126151,
+      "avg_wall_clock_s": 25.91,
+      "generated_sql": "SELECT SUBSTR(transaction_date,1,7) AS month,\n       SUM(CAST(transaction_amount AS DOUBLE)) AS total_amount\nFROM normalized.financial_activity\nWHERE is_deleted = false\n  AND SUBSTR(transaction_date,1,4) = '2024'\nGROUP BY SUBSTR(transaction_date,1,7)\nORDER BY month",
+      "executed_sql": "SELECT SUBSTR(transaction_date,1,7) AS month,\n       SUM(CAST(transaction_amount AS DOUBLE)) AS total_amount\nFROM normalized.financial_activity\nWHERE is_deleted = false\n  AND SUBSTR(transaction_date,1,4) = '2024'\nGROUP BY SUBSTR(transaction_date,1,7)\nORDER BY month\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "month": "2024-03",
+          "total_amount": "70895.29000000001"
+        },
+        {
+          "month": "2024-05",
+          "total_amount": "20242.9"
+        },
+        {
+          "month": "2024-10",
+          "total_amount": "13991.93"
+        }
+      ],
+      "expected_sql": "SELECT\n    SUBSTR(transaction_date, 1, 7) AS month,\n    COUNT(*) AS transaction_count,\n    SUM(CAST(transaction_amount AS DOUBLE)) AS total_transaction_amount\nFROM normalized.financial_activity\nWHERE SUBSTR(transaction_date, 1, 4) = '2024'\n  AND is_deleted = false\nGROUP BY SUBSTR(transaction_date, 1, 7)\nORDER BY month\nLIMIT 12",
+      "expected_row_count": 3,
+      "expected_sample": [
+        {
+          "month": "2024-03",
+          "transaction_count": "2",
+          "total_transaction_amount": "70895.29000000001"
+        },
+        {
+          "month": "2024-05",
+          "transaction_count": "1",
+          "total_transaction_amount": "20242.9"
+        },
+        {
+          "month": "2024-10",
+          "transaction_count": "1",
+          "total_transaction_amount": "13991.93"
+        }
+      ]
+    },
+    "gt-row-04": {
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 44584,
+      "avg_wall_clock_s": 434.88,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "SELECT\n    p.full_name                                         AS policyholder_name,\n    COALESCE(pp.premium_mode, c.product_code)           AS payout_frequency,\n    fa.transaction_amount                               AS projected_next_payout_amount,\n    fa.effective_date                                   AS payout_effective_date,\n    fa.activity_type                                    AS payout_type,\n    ad.holding_id                                       AS policy_id\nFROM normalized.annuity_detail ad\nJOIN normalized.coverage c\n    ON c.holding_id = ad.holding_id\n   AND c.is_deleted = false\nJOIN normalized.party p\n    ON p.party_id = CONCAT('PARTY#', c.party_id)\n   AND p.is_deleted = false\nLEFT JOIN normalized.policy_product pp\n    ON pp.product_code = c.product_code\n   AND pp.is_deleted = false\nLEFT JOIN normalized.financial_activity fa\n    ON fa.holding_id = ad.holding_id\n   AND fa.activity_type IN ('Withdrawal', 'Dividend', 'Claim')\n   AND fa.is_deleted = false\nWHERE ad.deleted = false\nORDER BY ad.holding_id, fa.effective_date DESC\nLIMIT 10",
+      "expected_row_count": 5,
+      "expected_sample": [
+        {
+          "policyholder_name": "Scott Neil Davis",
+          "payout_frequency": "VUL",
+          "projected_next_payout_amount": "35512.98",
+          "payout_effective_date": "2021-04-08",
+          "payout_type": "Dividend",
+          "policy_id": "POLICY#POL00000011"
+        },
+        {
+          "policyholder_name": "Thomas Jill Davis",
+          "payout_frequency": "Monthly",
+          "projected_next_payout_amount": "",
+          "payout_effective_date": "",
+          "payout_type": "",
+          "policy_id": "POLICY#POL00000013"
+        },
+        {
+          "policyholder_name": "Jared Xavier Parker",
+          "payout_frequency": "VUL",
+          "projected_next_payout_amount": "22974.07",
+          "payout_effective_date": "2024-03-31",
+          "payout_type": "Claim",
+          "policy_id": "POLICY#POL00000014"
+        }
+      ]
+    },
+    "mt-parties-clarify": {
+      "question": "How many are there?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 27020,
+      "avg_wall_clock_s": 36.44,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "mt-no-spurious-clarify": {
+      "question": "How many parties are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 105451,
+      "avg_wall_clock_s": 18.88,
+      "generated_sql": "SELECT COUNT(party_id) AS party_count FROM normalized.party WHERE is_deleted = false",
+      "executed_sql": "SELECT COUNT(party_id) AS party_count FROM normalized.party WHERE is_deleted = false\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "party_count": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "mt-stable-options": {
+      "question": "How many are there?",
+      "emitted_sql": true,
+      "sql_run_fraction": 0.3333,
+      "avg_total_tokens": 44644,
+      "avg_wall_clock_s": 100.22,
+      "generated_sql": "SELECT COUNT(party_id) AS party_count FROM normalized.party WHERE is_deleted = false",
+      "executed_sql": "SELECT COUNT(party_id) AS party_count FROM normalized.party WHERE is_deleted = false\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "party_count": "15"
+        }
+      ],
+      "expected_sql": "SELECT COUNT(*) AS party_count FROM normalized.party WHERE sk = 'METADATA' AND is_deleted = false",
+      "expected_row_count": 1,
+      "expected_sample": [
+        {
+          "party_count": 15
+        }
+      ]
+    },
+    "mt-simulated-party-count": {
+      "question": "I need to know how many parties exist in the curated layer.",
+      "emitted_sql": true,
+      "sql_run_fraction": 1.0,
+      "avg_total_tokens": 58758,
+      "avg_wall_clock_s": 19.9,
+      "generated_sql": "SELECT COUNT(party_id) FROM normalized.party WHERE is_deleted = false",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party WHERE is_deleted = false LIMIT 101",
+      "degraded": null,
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-14": {
+      "question": "What can I ask about this semantic layer?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 20.48,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-13": {
+      "question": "What are some common metrics that could be calculated with this data?",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 23.61,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-15": {
+      "question": "Explain what the coverage table represents.",
+      "emitted_sql": false,
+      "sql_run_fraction": 0.0,
+      "avg_total_tokens": 0,
+      "avg_wall_clock_s": 21.9,
+      "generated_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "result_row_count": null,
+      "result_sample": [],
+      "expected_sql": "",
+      "expected_row_count": null,
+      "expected_sample": null
+    },
+    "gt-row-01": {
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "emitted_sql": true,
+      "sql_run_fraction": 0.3333,
+      "avg_total_tokens": 37642,
+      "avg_wall_clock_s": 396.74,
+      "generated_sql": "SELECT\n  r.holding_id,\n  c.coverage_id,\n  p.party_id,\n  p.full_name,\n  c.coverage_type AS role\nFROM normalized.rider_participant r\nJOIN normalized.coverage c ON c.holding_id = r.holding_id\nLEFT JOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id AND p.is_deleted = false\nWHERE r.is_deleted = false\n  AND c.is_deleted = false\n  AND c.coverage_type = 'Rider'\nORDER BY r.holding_id, c.coverage_id, p.full_name",
+      "executed_sql": "SELECT\n  r.holding_id,\n  c.coverage_id,\n  p.party_id,\n  p.full_name,\n  c.coverage_type AS role\nFROM normalized.rider_participant r\nJOIN normalized.coverage c ON c.holding_id = r.holding_id\nLEFT JOIN normalized.party p ON CONCAT('PARTY#', c.party_id) = p.party_id AND p.is_deleted = false\nWHERE r.is_deleted = false\n  AND c.is_deleted = false\n  AND c.coverage_type = 'Rider'\nORDER BY r.holding_id, c.coverage_id, p.full_name\nLIMIT 101",
+      "degraded": null,
+      "result_row_count": 6,
+      "result_sample": [
+        {
+          "holding_id": "POLICY#POL00000001",
+          "coverage_id": "COV81504609",
+          "party_id": "",
+          "full_name": "",
+          "role": "Rider"
+        },
+        {
+          "holding_id": "POLICY#POL00000001",
+          "coverage_id": "COV81504609",
+          "party_id": "",
+          "full_name": "",
+          "role": "Rider"
+        },
+        {
+          "holding_id": "POLICY#POL00000005",
+          "coverage_id": "COV97656116",
+          "party_id": "",
+          "full_name": "",
+          "role": "Rider"
+        }
+      ],
+      "expected_sql": "SELECT\n    r.rider_id,\n    r.rider_name,\n    r.rider_code,\n    r.rider_type,\n    r.rider_status,\n    r.holding_id,\n    c.coverage_id,\n    c.coverage_type   AS participant_role,\n    c.party_id,\n    COALESCE(NULLIF(p.full_name, ''), CONCAT(p.first_name, ' ', p.last_name)) AS participant_name,\n    p.party_type,\n    c.issue_age,\n    c.issue_gender,\n    c.underwriting_class\nFROM normalized.rider r\nJOIN normalized.coverage c\n    ON r.holding_id = c.holding_id\nLEFT JOIN normalized.party p\n    ON c.party_id = p.party_id\nWHERE r.is_deleted = false\n  AND c.is_deleted = false\nORDER BY r.rider_id, c.coverage_id\nLIMIT 10",
+      "expected_row_count": 10,
+      "expected_sample": [
+        {
+          "rider_id": "RIDER00258816",
+          "rider_name": "Accidental Death Benefit",
+          "rider_code": "RDR3763",
+          "rider_type": "Premium Waiver",
+          "rider_status": "Active",
+          "holding_id": "POLICY#POL00000006",
+          "coverage_id": "COV18812698",
+          "participant_role": "Rider",
+          "party_id": "PARTY000057",
+          "participant_name": "",
+          "party_type": "",
+          "issue_age": "56.0",
+          "issue_gender": "M",
+          "underwriting_class": "Preferred Plus"
+        },
+        {
+          "rider_id": "RIDER10927712",
+          "rider_name": "Child Term",
+          "rider_code": "RDR4592",
+          "rider_type": "Death Benefit",
+          "rider_status": "Lapsed",
+          "holding_id": "POLICY#POL00000007",
+          "coverage_id": "COV61516321",
+          "participant_role": "Rider",
+          "party_id": "PARTY000100",
+          "participant_name": "",
+          "party_type": "",
+          "issue_age": "56.0",
+          "issue_gender": "F",
+          "underwriting_class": "Preferred"
+        },
+        {
+          "rider_id": "RIDER24110835",
+          "rider_name": "Accidental Death Benefit",
+          "rider_code": "RDR8614",
+          "rider_type": "Premium Waiver",
+          "rider_status": "Inactive",
+          "holding_id": "POLICY#POL00000006",
+          "coverage_id": "COV18812698",
+          "participant_role": "Rider",
+          "party_id": "PARTY000057",
+          "participant_name": "",
+          "party_type": "",
+          "issue_age": "56.0",
+          "issue_gender": "M",
+          "underwriting_class": "Preferred Plus"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,2259 @@
+{
+ "benchmark": "bird",
+ "agent": "ontology_query_agent",
+ "agent_id": "semantic_layer_dev_ontology_query-1zqUpC6ywe",
+ "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology_query-1zqUpC6ywe",
+ "benchmark_eval_lambda_arns": {
+  "ExecutionAccuracy": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerExec-DuyG09fJOxhs",
+  "RewardVES": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerRewa-vd5mvCQaJG0f",
+  "SoftF1": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerSoft-sa9YvZSVyLzx"
+ },
+ "batch_evaluation_id": "bird_vkg_bench_bird_california_schools_266e0a10-63aeeb03c7",
+ "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/bird_vkg_bench_bird_california_schools_266e0a10-63aeeb03c7",
+ "status": "COMPLETED_WITH_ERRORS",
+ "bird_db_scope": "bird_california_schools",
+ "db_ids": [
+  "bird_california_schools"
+ ],
+ "max_concurrent_scenarios": 8,
+ "evaluator_suffix": "bird_vkg_v2",
+ "evaluator_ids": [
+  "GoalSuccess_bird_vkg_v2-nmof3MDUBn",
+  "FinalAnswerFaithfulness_bird_vkg_v2-4Bf3W3GubP",
+  "SqlGrounded_bird_vkg_v2-Dk6IvWHDkx",
+  "bird_ExecutionAccuracy_bird_vkg_v2-SyBHeIEFKv",
+  "bird_RewardVES_bird_vkg_v2-Fblm6JDmTk",
+  "bird_SoftF1_bird_vkg_v2-427qOeDyR7"
+ ],
+ "llm_judges": {
+  "GoalSuccess": "GoalSuccess_bird_vkg_v2-nmof3MDUBn",
+  "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_bird_vkg_v2-4Bf3W3GubP",
+  "SqlGrounded": "SqlGrounded_bird_vkg_v2-Dk6IvWHDkx"
+ },
+ "exec_metric_evaluators": {
+  "ExecutionAccuracy": "bird_ExecutionAccuracy_bird_vkg_v2-SyBHeIEFKv",
+  "RewardVES": "bird_RewardVES_bird_vkg_v2-Fblm6JDmTk",
+  "SoftF1": "bird_SoftF1_bird_vkg_v2-427qOeDyR7"
+ },
+ "llm_judge_aggregates": {
+  "GoalSuccess": 0.45,
+  "FinalAnswerFaithfulness": 0.38,
+  "SqlGrounded": 1.0
+ },
+ "exec_metric_aggregates": {
+  "ExecutionAccuracy": null,
+  "RewardVES": null,
+  "SoftF1": null
+ },
+ "exec_metrics_by_difficulty": {
+  "moderate": {
+   "ExecutionAccuracy": 0.1538,
+   "ExecutionAccuracy_n": 13,
+   "RewardVES": 0.1154,
+   "RewardVES_n": 13,
+   "SoftF1": 0.1538,
+   "SoftF1_n": 13
+  },
+  "challenging": {
+   "RewardVES": 0.0,
+   "RewardVES_n": 4,
+   "ExecutionAccuracy": 0.0,
+   "ExecutionAccuracy_n": 4,
+   "SoftF1": 0.0,
+   "SoftF1_n": 4
+  },
+  "simple": {
+   "SoftF1": 0.1429,
+   "SoftF1_n": 7,
+   "ExecutionAccuracy": 0.1429,
+   "ExecutionAccuracy_n": 7,
+   "RewardVES": 0.1429,
+   "RewardVES_n": 7
+  }
+ },
+ "exec_metrics_by_db": {
+  "bird_california_schools": {
+   "ExecutionAccuracy": 0.125,
+   "ExecutionAccuracy_n": 24,
+   "RewardVES": 0.1042,
+   "RewardVES_n": 24,
+   "SoftF1": 0.125,
+   "SoftF1_n": 24
+  }
+ },
+ "telemetry_coverage": {
+  "n_rows": 30,
+  "scored_rows_per_metric": {
+   "ExecutionAccuracy": 24,
+   "RewardVES": 24,
+   "SoftF1": 24
+  },
+  "coverage_per_metric": {
+   "ExecutionAccuracy": 1.0,
+   "RewardVES": 1.0,
+   "SoftF1": 1.0
+  },
+  "min_coverage": 1.0,
+  "coverage_floor": 0.95,
+  "coverage_ok": true,
+  "n_answerable": 24,
+  "n_unanswerable_gold": 6,
+  "unanswerable_scenario_ids": [
+   "gt-row-11",
+   "gt-row-18",
+   "gt-row-19",
+   "gt-row-20",
+   "gt-row-23",
+   "gt-row-29"
+  ],
+  "gold_validity_note": "backfilled from gold_validity.json probed 2026-08-10T04:27:34.397495+00:00",
+  "coverage_per_metric_raw": {
+   "ExecutionAccuracy": 0.8,
+   "RewardVES": 0.8,
+   "SoftF1": 0.8
+  }
+ },
+ "aggregate_summaries": [
+  {
+   "Evaluator": "SqlGrounded",
+   "AvgScore": "1.000",
+   "Evaluated": 30,
+   "Failed": 0
+  },
+  {
+   "Evaluator": "SoftF1",
+   "AvgScore": null,
+   "Evaluated": 24,
+   "Failed": 6
+  },
+  {
+   "Evaluator": "GoalSuccess",
+   "AvgScore": "0.450",
+   "Evaluated": 29,
+   "Failed": 1
+  },
+  {
+   "Evaluator": "RewardVES",
+   "AvgScore": null,
+   "Evaluated": 24,
+   "Failed": 6
+  },
+  {
+   "Evaluator": "ExecutionAccuracy",
+   "AvgScore": null,
+   "Evaluated": 24,
+   "Failed": 6
+  },
+  {
+   "Evaluator": "FinalAnswerFaithfulness",
+   "AvgScore": "0.380",
+   "Evaluated": 29,
+   "Failed": 1
+  }
+ ],
+ "per_row_events": [
+  {
+   "scenario_id": "gt-row-05",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history at all. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind. Since the conversation never reaches a substantive answer, this fails the criterion regardless of the expected gold answer."
+  },
+  {
+   "scenario_id": "gt-row-05",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty \u2014 there is no user prompt, no agent response, and no tool execution history. There are no final-answer records to evaluate, and no conversation content to compare against the expected gold SQL answer. Since no substantive answer or clarification was ever produced, the assertion that the conversation's final answer matches the expected SQL-derived result cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-05",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:81: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-05",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:81: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-05",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:81: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-05",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context provided is empty - there is no user prompt, no agent response, no tool execution history, and no ontology context or executed SQL present anywhere in the conversation. Since there is no executed SQL found in the context, the agent did not run any ungrounded SQL, which per the instructions means the grounding invariant was upheld by default (degraded run scenario). There is no evidence of any SQL being executed against Athena, so there is nothing to check against the ontology for hallucinated schema references."
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "evaluator": "SoftF1",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "evaluator": "RewardVES",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "evaluator": "ExecutionAccuracy",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL computes count of schools opened in Alameda County under DOC=52 (Elementary School District) in 1980 divided by 12, giving a monthly average. The result rows show v0=1.4167 (average) and v3=17 (count), matching the expected computation structure (17/12=1.4167). The agent's final answer states the monthly average is about 1.42 schools, totaling 17 schools opened that year, which aligns with the expected numeric result."
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL computes COUNT(schools)/12 for Alameda County schools with DOC=52 (Elementary School District) opening in 1980, expected to yield 17 schools and average ~1.4167. The executed query result matches exactly: v0=1.4167 (average), v3=17 (count). The agent's final response states 'about 1.42 schools' monthly average and '17 schools' total for 1980, which is factually consistent with the expected gold answer. The final-answer record is a substantive, correct natural-language answer, not a clarification or fabrication."
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "There is no executed SQL present in the context - no Phase 5 output, reasoning.sqlQuery, or executed_sql is shown. The only tool call recorded is SliceSufficiency, and the agent's final response is derived directly from the provided result rows without any visible SQL grounding artifact in this context. Per the instructions, when no executed SQL is present in the context, the grounding invariant is considered upheld (degraded run), and the score should be 1 (pass) with a note of 'no SQL executed (degraded)'. Although result rows were provided implying some query ran, the SQL itself is not surfaced in the given context, so we cannot verify a schema violation, and per protocol this defaults to a pass."
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided contains no user prompt, no agent response, and an empty tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches any answer, it cannot match the expected gold SQL result."
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty\u2014there are no user prompts, agent responses, or tool execution history to examine. Without any final-answer record or conversation content, there is no evidence that the agent produced an answer matching the expected gold SQL result. Since the trajectory is completely empty, the assertion cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is entirely empty: there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no SQL executed in the context, the agent did not run any ungrounded SQL against Athena, which per the instructions means the grounding invariant was upheld by default (degraded/no-op run). This falls under the 'no SQL executed (degraded)' condition, warranting a pass."
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 3:197: mismatched input 'PROVISION'. Expecting: ')', ',', '.', 'AND', 'OR', '['); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 3:197: mismatched input 'PROVISION'. Expecting: ')', ',', '.', 'AND', 'OR', '['); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 3:197: mismatched input 'PROVISION'. Expecting: ')', ',', '.', 'AND', 'OR', '['); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context is empty - there is no user prompt, agent response, or tool execution history provided. No final-answer record span exists, and there is no substantive answer to evaluate against the expected gold SQL result. Since the conversation never reaches any answer at all, this fails the criterion."
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "evaluator": "RewardVES",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is empty - there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no SQL executed at all, this qualifies as a degraded run scenario per the instructions: 'If there is NO executed SQL in the context (the agent degraded rather than running ungrounded SQL), the grounding invariant was UPHELD \u2014 score 1 (pass) and note no SQL executed (degraded).' Therefore the score should be 1.0."
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty\u2014there is no user prompt, agent response, or tool execution history at all. There is no final-answer record to evaluate, no conversation_so_far block, and no substantive answer or clarification of any kind. Since no answer was given that matches the expected gold SQL result, the assertion is not satisfied."
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "evaluator": "ExecutionAccuracy",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "evaluator": "SoftF1",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The provided session context is empty\u2014there is no conversation content, no tool execution history, and no final-answer record span present. Since no substantive answer was ever given by the agent, the conversation never reaches the expected answer, and thus fails to satisfy the criterion."
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is completely empty\u2014there is no user prompt, no agent response, and no tool execution history. There are no final-answer records to evaluate, and no conversation content to reconstruct or assess against the gold SQL/answer. Since no substantive answer or clarification was ever produced, the assertion that the final answer matches the expected result cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is empty: there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL - this falls under the degraded run case where the grounding invariant is considered upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "evaluator": "SoftF1",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "evaluator": "RewardVES",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "evaluator": "ExecutionAccuracy",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided contains no conversation content at all - no user prompt, no agent response, and no tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the transcript. Since the conversation never reaches a substantive answer matching the expected result, this fails the criterion."
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty - there is no user prompt, no agent response, and no tool execution history. There are no final-answer records to evaluate against the expected gold SQL result. Without any conversation content, it's impossible to verify that the agent produced a substantive answer matching the expected result about Monterey County high schools with free meal counts. Since no final-answer record exists and there is no fallback natural-language assistant message either, the assertion cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context provided is empty - there is no user prompt content, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the given context. Since there is no executed SQL in the context, per the degraded-run rule, the agent did not run any ungrounded SQL, meaning the grounding invariant was upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (124) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (124) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (124) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided contains no conversation content at all \u2014 empty user prompt, empty agent response, and no tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the transcript. Since the conversation never reaches a substantive answer, it cannot be judged as matching the expected gold answer."
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The provided session context is completely empty: no user prompt, no agent response, and no tool execution history. There is no final-answer record present, nor any conversation_so_far block to reconstruct the trajectory from. Since no substantive answer or clarification was ever produced, the expected final answer (matching the gold SQL result) cannot be verified as having been delivered to the user. The assertion requiring the conversation's final answer to match the gold result is therefore not satisfied."
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is empty: there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the session. Since there is no executed SQL surfaced in the context, the agent did not run any ungrounded SQL against Athena, which per the grading instructions counts as the grounding invariant being upheld (degraded run scenario, though no explicit degradation message is present either, the absence of any SQL execution means no schema was hallucinated)."
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:29: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:29: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:29: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is empty: there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL - this falls under the degraded run scenario where the grounding invariant is upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The provided session context is entirely empty\u2014there is no user prompt, no agent response, and no tool execution history. There is no final-answer record, no conversation_so_far block, and no substantive answer of any kind to evaluate against the gold SQL result. Since no answer was ever given, the assertion that the conversation's final answer matches the expected result cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context is empty - there is no conversation content, no user prompt, no agent response, and no tool execution history. There is no final-answer record span present at all, and no natural-language assistant message to fall back on. Since the conversation never reaches any substantive answer, it cannot match the expected gold answer."
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:97: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:97: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 1:97: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL joins satscores to schools ordered by NumGE1500 descending, returning the top school's administrator names (AdmFName1/AdmLName1, plus secondary/tertiary if present). The agent's query result returned CDS ********000000 with NumGE1500=5837 and administrator 'Michelle King'. The agent's final answer states the school is administered by Michelle King, matching the retrieved row's ADMFNAME1/ADMLNAME1 fields. This is consistent with the gold query's intent (top school by NumGE1500, admin full name). The answer is substantive, not a clarification, and matches the expected result in entity and structure (full name of administrator for the top-scoring school). No contradiction with the gold SQL's expected output pattern."
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1714ms, gold_rows=1 in 1671ms) | pred_row0=['Michelle', 'King', '********000000', '5837'] gold_row0=['Michelle', 'King', None, None, None, None]"
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1618ms, gold_rows=1 in 1752ms) | pred_row0=['Michelle', 'King', '********000000', '5837'] gold_row0=['Michelle', 'King', None, None, None, None]"
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The executed SQL text itself is not printed, but the result columns (ADMFNAME1, ADMLNAME1, CDS, NUMGE1500) directly correspond to ontology-mapped properties: School/admfname1 -> schools.admfname1, School/admlname1 -> schools.admlname1, SatScore/cds -> satscores.cds, SatScore/numge1500 -> satscores.numge1500. The join between schools and satscores via cds/cdscode is explicitly defined in the ontology (Satscores/hasSchools object property). All referenced tables (schools, satscores) and columns are present in the retrieved ontology context, and no hallucinated schema elements appear. Thus the grounding invariant holds."
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The final user-facing answer states that the school with the highest number of students scoring 1500+ (5,837) is administered by Michelle King, using the CDS code and NumGE1500 value that match the query results. This aligns with the gold SQL's intent of retrieving the administrator's full name (AdmFName1/AdmLName1) for the school with the highest NumGE1500. Since the retrieved columns only included the first administrator's name fields, and the second/third admin fields were not returned (implying they were null or absent), the answer 'Michelle King' correctly reflects the school's administrator as required by the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1882ms, gold_rows=1 in 1939ms) | pred_row0=['Michelle', 'King', '********000000', '5837'] gold_row0=['Michelle', 'King', None, None, None, None]"
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL is present in the context; only the retrieved ontology context, the question, and a pre-computed result table (columns ['v5']) are shown. There is no Phase 5 SQL query, sparql, or reasoning.sqlQuery visible to inspect for schema grounding. Since there is no executed SQL to evaluate against the ontology, the grounding invariant is considered upheld by default (degraded/absent SQL case)."
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL counts distinct schools where Virtual='F' (not virtual, i.e., 'exclusively virtual' likely a translation quirk but gold uses Virtual='F') and AvgScrMath>400, yielding presumably 4 per the executed query result shown ('4'). The agent's final answer states 4 schools meeting the criteria, matching the query result and the gold expected count. The result matches the expected answer numerically and conceptually."
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL computes count of distinct schools with Virtual='F' (not virtual) and AvgScrMath>400, giving a count. The result row returned was '4', and the agent's final answer states 4 schools that are exclusively virtual with AvgScrMath>400. However, the gold query filters Virtual='F', meaning NOT virtual, not 'exclusively virtual'. The agent's answer misinterprets the condition as 'exclusively virtual' when the correct condition is 'not virtual' (F = full-time non-virtual). This is a factual mismatch in interpretation, though the numeric value matches (4). Since the question asks about schools that are virtual, but the gold answer's filter is Virtual='F' (non-virtual), the correct answer should describe non-virtual schools, not virtual ones. The agent's description contradicts the actual meaning of the result, making it factually inconsistent with the expected answer's intent."
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "evaluator": "SoftF1",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=soft_f1 value=1.0000 (pred_rows=1 in 2624ms, gold_rows=1 in 1763ms)"
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=ex value=1.0000 (pred_rows=1 in 1687ms, gold_rows=1 in 1860ms)"
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "evaluator": "RewardVES",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=rves value=1.0000 (pred_rows=1 in 1653ms, gold_rows=1 in 1747ms)"
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold answer is the phone number of the Fresno Unified school with the lowest average reading SAT score, which per the gold SQL should be (559) 248-5100 (matching the retrieved row). The agent's final answer states the phone number is (559) 248-5100, along with the score of 370, which matches the query result and aligns with the expected answer's key entity (phone number)."
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL joins satscores with schools filtered by District='Fresno Unified' and non-null AvgScrRead, ordered ascending, returning phone number. The agent's query result matches this logic (lowest AvgScrRead=370, phone (559) 248-5100), and the final answer states this phone number correctly, consistent with the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1723ms, gold_rows=1 in 1708ms) | pred_row0=['370', '********034214', 'Fresno Unified', '(559) 248-5100', 'S'] gold_row0=['(559) 248-5100']"
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=1 in 2451ms, gold_rows=1 in 1893ms) | pred_row0=['370', '********034214', 'Fresno Unified', '(559) 248-5100', 'S'] gold_row0=['(559) 248-5100']"
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL is present in the context - only the ontology slice and the final result columns/rows are shown, with a SliceSufficiency tool call marking sufficiency=True but no SQL query text (e.g., no reasoning.sqlQuery or executed_sql). The result columns (AVGSCRREAD, CDS, DNAME, PHONE, RTYPE) correspond to satscores fields (avgscrread, cds, dname, rtype) joined with schools.phone, all of which are present in the ontology (SatScore and School classes with mapsToColumn satscores.avgscrread, satscores.cds, satscores.dname, satscores.rtype, schools.phone, and the hasSchools join property). Since no explicit executed SQL text is surfaced to check against, and the agent appears to have run a grounded query using only ontology-mapped columns, there is no evidence of hallucinated schema. Per instructions, absence of executed SQL text means the grounding invariant is considered upheld (degraded run scenario), and even if SQL was run, the referenced columns all map cleanly to the ontology. Therefore this passes."
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1670ms, gold_rows=1 in 1620ms) | pred_row0=['370', '********034214', 'Fresno Unified', '(559) 248-5100', 'S'] gold_row0=['(559) 248-5100']"
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is empty: there is no user prompt, no agent response, no tool execution history, and no retrieved ontology context or executed SQL present anywhere in the conversation. Since there is no SQL executed in the context, the agent did not run any ungrounded SQL, meaning the grounding invariant was upheld by default (degraded/no-op run). Per the instructions, absence of executed SQL should be scored as pass with a note of 'no SQL executed (degraded)'."
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided contains no conversation content at all \u2014 no user prompt, no agent response, and no tool execution history. There is no final-answer record span present, and no natural-language assistant message to fall back on. Since the conversation never reaches any substantive answer, it cannot match the expected gold answer about schools with enrollment differences greater than 30."
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty \u2014 there is no user prompt, no agent response, and no tool execution history. There is no final-answer record to evaluate, and no evidence the agent produced any substantive answer matching the expected gold SQL result. Since no trajectory exists to satisfy the assertion, the goal cannot be considered achieved."
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (125) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (125) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (125) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "evaluator": "RewardVES",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL computes DOC=54 (Unified) count / DOC=52 (Elementary) count among Merged, Orange County schools. The agent's final answer states 4 merged Unified School District schools and 7 merged Elementary School District schools, giving ratio 4:7 (~0.571). This matches the counts expected from the gold query (DOC 54 = Unified count, DOC 52 = Elementary count), and the ratio direction (Unified/Elementary) is consistent with the gold formula's numerator/denominator. The numeric values (4 and 7) were verified via SPARQL execution against the underlying SQL, matching the schema and semantics of the gold query. Thus the final answer is factually consistent with the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "evaluator": "SoftF1",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "evaluator": "ExecutionAccuracy",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL computes ratio = COUNT(DOC=54)/COUNT(DOC=52) among Merged, Orange County schools. DOC 54 corresponds to Unified School District and DOC 52 to Elementary School District (per standard CDE codes), matching the agent's use of doctype filters. The agent executed SPARQL queries filtering County='Orange', StatusType='Merged', doctype='Unified School District' (count=4) and doctype='Elementary School District' (count=7), matching the underlying SQL translation exactly as the gold query's semantics (DOC=54 -> Unified, DOC=52 -> Elementary). The final answer '4:7 (~0.571)' matches gold's expected ratio (4/7\u22480.571). The agent's final response is a concrete, grounded, substantive answer consistent with the expected result, not a clarification or fabrication. Thus the assertion is satisfied."
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The executed SQL (SELECT COUNT(*) FROM \"bird_california_schools\".\"schools\" WHERE COUNTY, DOCTYPE, STATUSTYPE match given values) directly corresponds to the retrieved ontology's School class and its properties School/county, School/doctype, School/statustype, all explicitly retrieved via retrieve_ontology. No table or column in the executed SQL (schools, COUNTY, DOCTYPE, STATUSTYPE, CDSCODE) is absent from the ontology slice used - CDSCODE is the standard key for the School class (CDS code) referenced in the ontology comment. The queries executed successfully and returned rows (4 and 7), which were used to compute the ratio. All identifiers trace back to the ontology context retrieved."
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty\u2014there are no user prompts, agent responses, or tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches a substantive answer matching the expected gold SQL result, the criterion is not satisfied."
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty\u2014there are no user prompts, agent responses, or tool execution history at all. There is no final-answer record to evaluate against the expected gold SQL result. Since no substantive answer or clarification was given, the conversation never reaches the required answer matching the gold SQL result, violating the assertion."
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is entirely empty: there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Per the instructions, if there is NO executed SQL in the context, the agent degraded rather than running ungrounded SQL, and the grounding invariant is considered upheld."
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "evaluator": "ExecutionAccuracy",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "evaluator": "RewardVES",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "evaluator": "SoftF1",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL is present in the context; only the ontology schema and result columns/rows are shown, with no reasoning.sqlQuery or Phase 5 SQL surfaced. The result columns (AVGSCRWRITE, CDS, CHARTERNUM) map plausibly to satscores.avgscrwrite, satscores.cds, and schools.charternum per the ontology, but since no actual SQL is shown to verify joins/tables directly, this falls under the degraded-run case where no executed SQL is visible in the context. Per instructions, absence of executed SQL means the agent did not expose ungrounded SQL, so the grounding invariant is upheld."
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The agent's final response reports 58 schools with average Writing SAT score > 499, ranked, listing charter numbers, matching the tool-returned data (top score 630, CDS ********430252, charter 0210, etc.). This aligns with the gold SQL's intent of ranking schools by AvgScrWrite where AvgScrWrite>499 and CharterNum is not null, showing CharterNum and AvgScrWrite. The reported numbers and ranking order match the retrieved rows exactly, and no clarification was needed since the question was unambiguous. No final-answer record indicates a clarification or fabricated data; the answer is consistent with the underlying query results."
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=58 in 1702ms, gold_rows=58 in 1898ms) | pred_row0=['630', '********430252', '0210'] gold_row0=['0210', '630', '1']"
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=58 in 2446ms, gold_rows=58 in 1727ms) | pred_row0=['630', '********430252', '0210'] gold_row0=['0210', '630', '1']"
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=58 in 2679ms, gold_rows=58 in 1422ms) | pred_row0=['630', '********430252', '0210'] gold_row0=['0210', '630', '1']"
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL ranks schools with AvgScrWrite > 499 and non-null CharterNum, ordered descending by AvgScrWrite, returning CharterNum and score. The agent's final answer reports 58 qualifying schools, with the top ranked score of 630 (charter 0210), followed by 593 (0890), 582 (0290), 581 (0352), 579 (0930), consistent with the returned SQL execution results shown in the tool result. The answer accurately reflects the ranking, the filter threshold (>499), and includes charter numbers as requested. No fabricated or contradictory figures are present, and the summary aligns with the expected gold query's intent and output structure."
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL is present in the context; only the retrieved ontology context and the final result table are shown, with no reasoning.sqlQuery or executed_sql surfaced. Per the instructions, when no executed SQL is present, the agent degraded rather than running ungrounded SQL, so the grounding invariant is upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL selects schools opened after 1991 or closed before 2000, with their writing scores and phone numbers, using an OR condition (open>1991 OR closed<2000). The agent's result set shows 11 schools with writing scores and phone numbers, matching the expected query shape. The agent's final answer summarizes the correct number of schools (11), gives example schools with correct scores (FAME Public Charter 505, Northcoast Preparatory 579, Los Angeles Teacher Preparatory Academy 339), and correctly notes no phone numbers are listed for any of them. This aligns with the data shown, which matches the gold SQL's intent and columns (School, AvgScrWrite, Phone). The answer is consistent with the expected result \u2014 same entities, same key figures, same conclusion about phone numbers being empty."
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL selects schools whose OpenDate year > 1991 OR ClosedDate year < 2000, returning school name, avg writing score, and phone. The returned SQL result rows show 11 schools, but checking the OpenDate values (2005, 2007, 2005, 2006, 2006, 2008, 2012, 2011, 2004, 2010, 2004) - none are after 1991 by the 'open year>1991' criterion in isolation, but all satisfy 'closed before 2000'? No, ClosedDate values are 2015, 2016, etc., none before 2000. Actually all OpenDate years are after 1991 (2004-2012), so they satisfy the 'opened after 1991' condition, which matches the gold intent. The agent's final answer correctly reports 11 schools, gives writing scores (339-579), names example schools with correct scores matching the tool output, and correctly states phone numbers are blank/not listed for these schools. This is consistent with the underlying data and the gold query's expected columns (School, AvgScrWrite, Phone). The answer is a reasonable natural-language summary consistent with the SQL result, satisfying the assertion that the final answer matches the gold query's intent and data."
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=11 in 1776ms, gold_rows=8574 in 1766ms) | pred_row0=['505', '********109835', '2015-07-31', '2005-08-29', None, 'FAME Public Charter'] gold_row0=['FAME Public Charter', '505', None]"
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=11 in 2039ms, gold_rows=8574 in 1671ms) | pred_row0=['505', '********109835', '2015-07-31', '2005-08-29', None, 'FAME Public Charter'] gold_row0=['FAME Public Charter', '505', None]"
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=11 in 1892ms, gold_rows=8574 in 2043ms) | pred_row0=['505', '********109835', '2015-07-31', '2005-08-29', None, 'FAME Public Charter'] gold_row0=['FAME Public Charter', '505', None]"
+  },
+  {
+   "scenario_id": "gt-row-01",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL query is shown in the context; only result columns and rows are provided along with a SliceSufficiency tool call marking the ontology slice as sufficient. Since there's no visible SQL statement to inspect for table/column grounding, this appears to be a case where the SQL wasn't surfaced in the context, but the result columns 'CDSCODE' and 'ENROLLMENT (K-12)' correspond directly to Frpm.cdscode (mapsToColumn 'frpm.cdscode') and Frpm.enrollmentK12 (mapsToColumn 'frpm.enrollment (k-12)'), both present in the retrieved ontology context. There is no indication of hallucinated schema elements - the columns align with the Frpm class properties. Following the instructions, since no executed SQL is explicitly shown but the result structure maps cleanly to ontology-defined properties, and there's no evidence of ungrounded schema usage, the grounding invariant appears upheld."
+  },
+  {
+   "scenario_id": "gt-row-01",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL computes total enrollment as the SUM of 'Enrollment (K-12)' + 'Enrollment (Ages 5-17)' and filters for that sum >500, then reports CDSCode. The agent's query and final answer instead filtered only on 'Enrollment (K-12)' >500, ignoring the Ages 5-17 enrollment component entirely. This yields a different filtering criterion and thus a different result set (the agent reports 5,362 schools, but this count and the specific school codes are based on an incorrect total-enrollment computation). Since the underlying calculation and resulting list of codes do not match the gold definition of 'total enrollment', the final answer is factually inconsistent with the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-01",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=5362 in 1060ms, gold_rows=7806 in 1862ms) | pred_row0=['********109835', '1087.0'] gold_row0=['********109835']"
+  },
+  {
+   "scenario_id": "gt-row-01",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=5362 in 976ms, gold_rows=7806 in 2482ms) | pred_row0=['********109835', '1087.0'] gold_row0=['********109835']"
+  },
+  {
+   "scenario_id": "gt-row-01",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL defines 'total enrollment' as Enrollment (K-12) + Enrollment (Ages 5-17) > 500, but the executed query and the agent's final answer only filtered on Enrollment (K-12) > 500, ignoring the Ages 5-17 enrollment. This means the returned school codes and the reported count (5,362) do not match the gold criterion's intended set of schools, since some schools' K-12 enrollment alone may be \u2264500 while the sum exceeds 500, or vice versa. The agent's final answer (the last natural-language response) reports the wrong filtering logic and thus a different, incorrect result set/count relative to the gold SQL's definition of total enrollment. Since the assertion requires the final answer to match the gold SQL's result, and the underlying computation deviates from the specified formula, the assertion is violated."
+  },
+  {
+   "scenario_id": "gt-row-01",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=5362 in 969ms, gold_rows=7806 in 3301ms) | pred_row0=['********109835', '1087.0'] gold_row0=['********109835']"
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is empty\u2014there is no user prompt, agent response, or tool execution history provided. There is no retrieved ontology context and no executed SQL present anywhere in the session. Since there is no executed SQL in the context, this qualifies as a degraded run per the instructions: the agent did not execute any ungrounded SQL. Therefore the grounding invariant is upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The provided session context is empty - there is no user prompt, agent response, or tool execution history at all. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches a substantive answer, it fails to match the expected gold SQL result."
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (125) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The provided session context is completely empty\u2014there are no user prompts, agent responses, or tool execution history. There is no final-answer record to evaluate, no conversation content to reconstruct, and no evidence the agent produced any substantive answer matching the gold SQL result. Since no final-answer record exists and no fallback natural-language message is present either, the assertion cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (125) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (125) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history at all. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches a substantive answer, it fails to match the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is entirely empty: no user prompt, no agent response, no tool execution history, and no ontology context or executed SQL are present. Since there is no executed SQL found in the context at all, per the instructions this indicates a degraded run where the agent did not execute any ungrounded SQL, upholding the grounding invariant."
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty \u2014 there is no user prompt, agent response, or tool execution history at all. No final-answer record exists in the given trajectory, and there is no [conversation_so_far] block to reconstruct prior turns from. Since there is no substantive answer, clarification, or any final-answer record matching the expected gold SQL result, the assertion (that the conversation's final answer matches the expected result) cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (107) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (107) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (107) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context is entirely empty: no user prompt, no agent response, no tool execution history, and no available tools. There is no retrieved ontology context present, and there is no executed SQL present in the context either. Since there is no SQL executed at all, the agent did not run any ungrounded SQL against Athena, meaning the grounding invariant was not violated. Per the instructions, if there is no executed SQL in the context, the grounding invariant was UPHELD and the score should be 1 (pass), noting 'no SQL executed (degraded)'."
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches any answer at all, it cannot match the expected gold answer."
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty\u2014there are no user prompts, agent responses, or tool execution history. There is no final-answer record to evaluate, and no substantive answer or clarification was ever given. Since the required answer (a count matching the gold SQL result) was never produced, the assertion is not satisfied."
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 3:53: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 3:53: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Predicted SQL failed to execute (An error occurred (InvalidRequestException) when calling the StartQueryExecution operation: line 3:53: mismatched input '%'. Expecting: ')', '*', 'ALL', 'DISTINCT', 'ORDER', <expression>); scored 0."
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The session context provided is empty (no user prompt, no agent response, no tool execution history). There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no executed SQL in the context, this falls under the degraded-run case: the agent did not run any ungrounded SQL, so the grounding invariant was upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided contains no user prompt, agent response, or tool execution history at all - it is entirely empty. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches any answer, it cannot match the expected gold SQL result about schools with 'Locally funded' funding type and enrollment difference criteria."
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (140) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (140) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The session context provided is empty - there is no user prompt, no agent response, and no tool execution history whatsoever. There is no final-answer record to evaluate, no conversation content, and no way to verify whether the agent's answer matches the gold SQL result. Since there is no substantive answer or clarification record present in the given trajectory, the assertion that the conversation's final answer matches the expected gold SQL result cannot be satisfied."
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (140) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (48) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold query orders by AvgScrMath DESC, OFFSET 6 LIMIT 1, meaning the 7th row after skipping the top 6 - i.e., the 7th highest math average. The agent's final SPARQL query returned the top 10 rows ordered by math DESC, and the 7th row (index 6, 0-based) is Oxford Academy with math=669, mailstreet='5172 Orange Avenue'. This matches exactly what OFFSET 6 LIMIT 1 would return. The agent's final answer states Oxford Academy with address 5172 Orange Avenue, which is factually consistent with the gold SQL's expected result. The answer is substantive, grounded in the executed SQL results, and correctly identifies the school name and mailing street address for the 7th highest math average."
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (48) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL orders by AvgScrMath DESC with OFFSET 6 LIMIT 1, which selects the 7th highest row (0-indexed position 6). In the query results returned by the agent (ORDER BY DESC(?math) LIMIT 10), the 7th row (index 6) is ['669', '********030616', '5172 Orange Avenue', 'Oxford Academy'], matching the gold row exactly. The agent's final answer states the school is Oxford Academy with mailing street address 5172 Orange Avenue, which matches the expected result precisely."
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (48) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The executed SQL (Phase 5) is: SELECT R1.AVGSCRMATH, R1.CDS, R2.MAILSTREET, R2.SCHOOL FROM satscores R1, schools R2 WHERE R1.CDS = R2.CDSCODE ORDER BY R1.AVGSCRMATH DESC LIMIT 10. All tables and columns used (satscores.AVGSCRMATH, satscores.CDS, schools.CDSCODE, schools.MAILSTREET, schools.SCHOOL) correspond directly to ontology properties retrieved in the slice: SatScore/avgscrmath, SatScore/cds, School/cdscode, School/mailstreet, School/school, under classes SatScore and School, joined via cds=cdscode consistent with the Satscores/hasSchools mapping. No hallucinated tables or columns appear; the join condition matches the documented cds->cdscode foreign key relationship. The agent then manually selected the 7th-highest row (Oxford Academy, 669, 5172 Orange Avenue) from the returned 10 rows, which is a correct post-processing step rather than a schema violation. Since every identifier in the executed SQL is grounded in the retrieved ontology context, the grounding invariant is upheld."
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL counts schools with Virtual='F' (no physical building) grouped by county, returning San Diego with 8 as the top count. The executed query result matches: San Diego, 8. The agent's final-answer response states San Diego offers the most schools without a physical building, with 8 such schools, compared to Santa Barbara. This matches the expected gold answer's key entity (San Diego) and number (8). No clarification was needed and none was given inappropriately. The answer is factually consistent with the gold result."
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL result: San Diego has more schools with Virtual='F' (no physical building indicator meaning not virtual, i.e., physical building) than Santa Barbara, with count 8. The agent's final answer states San Diego offers the most schools without a physical building, with 8 such schools, compared to Santa Barbara. This matches the expected result (San Diego, 8). The interpretation of 'Virtual=F' as 'no physical building' is slightly inverted in wording (F means not virtual, i.e., has a physical building), but the numeric answer and county match the gold result exactly (San Diego, 8). Since the assertion is based on matching the gold SQL output (San Diego with count 8), the final answer aligns with the expected answer's key entity and number."
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "evaluator": "SoftF1",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=soft_f1 value=1.0000 (pred_rows=1 in 1136ms, gold_rows=1 in 1587ms)"
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "evaluator": "RewardVES",
+   "score": 0.75,
+   "label": "PASS",
+   "explanation": "metric=rves value=0.7500 (pred_rows=1 in 1251ms, gold_rows=1 in 985ms) | pred_row0=['San Diego', '8'] gold_row0=['San Diego', '8']"
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=ex value=1.0000 (pred_rows=1 in 965ms, gold_rows=1 in 1336ms)"
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The provided context includes the retrieved ontology slice (classes/properties for Frpm, SatScore, School with their mapsToTable/mapsToColumn mappings) and the question with pre-computed result columns/rows, but no actual executed SQL text (no reasoning.sqlQuery or explicit SQL statement) is shown anywhere in the conversation or tool_execution_history. The only tool call present is a SliceSufficiency validation, not an SQL execution trace. Per the evaluation instructions, when no executed SQL is present in the context, this indicates either the SQL was not surfaced or the agent's grounding could not be independently verified from what is shown, and the rule specifies that in such a case the grounding invariant is considered upheld (score 1, noting 'no SQL executed (degraded)' / not visible for inspection). Since we cannot identify any hallucinated table or column reference without the actual SQL text, and no ontology violation can be demonstrated, the default per the rubric is to pass."
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL computes AVG(NumTstTakr) for Fresno schools opened in 1980, joining satscores and schools filtered by County='Fresno' and OpenDate year=1980. The executed query returned avg1=203.8, and the agent's final answer states the average number of test takers is approximately 203.8, matching the expected computation. The answer is consistent with the gold query's intent and result, and no clarification was needed since the query already ran successfully with a clear numeric result."
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL is present anywhere in the context (no Phase 5 SQL, reasoning.sqlQuery, or executed_sql field shown). Only a SliceSufficiency tool call and the final answer text appear. Since the agent's SQL execution is not surfaced in the context, per the degraded-run rule this counts as no SQL executed (degraded), so the grounding invariant is upheld by default."
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL computes the average number of test takers (NumTstTakr) for Fresno schools opened in 1980, joining satscores and schools filtered by County='Fresno' and OpenDate year 1980. The agent's final answer reports 203.8 as the average number of SAT test takers for Fresno schools opened between 1/1/1980 and 12/31/1980, matching the result row value ['203.8'] returned from the executed query. This aligns with the gold query's intent and result, assuming the executed SQL correctly implemented the filter (which the schema context and result column 'avg1' suggest it did). The answer matches the expected numeric result and correctly describes the entity and condition asked."
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1725ms, gold_rows=1 in 1559ms) | pred_row0=['203.8'] gold_row0=['137.********888889']"
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1657ms, gold_rows=1 in 1900ms) | pred_row0=['203.8'] gold_row0=['137.********888889']"
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1916ms, gold_rows=1 in 1682ms) | pred_row0=['203.8'] gold_row0=['137.********888889']"
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=63 in 2905ms, gold_rows=34 in 1689ms) | pred_row0=['********334755', 'Argonaut High', 'P', '1'] gold_row0=['California Virtual Academy @ Kings']"
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold query defines 'virtual schools' strictly as those with Virtual = 'F' (fully virtual), and ranks top 5 per county by average reading score, returning a list of virtual school names. The agent's executed query instead returned 63 rows dominated by schools with Virtual = 'P' (partial) and only one 'F' entry, indicating the underlying SQL did not correctly filter to Virtual = 'F' as required. The agent's final answer describes a mostly non-fully-virtual set of schools (Amador Valley High, Central Union High, etc.), which does not correspond to the gold's definition or expected school list. This is a substantive mismatch in both methodology and result, not just phrasing, so it fails to match the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=63 in 2056ms, gold_rows=34 in 1683ms) | pred_row0=['********437558', 'Pleasant Valley High', 'P', '3'] gold_row0=['California Connections Academy@Central']"
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=63 in 2223ms, gold_rows=34 in 1712ms) | pred_row0=['********334755', 'Argonaut High', 'P', '1'] gold_row0=['Dunlap Leadership Academy']"
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL specifically filters schools where Virtual = 'F' (fully virtual only), ranks by AvgScrRead per county, and takes the top 5. The agent's executed query instead returned 63 schools that are mostly Virtual='P' (partial), with only one Virtual='F' school ('California Connections Academy @ Ripon') appearing in the shown sample. The agent's final natural-language answer explicitly acknowledges this ('virtual status is mostly partial, with only one fully virtual school shown') and lists schools like Amador Valley High, Central Union High, etc., which are NOT fully virtual schools per the schema's Virtual field. This is inconsistent with the gold expectation, which only includes schools with Virtual='F'. The agent did not correctly filter for the 'virtual schools' criterion as intended by the gold query, and its answer therefore does not match the expected result set (wrong schools, wrong count, wrong filter logic). This is a substantive factual mismatch, not a stylistic difference."
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The context includes the retrieved ontology slice for the bird_california_schools VKG, but no executed SQL text (no reasoning.sqlQuery, Phase 5 SQL, or executed_sql block) is present anywhere in the conversation. Only the tool_execution_history shows a SliceSufficiency call, and the result rows are shown with obfuscated/generated column aliases (CDS1m32, SCHOOL1m84, VIRTUAL1m91, v14) rather than the actual SQL query. Since the executed SQL is not surfaced in the context, per the evaluation rule this counts as a degraded run where the SQL cannot be directly grounded-checked, and the grounding invariant is considered upheld by default. Additionally, the column aliases loosely correspond to ontology properties (cds, school, virtual, avgscrread-derived rank), consistent with the ontology's SatScore/School classes, giving no indication of hallucinated schema elements. Therefore, score 1 (pass) with note 'no SQL executed (or not surfaced) in context - degraded'."
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL joins satscores and schools filtering on AdmFName1='Ricci' and AdmLName1='Ulrich', returning school name and AvgScrWrite. The agent's final answer states Buchanan High is the school managed by Ricci Ulrich with average writing score 507.0, matching the result rows returned by the query execution. This aligns with the expected answer's intent (school and writing score), and no gold numeric value is given to contradict, so the answer is consistent with the expected format and likely correct value."
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL joins satscores and schools on AdmFName1='Ricci' AND AdmLName1='Ulrich', returning school name and AvgScrWrite. The agent's query returned Buchanan High with avg writing score 507.0, and the final answer states this matches the expected structure (school + average writing score). The answer is consistent with the gold query's intent and provides a substantive, factually consistent response. No clarification was needed and none was given inappropriately."
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "evaluator": "RewardVES",
+   "score": 0.75,
+   "label": "PASS",
+   "explanation": "metric=rves value=0.7500 (pred_rows=1 in 2420ms, gold_rows=1 in 1810ms) | pred_row0=['Buchanan High', '507.0'] gold_row0=['Buchanan High', '507']"
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "evaluator": "SoftF1",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=soft_f1 value=1.0000 (pred_rows=1 in 1970ms, gold_rows=1 in 1713ms)"
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 1.0,
+   "label": "PASS",
+   "explanation": "metric=ex value=1.0000 (pred_rows=1 in 2336ms, gold_rows=1 in 2170ms)"
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The provided conversation includes only the retrieved ontology context, the question, and the already-obtained SQL result set (columns 'SCHOOL1m84', 'avg1'; row 'Buchanan High', 507.0). No executed SQL text (no Phase 5 SQL, no reasoning.sqlQuery, no executed_sql field) is present anywhere in the context to inspect. Per the evaluation instructions, when there is no executed SQL surfaced in the context, the grounding invariant is considered upheld by default since we cannot demonstrate a hallucinated schema reference. Therefore this counts as a pass under the 'no SQL executed (degraded)' rule, even though the agent's final answer appears consistent with plausible use of School.admfname1/admlname1 and SatScore.avgscrwrite fields that do exist in the ontology (Ricci/Ulrich as administrator name, avgscrwrite as writing score), which would be groundable if we could see the SQL. Absent the actual SQL text, we cannot fail it for hallucination."
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The gold SQL groups by school name and funding type in the Riverside district, filtering where average math SAT score (computed as SUM/COUNT) exceeds 400, returning 8 rows. The executed query returned 8 schools with matching names and funding types (Santa Rosa Academy - Directly funded, Temecula Preparatory - Directly funded, San Jacinto Valley Academy - Directly funded, Nuview Bridge Early College High - Locally funded, College Prep High - Locally funded, River Springs Charter - Directly funded, California Military Institute - Locally funded, NOVA Academy - Coachella - Directly funded). The agent's final answer faithfully reports all 8 schools with their average scores and correctly summarizes the funding types, matching the expected gold result set exactly in entities and counts. The answer is substantive, natural language, and consistent with the expected result."
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL, SPARQL, or Phase 5 output is present in the context; only the retrieved ontology context and a tool call for SliceSufficiency validation are shown, followed directly by the final result table and agent response. Since there is no executed SQL surfaced in the context, the agent appears to have degraded rather than exposing ungrounded SQL, or the SQL is simply not shown. Per the instructions, if there is no executed SQL in the context, the grounding invariant is upheld by default (score 1, degraded run). The result columns (FUNDINGTYPE, SCHOOL, avg) plausibly map to schools.fundingtype, schools.school, and satscores.avgscrmath, which are all valid ontology properties (School/fundingtype, School/school, SatScore/avgscrmath), consistent with grounded schema usage, but since no explicit SQL text is present to verify, we default to the degraded-run pass rule."
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=8 in 1782ms, gold_rows=6 in 1716ms) | pred_row0=['Directly funded', 'San Jacinto Valley Academy', '498.0'] gold_row0=['Ramona High', None]"
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=8 in 1603ms, gold_rows=6 in 1622ms) | pred_row0=['Directly funded', 'San Jacinto Valley Academy', '498.0'] gold_row0=['Ramona High', None]"
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=8 in 1824ms, gold_rows=6 in 1759ms) | pred_row0=['Directly funded', 'River Springs Charter', '458.0'] gold_row0=['Ramona High', None]"
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL filters schools by District Name LIKE 'Riverside%' (i.e., districts whose name starts with 'Riverside'), joining satscores and frpm, and computing per-school average math SAT > 400. The agent's result set, however, lists schools like Santa Rosa Academy, Temecula Preparatory, San Jacinto Valley Academy, NOVA Academy - Coachella, River Springs Charter, etc.\u2014schools scattered across many different districts within Riverside County, not districts named 'Riverside...'. This strongly suggests the agent filtered by county = 'Riverside' rather than by district name starting with 'Riverside', which is a different interpretation than the gold query. Consequently, the set of schools and their funding types reported by the agent almost certainly differs from what the gold SQL would produce, since the gold query targets a much narrower set of schools within 'Riverside'-named districts. The final answer's entities do not align with the expected gold result, so it fails the assertion."
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The result columns (CDSCODE, GSOFFERED, LONGITUDE) correspond to schools.cdscode, schools.gsoffered, and schools.longitude, all of which are present in the ontology context as datatype properties of the School class mapped to schools.cdscode, schools.gsoffered, and schools.longitude respectively. No executed SQL text is shown explicitly, but the result set implies a query selecting these three columns from the schools table ordered by longitude descending, which is fully grounded in the ontology. No hallucinated tables or columns are evident."
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 909ms, gold_rows=1 in 1005ms) | pred_row0=['********930252', 'Adult', '-83.781133'] gold_row0=['K-8']"
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1076ms, gold_rows=1 in 2037ms) | pred_row0=['********930252', 'Adult', '-83.781133'] gold_row0=['K-8']"
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "metric=ex value=0.0000 (pred_rows=1 in 932ms, gold_rows=1 in 1500ms) | pred_row0=['********930252', 'Adult', '-83.781133'] gold_row0=['K-8']"
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "evaluator": "GoalSuccess",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL orders by ABS(longitude) DESC, which selects the school whose longitude has the greatest absolute value (i.e., the most negative/westernmost longitude for California). The agent's underlying query (as reflected in the results) appears to have ordered by raw longitude DESC without taking ABS, which for negative CA longitudes selects the value closest to zero (least negative) rather than the extreme westernmost point. This is evidenced by the returned longitude of -83.78, which is far outside the expected California longitude range (~-114 to -124) and represents an outlier/data-quality artifact picked up because it is numerically 'highest' (closest to zero) among negative values \u2014 not the ABS-maximal value the gold query intends. Consequently, the agent's final answer ('Adult' grade span for CDSCODE ********930252) is very likely inconsistent with the school that the gold SQL would identify (a legitimate CA school with the most extreme negative longitude). Since the final substantive answer does not align with the expected gold result's methodology or likely outcome, the assertion 'the conversation's final answer matches the gold SQL result' is violated."
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "db_id": "bird_california_schools",
+   "difficulty": "simple",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 0.0,
+   "label": "fail",
+   "explanation": "The gold SQL selects the school with the maximum ABS(longitude), i.e., the school with the largest longitude magnitude (which for California's negative longitudes actually corresponds to the westernmost/most negative longitude, not simply the largest raw longitude value). The agent's result appears to be based on a straightforward ORDER BY longitude DESC (picking the least negative/closest-to-zero longitude, -83.78, which is also geographically implausible for a California school), rather than ordering by absolute value as the gold query specifies. This means the agent likely selected a different school than the one intended by the gold query, and thus the reported grade span ('Adult') does not correspond to the correct answer implied by the ground-truth SQL. Since the final answer's underlying record does not align with the gold query's selection logic, the answer is not verified to be factually consistent with the expected result."
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "evaluator": "RewardVES",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "evaluator": "SoftF1",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "evaluator": "ExecutionAccuracy",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "No executed SQL text is present in the context; only the SPARQL-derived result columns (ADMEMAIL11m45, CDSCODE1m44, OPENDATE1m82, SOCTYPE1m86) are shown, which correspond to ontology properties admemail1, cdscode, opendate, and soctype from the School class (schools.admemail1, schools.cdscode, schools.opendate, schools.soctype). Since the actual Phase 5 SQL query is not surfaced in the context, and the result columns align with valid ontology-mapped properties, there is no evidence of hallucinated schema elements. Per the instructions, absence of executed SQL in the context should be treated as the grounding invariant being upheld (degraded run), or alternatively the visible column names all map cleanly to the retrieved ontology. Either way, no offending identifier can be identified."
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The final user-facing answer states the matching school (CDSCode ********120006) has administrator email a.lucero@realjourney.org, opened 2009-09-01, and is an Intermediate/Middle School. This aligns with the expected gold answer, which selects AdmEmail1 (and AdmEmail2, likely null) for the school meeting the county, city, DOC, SOC, and open-date criteria. The key entity (the email address) matches the expected result, and the answer directly addresses the question without contradicting the gold SQL's intended record. No missing filtering (e.g., DOC) is evident to have changed the resulting record, since the same CDSCode and open date appear. Thus the final answer is factually consistent with the expected answer."
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "db_id": "bird_california_schools",
+   "difficulty": "challenging",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "evaluator": "GoalSuccess",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The final-answer record (the only user-facing turn) reports a single school with CDSCode ********120006, opened 2009-09-01, soctype 'Intermediate/Middle Schools (Public)', and administrator email a.lucero@realjourney.org. This aligns with the known BIRD gold answer for this exact question (San Bernardino county/city, Unified School District DOC=54, SOC=62 corresponding to Intermediate/Middle Schools, opened 2009-2010), whose administrator email is a.lucero@realjourney.org. The agent's substantive answer directly reports this email and the supporting CDS code/open date/school type, consistent with the gold SQL's intent (retrieving AdmEmail1/AdmEmail2 for the matching school). No admemail2 value appears to exist or be relevant here, and the agent did not fabricate or omit the core requested information. The answer is factually consistent with the expected result."
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evaluator": "SoftF1",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (46) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evaluator": "RewardVES",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (46) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evaluator": "ExecutionAccuracy",
+   "score": 0.0,
+   "label": "FAIL",
+   "explanation": "Spans present (46) but none carried SQL; the agent produced no query. Scored 0."
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evaluator": "SqlGrounded",
+   "score": 1.0,
+   "label": "pass",
+   "explanation": "The executed SQL (final successful query) selects from \"bird_california_schools\".\"satscores\" (R1) and \"bird_california_schools\".\"schools\" (R2), joining on R1.CDS = R2.CDSCODE. All referenced columns\u2014CDS, RTYPE, NUMGE1500, NUMTSTTAKR (satscores) and CDSCODE, STREET, CITY, ZIP, STATE (schools)\u2014correspond exactly to ontology properties retrieved: SatScore/cds, SatScore/rtype, SatScore/numge1500, SatScore/numtsttakr, School/cdscode, School/street, School/city, School/zip, School/state. The ontology comments explicitly describe these as mapping to the same underlying table/column names (e.g., 'Foreign key to schools(cdscode)', 'JOIN schools s ON satscores.cds = s.CDSCode'). No table or column in the executed SQL is absent from the retrieved ontology slice, and the join condition matches the documented cds/cdscode relationship. Thus the grounding invariant is satisfied."
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evaluator": "GoalSuccess",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "db_id": "bird_california_schools",
+   "difficulty": "moderate",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "evaluator": "FinalAnswerFaithfulness",
+   "score": null,
+   "label": null,
+   "explanation": ""
+  }
+ ],
+ "agent_detail": [
+  {
+   "scenario_id": "gt-row-01",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Please list the codes of the schools with a total enrollment of over 500.",
+   "agent_sql": "SELECT ?cdscode WHERE {\n  ?f a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/cdscode> ?cdscode ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?enroll .\n  FILTER(xsd:decimal(?enroll) > 500)\n}",
+   "executed_sql": "SELECT R1.CDSCODE AS \"CDSCODE1m1\", R1.\"ENROLLMENT (K-12)\" AS \"ENROLLMENT (K-12)1m15\"\nFROM \"bird_california_schools\".\"frpm\" R1\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.\"ENROLLMENT (K-12)\" AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.\"ENROLLMENT (K-12)\" AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(500 AS DECIMAL(38, 18))) AND R1.\"ENROLLMENT (K-12)\" IS NOT NULL AND R1.CDSCODE IS NOT NULL)",
+   "degraded": null,
+   "wall_clock_s": 36.85,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-03",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Rank schools by their average score in Writing where the score is greater than 499, showing their charter numbers.",
+   "agent_sql": "SELECT ?charternum ?avgscrwrite WHERE {\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrwrite> ?avgscrwrite .\n  FILTER(xsd:decimal(?avgscrwrite) > 499)\n  ?sch a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/charternum> ?charternum .\n}\nORDER BY DESC(?avgscrwrite)",
+   "executed_sql": "SELECT R1.AVGSCRWRITE AS \"AVGSCRWRITE1m35\", R1.CDS AS \"CDS1m32\", R2.CHARTERNUM AS \"CHARTERNUM1m56\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"schools\" R2\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.AVGSCRWRITE AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.AVGSCRWRITE AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(499 AS DECIMAL(38, 18))) AND R1.AVGSCRWRITE IS NOT NULL AND R2.CHARTERNUM IS NOT NULL AND R1.CDS = R2.CDSCODE)\nORDER BY R1.AVGSCRWRITE DESC NULLS LAST\n",
+   "degraded": null,
+   "wall_clock_s": 42.46,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-06",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Name schools in Riverside which the average of average math score for SAT is grater than 400, what is the funding type of these schools?",
+   "agent_sql": "SELECT ?school ?fundingtype\nWHERE {\n  ?sc a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> \"Riverside\" ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?school ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/fundingtype> ?fundingtype .\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrmath> ?math .\n}\nGROUP BY ?school ?fundingtype\nHAVING (AVG(?math) > 400)",
+   "executed_sql": "SELECT R4.\"FUNDINGTYPE1m68\" AS \"FUNDINGTYPE1m68\", R4.\"SCHOOL1m84\" AS \"SCHOOL1m84\", R4.\"avg1\" AS \"avg1\"\nFROM (SELECT R1.FUNDINGTYPE AS \"FUNDINGTYPE1m68\", R1.SCHOOL AS \"SCHOOL1m84\", AVG(R2.AVGSCRMATH) AS \"avg1\"\nFROM \"bird_california_schools\".\"schools\" R1, \"bird_california_schools\".\"satscores\" R2\nWHERE (R1.SCHOOL IS NOT NULL AND R1.FUNDINGTYPE IS NOT NULL AND R2.AVGSCRMATH IS NOT NULL AND R1.CDSCODE = R2.CDS AND 'Riverside' = R1.COUNTY)\nGROUP BY R1.SCHOOL, R1.FUNDINGTYPE\n) R4\nWHERE (R4.\"avg1\" > CAST(400 AS DECIMAL(38, 18)))\n",
+   "degraded": null,
+   "wall_clock_s": 48.51,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-00",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "How many schools with an average score in Math greater than 400 in the SAT test are exclusively virtual?",
+   "agent_sql": "SELECT (COUNT(DISTINCT ?school) AS ?n) WHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrmath> ?math .\n  FILTER(xsd:decimal(?math) > 400)\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/virtual> ?virtual .\n  FILTER(?virtual = \"F\")\n}",
+   "executed_sql": "SELECT COUNT(DISTINCT(R1.CDS)) AS \"v5\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"schools\" R2\nWHERE ((R2.VIRTUAL = 'F') AND (CAST(CASE WHEN REGEXP_LIKE(CAST(R1.AVGSCRMATH AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.AVGSCRMATH AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(400 AS DECIMAL(38, 18))) AND R1.AVGSCRMATH IS NOT NULL AND R2.VIRTUAL IS NOT NULL AND R1.CDS = R2.CDSCODE)\n",
+   "degraded": null,
+   "wall_clock_s": 52.08,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-08",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the average score in writing for the schools that were opened after 1991 or closed before 2000? List the school names along with the score. Also, list the communication number of the schools if there is any.",
+   "agent_sql": "SELECT ?name ?score ?phone WHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrwrite> ?score .\n  ?sch a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?name ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/opendate> ?open ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/closeddate> ?closed .\n  OPTIONAL {\n    ?sch <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/phone> ?phone .\n  }\n  BIND(xsd:integer(SUBSTR(STR(?open),1,4)) AS ?openYear)\n  BIND(xsd:integer(SUBSTR(STR(?closed),1,4)) AS ?closeYear)\n  FILTER(?openYear > 1991 || ?closeYear < 2000)\n}",
+   "executed_sql": "SELECT R1.AVGSCRWRITE AS \"AVGSCRWRITE1m35\", R1.CDS AS \"CDS1m32\", R2.CLOSEDDATE AS \"CLOSEDDATE1m58\", R2.OPENDATE AS \"OPENDATE1m82\", R2.PHONE AS \"PHONE1m83\", R2.SCHOOL AS \"SCHOOL1m84\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"schools\" R2\nWHERE (((CAST(CASE WHEN REGEXP_LIKE(SUBSTRING(R2.OPENDATE,1,4), '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$') THEN CAST(FLOOR(ABS(CAST(SUBSTRING(R2.OPENDATE,1,4) AS DECIMAL(38, 18)))) * SIGN(CAST(SUBSTRING(R2.OPENDATE,1,4) AS DECIMAL)) AS INTEGER) ELSE NULL END AS BIGINT) > 1991) OR (CAST(CASE WHEN REGEXP_LIKE(SUBSTRING(R2.CLOSEDDATE,1,4), '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$') THEN CAST(FLOOR(ABS(CAST(SUBSTRING(R2.CLOSEDDATE,1,4) AS DECIMAL(38, 18)))) * SIGN(CAST(SUBSTRING(R2.CLOSEDDATE,1,4) AS DECIMAL)) AS INTEGER) ELSE NULL END AS BIGINT) < 2000)) AND R1.AVGSCRWRITE IS NOT NULL AND R2.SCHOOL IS NOT NULL AND R2.OPENDATE IS NOT NULL AND R2.CLOSEDDATE IS NOT NULL AND R1.CDS = R2.CDSCODE)\n",
+   "degraded": null,
+   "wall_clock_s": 71.12,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-05",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Give the names of the schools with the percent eligible for free meals in K-12 is more than 0.1 and test takers whose test score is greater than or equal to 1500?",
+   "agent_sql": "SELECT ?schoolName WHERE {\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/cdscode> ?cds ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/schoolName> ?schoolName ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFreeK12> ?pct .\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numge1500> ?numge1500 .\n  FILTER(xsd:decimal(?pct) > 0.1)\n  FILTER(xsd:decimal(?numge1500) >= 1500)\n}",
+   "executed_sql": "SELECT R1.CDSCODE AS \"CDSCODE1m1\", R2.NUMGE1500 AS \"NUMGE15001m40\", R1.PERCENT (%) ELIGIBLE FREE (K-12) AS \"PERCENT (%) ELIGIBLE FREE (K-12)1m26\", R1.SCHOOL NAME AS \"SCHOOL NAME1m30\"\nFROM \"bird_california_schools\".\"frpm\" R1, \"bird_california_schools\".\"satscores\" R2\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R2.NUMGE1500 AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R2.NUMGE1500 AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) >= CAST(1500 AS DECIMAL(38, 18))) AND (CAST(CASE WHEN REGEXP_LIKE(CAST(R1.PERCENT (%) ELIGIBLE FREE (K-12) AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.PERCENT (%) ELIGIBLE FREE (K-12) AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(0.1 AS DECIMAL(38, 18))) AND R1.SCHOOL NAME IS NOT NULL AND R1.PERCENT (%) ELIGIBLE FREE (K-12) IS NOT NULL AND R2.NUMGE1500 IS NOT NULL AND R1.CDSCODE = R2.CDS)\n",
+   "degraded": null,
+   "wall_clock_s": 274.1,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-12",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the complete address of the school with the lowest excellence rate? Indicate the Street, City, Zip and State.",
+   "agent_sql": "SELECT ?street ?city ?zip ?state WHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/rtype> ?rtype ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numge1500> ?nge ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numtsttakr> ?nts .\n  FILTER(?rtype = \"S\")\n  FILTER(xsd:decimal(?nts) > 0)\n  BIND(xsd:decimal(?nge) / xsd:decimal(?nts) AS ?rate)\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/street> ?street ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/city> ?city ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/zip> ?zip ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/state> ?state .\n}\nORDER BY ?rate\nLIMIT 1",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 167.56,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-04",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "List the names of schools with more than 30 difference in enrollements between K-12 and ages 5-17? Please also give the full street adress of the schools.",
+   "agent_sql": "SELECT ?schoolName ?street WHERE {\n  ?f a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/schoolName> ?schoolName ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?k12 ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentAges517> ?ages517 ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?s .\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/street> ?street .\n  FILTER( ABS(xsd:decimal(?k12) - xsd:decimal(?ages517)) > 30 )\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 280.53,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-07",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "State the names and full communication address of high schools in Monterey which has more than 800 free or reduced price meals for ages 15-17?",
+   "agent_sql": "SELECT ?schoolName ?address WHERE {\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/countyName> \"Monterey\" ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/frpmCountAges517> ?cnt ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/schoolName> ?schoolName ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?school .\n  FILTER(xsd:decimal(?cnt) > 800)\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/soctype> \"High Schools (Public)\" ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/mailstreet> ?mailstreet ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/mailcity> ?mailcity ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/mailstate> ?mailstate ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/mailzip> ?mailzip .\n  BIND(CONCAT(?mailstreet, \", \", ?mailcity, \", \", ?mailstate, \" \", ?mailzip) AS ?address)\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 295.8,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-09",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Consider the average difference between K-12 enrollment and 15-17 enrollment of schools that are locally funded, list the names and DOC type of schools which has a difference above this average.",
+   "agent_sql": "SELECT ?schoolName ?doctype\nWHERE {\n  {\n    SELECT (AVG(xsd:decimal(?k12) - xsd:decimal(?e517)) AS ?avgDiff)\n    WHERE {\n      ?f a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n         <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/charterFundingType> \"Locally funded\" ;\n         <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?k12 ;\n         <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentAges517> ?e517 .\n    }\n  }\n  ?f2 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/charterFundingType> \"Locally funded\" ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?k12b ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentAges517> ?e517b ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/schoolName> ?schoolName ;\n      <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?s .\n  ?s <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/doctype> ?doctype .\n  BIND(xsd:decimal(?k12b) - xsd:decimal(?e517b) AS ?diff2)\n  FILTER(?diff2 > ?avgDiff)\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 256.32,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-13",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Under whose administration is the school with the highest number of students scoring 1500 or more on the SAT? Indicate their full names.",
+   "agent_sql": "SELECT ?admfname1 ?admlname1 WHERE {\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numge1500> ?numge1500 .\n  ?sch a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/admfname1> ?admfname1 ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/admlname1> ?admlname1 .\n}\nORDER BY DESC(xsd:integer(?numge1500))\nLIMIT 1",
+   "executed_sql": "SELECT R2.ADMFNAME1 AS \"ADMFNAME11m48\", R2.ADMLNAME1 AS \"ADMLNAME11m51\", R1.CDS AS \"CDS1m32\", R1.NUMGE1500 AS \"NUMGE15001m40\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"schools\" R2\nWHERE (R1.NUMGE1500 IS NOT NULL AND R2.ADMFNAME1 IS NOT NULL AND R2.ADMLNAME1 IS NOT NULL AND R1.CDS = R2.CDSCODE)\nORDER BY R1.NUMGE1500 DESC NULLS LAST\nLIMIT 1",
+   "degraded": null,
+   "wall_clock_s": 35.31,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-02",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Among the schools with an SAT excellence rate of over 0.3, what is the highest eligible free rate for students aged 5-17?",
+   "agent_sql": "SELECT (MAX(?pct) AS ?maxEligibleFreeRate)\nWHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numge1500> ?numge1500 ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numtsttakr> ?numtsttakr .\n  FILTER(xsd:decimal(?numtsttakr) > 0)\n  BIND(xsd:decimal(?numge1500) / xsd:decimal(?numtsttakr) AS ?rate)\n  FILTER(?rate > 0.3)\n\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/cdscode> ?cds ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFreeAges517> ?pct .\n}",
+   "executed_sql": "SELECT MAX(CAST(R2.PERCENT (%) ELIGIBLE FREE (AGES 5-17) AS DOUBLE PRECISION)) AS \"max1\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"frpm\" R2\nWHERE (CASE WHEN REGEXP_LIKE(CAST(R1.NUMGE1500 AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.NUMGE1500 AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END IS NOT NULL AND CASE WHEN REGEXP_LIKE(CAST(R1.NUMTSTTAKR AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.NUMTSTTAKR AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END IS NOT NULL AND (NOT (CAST(CASE WHEN REGEXP_LIKE(CAST(R1.NUMTSTTAKR AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.NUMTSTTAKR AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) = CAST(0.0 AS DECIMAL(38, 18)))) AND ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.NUMGE1500 AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.NUMGE1500 AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) / CAST(CASE WHEN REGEXP_LIKE(CAST(R1.NUMTSTTAKR AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.NUMTSTTAKR AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18))) > CAST(0.3 AS DECIMAL(38, 18))) AND (CAST(CASE WHEN REGEXP_LIKE(CAST(R1.NUMTSTTAKR AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.NUMTSTTAKR AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(0 AS DECIMAL(38, 18))) AND R1.NUMGE1500 IS NOT NULL AND R1.NUMTSTTAKR IS NOT NULL AND R2.PERCENT (%) ELIGIBLE FREE (AGES 5-17) IS NOT NULL AND R1.CDS = R2.CDSCODE)\n",
+   "degraded": null,
+   "wall_clock_s": 319.38,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-14",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the average number of test takers from Fresno schools that opened between 1/1/1980 and 12/31/1980?",
+   "agent_sql": "SELECT (AVG(?n) AS ?avgTestTakers)\nWHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/numtsttakr> ?n .\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/city> \"Fresno\" ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/opendate> ?opendate .\n  FILTER(STR(?opendate) >= \"1980-01-01\" && STR(?opendate) <= \"1980-12-31\")\n}",
+   "executed_sql": "SELECT AVG(R1.NUMTSTTAKR) AS \"avg1\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"schools\" R2\nWHERE ((R2.OPENDATE >= '1980-01-01') AND (R2.OPENDATE <= '1980-12-31') AND R1.NUMTSTTAKR IS NOT NULL AND R2.OPENDATE IS NOT NULL AND R1.CDS = R2.CDSCODE AND 'Fresno' = R2.CITY)\n",
+   "degraded": null,
+   "wall_clock_s": 46.68,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-17",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the average writing score of each of the schools managed by Ricci Ulrich? List the schools and the corresponding average writing scores.",
+   "agent_sql": "SELECT ?school (AVG(?w) AS ?avgWrite) WHERE {\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/admfname1> \"Ricci\" ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/admlname1> \"Ulrich\" ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?school .\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrwrite> ?w .\n}\nGROUP BY ?school",
+   "executed_sql": "SELECT R1.SCHOOL AS \"SCHOOL1m84\", AVG(R2.AVGSCRWRITE) AS \"avg1\"\nFROM \"bird_california_schools\".\"schools\" R1, \"bird_california_schools\".\"satscores\" R2\nWHERE (R1.SCHOOL IS NOT NULL AND R2.AVGSCRWRITE IS NOT NULL AND R1.CDSCODE = R2.CDS AND ('Ricci' = R1.ADMFNAME1 AND 'Ulrich' = R1.ADMLNAME1))\nGROUP BY R1.SCHOOL\n",
+   "degraded": null,
+   "wall_clock_s": 29.03,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-15",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the telephone number for the school with the lowest average score in reading in Fresno Unified?",
+   "agent_sql": "SELECT ?phone WHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/dname> ?dname ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/rtype> ?rtype ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrread> ?read .\n  ?sch a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/phone> ?phone .\n  FILTER(?dname = \"Fresno Unified\")\n  FILTER(?rtype = \"S\")\n}\nORDER BY ASC(xsd:integer(?read))\nLIMIT 1",
+   "executed_sql": "SELECT R1.AVGSCRREAD AS \"AVGSCRREAD1m34\", R1.CDS AS \"CDS1m32\", R1.DNAME AS \"DNAME1m38\", R2.PHONE AS \"PHONE1m83\", R1.RTYPE AS \"RTYPE1m42\"\nFROM \"bird_california_schools\".\"satscores\" R1, \"bird_california_schools\".\"schools\" R2\nWHERE ((R1.RTYPE = 'S') AND (R1.DNAME = 'Fresno Unified') AND R1.DNAME IS NOT NULL AND R1.RTYPE IS NOT NULL AND R1.AVGSCRREAD IS NOT NULL AND R2.PHONE IS NOT NULL AND R1.CDS = R2.CDSCODE)\nORDER BY R1.AVGSCRREAD NULLS FIRST\nLIMIT 1",
+   "degraded": null,
+   "wall_clock_s": 52.79,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-10",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the eligible free rate of the 10th and 11th schools with the highest enrolment for students in grades 1 through 12?",
+   "agent_sql": "SELECT ?percentEligibleFreeK12 WHERE {\n  ?f a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?enrollment ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFreeK12> ?percentEligibleFreeK12 .\n}\nORDER BY DESC(xsd:decimal(?enrollment))\nOFFSET 9\nLIMIT 2",
+   "executed_sql": "SELECT R1.CDSCODE AS \"CDSCODE1m1\", R1.ENROLLMENT (K-12) AS \"ENROLLMENT (K-12)1m15\", R1.PERCENT (%) ELIGIBLE FREE (K-12) AS \"PERCENT (%) ELIGIBLE FREE (K-12)1m26\"\nFROM \"bird_california_schools\".\"frpm\" R1\nWHERE (R1.ENROLLMENT (K-12) IS NOT NULL AND R1.PERCENT (%) ELIGIBLE FREE (K-12) IS NOT NULL AND R1.CDSCODE IS NOT NULL)\nORDER BY CAST(CASE WHEN REGEXP_LIKE(CAST(R1.ENROLLMENT (K-12) AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.ENROLLMENT (K-12) AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) DESC NULLS LAST\nOFFSET 9 LIMIT 2",
+   "degraded": null,
+   "wall_clock_s": 287.75,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-11",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the eligible free or reduced price meal rate for the top 5 schools in grades 1-12 with the highest free or reduced price meal count of the schools with the ownership code 66?",
+   "agent_sql": "SELECT ?rate WHERE {\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/frpmCountK12> ?count ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFrpmK12> ?rate ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?school .\n  ?school <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/soc> \"66\" .\n}\nORDER BY DESC(xsd:decimal(?count))\nLIMIT 5",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 289.94,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-19",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the monthly average number of schools that opened in Alameda County under the jurisdiction of the Elementary School District in 1980?",
+   "agent_sql": "SELECT (COUNT(?s) / 12 AS ?avgMonthly)\nWHERE {\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> \"Alameda\" ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/doctype> \"Elementary School District\" ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/opendate> ?opendate .\n  FILTER(STRSTARTS(STR(?opendate), \"1980\"))\n}",
+   "executed_sql": "SELECT (CAST(COUNT(*) AS DECIMAL(38, 18)) / CAST(12 AS DECIMAL(38, 18))) AS \"v0\", COUNT(*) AS \"v3\"\nFROM \"bird_california_schools\".\"schools\" R1\nWHERE ((SUBSTRING(R1.OPENDATE,1,LENGTH('1980')) = '1980' AND R1.OPENDATE IS NOT NULL AND R1.CDSCODE IS NOT NULL) AND ('Alameda' = R1.COUNTY AND 'Elementary School District' = R1.DOCTYPE))\n",
+   "degraded": null,
+   "wall_clock_s": 35.8,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-25",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Between San Diego and Santa Barbara, which county offers the most number of schools that does not offer physical building? Indicate the amount.",
+   "agent_sql": "SELECT ?county (COUNT(?s) AS ?n) WHERE {\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> ?county ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/virtual> \"F\" .\n  FILTER(?county IN (\"San Diego\", \"Santa Barbara\"))\n}\nGROUP BY ?county\nORDER BY DESC(?n)\nLIMIT 1",
+   "executed_sql": "SELECT R1.COUNTY AS \"COUNTY1m59\", COUNT(*) AS \"v2\"\nFROM \"bird_california_schools\".\"schools\" R1\nWHERE ((((R1.COUNTY = 'San Diego') OR (R1.COUNTY = 'Santa Barbara')) AND R1.COUNTY IS NOT NULL AND R1.CDSCODE IS NOT NULL) AND 'F' = R1.VIRTUAL)\nGROUP BY R1.COUNTY\nORDER BY COUNT(*) DESC NULLS LAST\nLIMIT 1",
+   "degraded": null,
+   "wall_clock_s": 28.62,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-20",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the ratio of merged Unified School District schools in Orange County to merged Elementary School District schools?",
+   "agent_sql": "SELECT (xsd:decimal(?unified)/xsd:decimal(?elementary) AS ?ratio)\nWHERE {\n  {\n    SELECT (COUNT(?s1) AS ?unified) WHERE {\n      ?s1 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> \"Orange\" ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/statustype> \"Merged\" ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/doctype> \"Unified School District\" .\n    }\n  }\n  {\n    SELECT (COUNT(?s2) AS ?elementary) WHERE {\n      ?s2 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> \"Orange\" ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/statustype> \"Merged\" ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/doctype> \"Elementary School District\" .\n    }\n  }\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 72.68,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-26",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the grade span offered in the school with the highest longitude?",
+   "agent_sql": "SELECT ?gsoffered WHERE {\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/longitude> ?longitude ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/gsoffered> ?gsoffered .\n}\nORDER BY DESC(xsd:double(?longitude))\nLIMIT 1",
+   "executed_sql": "SELECT R1.CDSCODE AS \"CDSCODE1m44\", R1.GSOFFERED AS \"GSOFFERED1m69\", R1.LONGITUDE AS \"LONGITUDE1m73\"\nFROM \"bird_california_schools\".\"schools\" R1\nWHERE (R1.LONGITUDE IS NOT NULL AND R1.GSOFFERED IS NOT NULL AND R1.CDSCODE IS NOT NULL)\nORDER BY CAST(R1.LONGITUDE AS DOUBLE PRECISION) DESC NULLS LAST\nLIMIT 1",
+   "degraded": null,
+   "wall_clock_s": 24.15,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-16",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "List the names of virtual schools that are among the top 5 in their respective counties based on average reading scores.",
+   "agent_sql": "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\nSELECT ?name WHERE {\n  {\n    SELECT ?cds (COUNT(?cds2) AS ?higherCount) WHERE {\n      ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n           <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds ;\n           <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrread> ?read ;\n           <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/rtype> \"S\" .\n      ?sch a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n           <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n           <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> ?cty .\n      OPTIONAL {\n        ?sat2 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n              <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/cds> ?cds2 ;\n              <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrread> ?read2 ;\n              <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/rtype> \"S\" .\n        ?sch2 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n              <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds2 ;\n              <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> ?cty .\n        FILTER(xsd:decimal(?read2) > xsd:decimal(?read))\n      }\n    }\n    GROUP BY ?cds\n  }\n  ?sch a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?name ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/virtual> ?v .\n  FILTER(?higherCount < 5)\n  FILTER(?v = \"F\" || ?v = \"P\")\n}",
+   "executed_sql": "SELECT R1.CDSCODE AS \"CDS1m32\", R1.SCHOOL AS \"SCHOOL1m84\", R1.VIRTUAL AS \"VIRTUAL1m91\", R7.\"v14\" AS \"v14\"\nFROM \"bird_california_schools\".\"schools\" R1, (SELECT R2.CDS AS \"CDS1m0\", COUNT(R4.CDS) AS \"v14\"\nFROM \"bird_california_schools\".\"satscores\" R2\n JOIN \n\"bird_california_schools\".\"schools\" R3 ON (R2.AVGSCRREAD IS NOT NULL AND R3.COUNTY IS NOT NULL AND R2.CDS = R3.CDSCODE AND 'S' = R2.RTYPE) \n LEFT OUTER JOIN \n\"bird_california_schools\".\"satscores\" R4\n JOIN \n\"bird_california_schools\".\"schools\" R5 ON (R4.AVGSCRREAD IS NOT NULL AND R4.CDS = R5.CDSCODE AND 'S' = R4.RTYPE)  ON ((CAST(CASE WHEN REGEXP_LIKE(CAST(R4.AVGSCRREAD AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R4.AVGSCRREAD AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(CASE WHEN REGEXP_LIKE(CAST(R2.AVGSCRREAD AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R2.AVGSCRREAD AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18))) AND R3.COUNTY = R5.COUNTY) \nGROUP BY R2.CDS\n) R7\nWHERE (((R1.VIRTUAL = 'F') OR (R1.VIRTUAL = 'P')) AND (R7.\"v14\" < 5) AND R1.SCHOOL IS NOT NULL AND R1.VIRTUAL IS NOT NULL AND R1.CDSCODE = R7.\"CDS1m0\")\n",
+   "degraded": null,
+   "wall_clock_s": 126.8,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-21",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the postal street address for the school with the 7th highest Math average? Indicate the school's name.",
+   "agent_sql": "SELECT ?mailstreet ?schoolName WHERE {\n  ?sat a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore> ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/SatScore/avgscrmath> ?math ;\n       <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Satscores/hasSchools> ?school .\n  ?school <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/mailstreet> ?mailstreet ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?schoolName .\n}\nORDER BY DESC(xsd:decimal(?math))\nLIMIT 1\nOFFSET 6",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 121.17,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-29",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What are the valid e-mail addresses of the administrator of the school located in the San Bernardino county, City of San Bernardino City Unified that opened between 1/1/2009 to 12/31/2010 whose school types are public Intermediate/Middle Schools and Unified Schools?",
+   "agent_sql": "SELECT ?admemail1 WHERE {\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n    <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> \"San Bernardino\" ;\n    <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/district> \"San Bernardino City Unified\" ;\n    <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/opendate> ?opendate ;\n    <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/soctype> ?soctype ;\n    <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/admemail1> ?admemail1 .\n  FILTER(?opendate >= \"2009-01-01\" && ?opendate <= \"2010-12-31\")\n  FILTER(?soctype IN (\"Intermediate/Middle Schools (Public)\", \"Unified Schools (Public)\"))\n  FILTER(?admemail1 != \"\")\n}",
+   "executed_sql": "SELECT R1.ADMEMAIL1 AS \"ADMEMAIL11m45\", R1.CDSCODE AS \"CDSCODE1m44\", R1.OPENDATE AS \"OPENDATE1m82\", R1.SOCTYPE AS \"SOCTYPE1m86\"\nFROM \"bird_california_schools\".\"schools\" R1\nWHERE ((((R1.SOCTYPE = 'Intermediate/Middle Schools (Public)') OR (R1.SOCTYPE = 'Unified Schools (Public)')) AND (NOT (R1.ADMEMAIL1 = '')) AND (R1.OPENDATE >= '2009-01-01') AND (R1.OPENDATE <= '2010-12-31') AND R1.OPENDATE IS NOT NULL AND R1.SOCTYPE IS NOT NULL AND R1.ADMEMAIL1 IS NOT NULL AND R1.CDSCODE IS NOT NULL) AND ('San Bernardino' = R1.COUNTY AND 'San Bernardino City Unified' = R1.DISTRICT))\n",
+   "degraded": null,
+   "wall_clock_s": 34.5,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-18",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Which state special schools have the highest number of enrollees from grades 1 through 12?",
+   "agent_sql": "SELECT ?schoolName WHERE {\n  ?f a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?enroll ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?s .\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/soctype> \"State Special Schools\" ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?schoolName .\n  {\n    SELECT (MAX(?enroll2) AS ?maxEnroll) WHERE {\n      ?f2 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentK12> ?enroll2 ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?s2 .\n      ?s2 a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/soctype> \"State Special Schools\" .\n    }\n  }\n  FILTER(xsd:decimal(?enroll) = ?maxEnroll)\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 239.68,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-22",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the total number of non-chartered schools in the county of Los Angeles with a percent (%) of eligible free meals for grades 1 through 12 that is less than 0.18%?",
+   "agent_sql": "SELECT (COUNT(*) AS ?n) WHERE {\n  ?f a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/countyName> ?county ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/charterSchool> ?charter ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFreeK12> ?pct .\n  FILTER(?county = \"Los Angeles\")\n  FILTER(xsd:decimal(?charter) = 0)\n  FILTER(xsd:decimal(?pct) < 0.0018)\n}",
+   "executed_sql": "SELECT COUNT(*) AS \"v0\"\nFROM \"bird_california_schools\".\"frpm\" R1\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.PERCENT (%) ELIGIBLE FREE (K-12) AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.PERCENT (%) ELIGIBLE FREE (K-12) AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) < CAST(0.0018 AS DECIMAL(38, 18))) AND (CAST(CASE WHEN REGEXP_LIKE(CAST(R1.CHARTER SCHOOL (Y/N) AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.CHARTER SCHOOL (Y/N) AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) = CAST(0 AS DECIMAL(38, 18))) AND (R1.COUNTY NAME = 'Los Angeles') AND R1.COUNTY NAME IS NOT NULL AND R1.CHARTER SCHOOL (Y/N) IS NOT NULL AND R1.PERCENT (%) ELIGIBLE FREE (K-12) IS NOT NULL AND R1.CDSCODE IS NOT NULL)\n",
+   "degraded": null,
+   "wall_clock_s": 273.78,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-24",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Which schools served a grade span of Kindergarten to 9th grade in the county of Los Angeles and what is its Percent (%) Eligible FRPM (Ages 5-17)?",
+   "agent_sql": "SELECT ?school ?percent WHERE {\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?s ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFrpmAges517> ?percent .\n  ?s a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/school> ?school ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/county> ?county ;\n     <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/gsserved> ?gsserved .\n  FILTER(?county = \"Los Angeles\")\n  FILTER(?gsserved = \"K-9\")\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 279.2,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-23",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "How many students from the ages of 5 to 17 are enrolled at the State Special School school in Fremont for the 2014-2015 academic year?",
+   "agent_sql": "SELECT ?enrollmentAges517 WHERE {\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/academicYear> \"2014-2015\" ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/schoolType> ?schoolType ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/enrollmentAges517> ?enrollmentAges517 ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?school .\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/city> \"Fremont\" .\n  FILTER(CONTAINS(?schoolType, \"State Special\"))\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 288.45,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-27",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "Of the schools that offers a magnet program serving a grade span of Kindergarten to 8th grade, how many offers Multiple Provision Types? List the number of cities that offers a Kindergarten to 8th grade span and indicate how many schools are there serving such grade span for each city.",
+   "agent_sql": "SELECT ?city (COUNT(?school) AS ?numSchools)\nWHERE {\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/magnet> ?magnet ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/gsserved> ?gsserved ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/cdscode> ?cds ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/city> ?city .\n  FILTER(?magnet = 1)\n  FILTER(?gsserved = \"K-8\")\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/cdscode> ?cds ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/nslpProvisionStatus> \"Multiple Provision Types\" .\n}\nGROUP BY ?city",
+   "executed_sql": "SELECT R1.CITY AS \"CITY1m57\", COUNT(*) AS \"v7\"\nFROM \"bird_california_schools\".\"schools\" R1, \"bird_california_schools\".\"frpm\" R2\nWHERE ((R1.GSSERVED = 'K-8') AND (R1.MAGNET = 1) AND R1.MAGNET IS NOT NULL AND R1.GSSERVED IS NOT NULL AND R1.CITY IS NOT NULL AND R1.CDSCODE = R2.CDSCODE AND 'Multiple Provision Types' = R2.NSLP PROVISION STATUS)\nGROUP BY R1.CITY\n",
+   "degraded": null,
+   "wall_clock_s": 290.48,
+   "error": null
+  },
+  {
+   "scenario_id": "gt-row-28",
+   "ontology_id": "vkg-bird_california_schools",
+   "question": "What is the Percent (%) Eligible Free (K-12) in the school administered by an administrator whose first name is Alusine. List the district code of the school.",
+   "agent_sql": "SELECT ?percentEligibleFreeK12 ?districtCode WHERE {\n  ?frpm a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm> ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/percentEligibleFreeK12> ?percentEligibleFreeK12 ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/districtCode> ?districtCode ;\n        <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/Frpm/hasSchools> ?school .\n  ?school a <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School> ;\n          <http://bird-bird_california_schools-ontology-20260809-231020/ontology/vkg-bird_california_schools/School/admfname1> \"Alusine\" .\n}",
+   "executed_sql": "",
+   "degraded": null,
+   "wall_clock_s": 290.05,
+   "error": null
+  }
+ ],
+ "n_rows": 30
+}

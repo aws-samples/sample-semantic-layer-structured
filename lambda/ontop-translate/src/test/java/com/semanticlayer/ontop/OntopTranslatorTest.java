@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +38,53 @@ class OntopTranslatorTest {
             "expected the real subject column admin_code_id in SQL but got: " + sql);
         assertFalse(low.contains("__pk"),
             "translated SQL must not reference the synthetic __pk but got: " + sql);
+    }
+
+    /**
+     * REGRESSION: a table whose name is a SQL RESERVED WORD must still reformulate.
+     *
+     * <p>Unquoted, JSqlParser cannot parse {@code SELECT * FROM db.sets}; Ontop then
+     * treats the source as an opaque "black box view" and tries to fetch its metadata
+     * from a LIVE database, but the offline configuration has no parent metadata
+     * provider, so it threw {@code UnsupportedOperationException: Has no parent
+     * provider}. That surfaced as "Failed to build Ontop reformulator" and failed EVERY
+     * SPARQL query for bird_card_games (table {@code sets}) and bird_european_football_2
+     * (table {@code Match}) — 398 build failures on card_games alone, since
+     * {@code computeIfAbsent} never caches a failure and so rebuilt on every call.
+     *
+     * <p>This test covers both reserved words AND the mixed-case table that already
+     * worked (quoting must not regress it), exercising the full generator + real Ontop
+     * reformulator path — the only place where OBDA-source quoting and db-metadata
+     * relation-name quoting must AGREE. Quoting only one side leaves the relation
+     * unresolvable ("unknown to the JsonSerializedMetadataProvider"), which unit tests on
+     * either generator alone cannot detect.
+     *
+     * @throws Exception if Ontop fails to build the reformulator or translate.
+     */
+    @Test
+    void reservedWordAndMixedCaseTablesReformulateToSql() throws Exception {
+        // `sets` and `Match` are SQL reserved words; `postHistory` is mixed case.
+        for (final String table : new String[] {"sets", "Match", "postHistory"}) {
+            final Map<String, Object> ont = Map.of(
+                "classes", Map.of("http://x/T", Map.of("label", "T")),
+                "properties", Map.of(
+                    "http://x/T/theId", Map.of("type", "owl#DatatypeProperty"),
+                    "http://x/T/name", Map.of("type", "owl#DatatypeProperty")),
+                "mappings", Map.of(
+                    "http://x/T", Map.of("table", "thedb." + table),
+                    "http://x/T/theId", Map.of("column", table + ".id"),
+                    "http://x/T/name", Map.of("column", table + ".name")),
+                "databases", List.of(Map.of("name", "thedb", "catalog", "AwsDataCatalog")));
+
+            final String sparql =
+                "SELECT ?n WHERE { ?t a <http://x/T> . ?t <http://x/T/name> ?n }";
+            // Must not throw: pre-fix this raised TranslationException for sets/Match.
+            final String sql = new OntopTranslator().translate("vkg-rw-" + table + ":v1",
+                ont, sparql);
+            // The reserved word must appear QUOTED in the emitted SQL so Athena accepts it.
+            assertTrue(sql.contains("\"" + table + "\""),
+                "expected quoted \"" + table + "\" in SQL but got: " + sql);
+        }
     }
 
     /**
@@ -108,6 +156,25 @@ class OntopTranslatorTest {
         // The boolean is used directly — no lower() applied to the boolean column.
         assertFalse(low.matches("(?s).*lower\\s*\\(\\s*is_deleted.*"),
             "boolean column must not be wrapped in lower(): " + sql);
+    }
+
+    @Test
+    void hyphenatedDynamoTableReformulatesToQuotedSql() throws Exception {
+        // Raw-DynamoDB arm: the connector table name carries hyphens
+        // (default.semantic-layer-dev-riders). The REAL Ontop parser must accept the
+        // OBDA source + db-metadata (proving the hyphenated name is a single quoted
+        // identifier, not `semantic - layer - dev - riders` subtraction) and reformulate
+        // a class query into SQL that references the quoted table.
+        Map<String, Object> ont = TestFixtures.hyphenatedDynamoTableOntology();
+        String sparql = "SELECT ?id WHERE { "
+            + "?r a <http://x/Rider> ; <http://x/Rider/rider_id> ?id . }";
+        String sql = new OntopTranslator().translate("vkg-ddb:v1", ont, sparql);
+        String low = sql.toLowerCase();
+        // The reformulated SQL references the hyphenated table as a quoted identifier.
+        assertTrue(low.contains("semantic-layer-dev-riders"),
+            "expected the hyphenated DynamoDB table in SQL but got: " + sql);
+        assertTrue(sql.contains("\"semantic-layer-dev-riders\""),
+            "the hyphenated table must be double-quoted in the SQL but got: " + sql);
     }
 
     @Test

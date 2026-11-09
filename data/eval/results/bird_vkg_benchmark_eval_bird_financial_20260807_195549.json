@@ -1,0 +1,2367 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "agent_id": "semantic_layer_dev_ontology_query-1zqUpC6ywe",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology_query-1zqUpC6ywe",
+  "benchmark_eval_lambda_arns": {
+    "ExecutionAccuracy": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerExec-DuyG09fJOxhs",
+    "RewardVES": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerRewa-vd5mvCQaJG0f",
+    "SoftF1": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerSoft-sa9YvZSVyLzx"
+  },
+  "batch_evaluation_id": "bird_vkg_bench_bird_financial_d3f8562a-e1dc9b956d",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/bird_vkg_bench_bird_financial_d3f8562a-e1dc9b956d",
+  "status": "COMPLETED_WITH_ERRORS",
+  "bird_db_scope": "bird_financial",
+  "db_ids": [
+    "bird_financial"
+  ],
+  "max_concurrent_scenarios": 8,
+  "evaluator_suffix": "bird_vkg_v1",
+  "evaluator_ids": [
+    "GoalSuccess_bird_vkg_v1-20o5fP78jb",
+    "FinalAnswerFaithfulness_bird_vkg_v1-e7fJnt5vEj",
+    "SqlGrounded_bird_vkg_v1-9Wp51CGhfr",
+    "bird_ExecutionAccuracy_bird_vkg_v1-b5oCqp41Uw",
+    "bird_RewardVES_bird_vkg_v1-AQzlzN7GGn",
+    "bird_SoftF1_bird_vkg_v1-sTjo5BHQEZ"
+  ],
+  "llm_judges": {
+    "GoalSuccess": "GoalSuccess_bird_vkg_v1-20o5fP78jb",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_bird_vkg_v1-e7fJnt5vEj",
+    "SqlGrounded": "SqlGrounded_bird_vkg_v1-9Wp51CGhfr"
+  },
+  "exec_metric_evaluators": {
+    "ExecutionAccuracy": "bird_ExecutionAccuracy_bird_vkg_v1-b5oCqp41Uw",
+    "RewardVES": "bird_RewardVES_bird_vkg_v1-AQzlzN7GGn",
+    "SoftF1": "bird_SoftF1_bird_vkg_v1-sTjo5BHQEZ"
+  },
+  "llm_judge_aggregates": {
+    "GoalSuccess": 0.47,
+    "FinalAnswerFaithfulness": 0.5,
+    "SqlGrounded": 0.72
+  },
+  "exec_metric_aggregates": {
+    "ExecutionAccuracy": null,
+    "RewardVES": null,
+    "SoftF1": null
+  },
+  "exec_metrics_by_difficulty": {
+    "moderate": {
+      "ExecutionAccuracy": 0.1111,
+      "ExecutionAccuracy_n": 18,
+      "SoftF1": 0.1111,
+      "SoftF1_n": 18,
+      "RewardVES": 0.1111,
+      "RewardVES_n": 18
+    },
+    "simple": {
+      "ExecutionAccuracy": 0.0,
+      "ExecutionAccuracy_n": 3,
+      "SoftF1": 0.0,
+      "SoftF1_n": 3,
+      "RewardVES": 0.0,
+      "RewardVES_n": 3
+    },
+    "challenging": {
+      "RewardVES": 0.0,
+      "RewardVES_n": 6,
+      "ExecutionAccuracy": 0.0,
+      "ExecutionAccuracy_n": 6,
+      "SoftF1": 0.0,
+      "SoftF1_n": 6
+    }
+  },
+  "exec_metrics_by_db": {
+    "bird_financial": {
+      "ExecutionAccuracy": 0.0741,
+      "ExecutionAccuracy_n": 27,
+      "SoftF1": 0.0741,
+      "SoftF1_n": 27,
+      "RewardVES": 0.0741,
+      "RewardVES_n": 27
+    }
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "SoftF1",
+      "AvgScore": null,
+      "Evaluated": 27,
+      "Failed": 5
+    },
+    {
+      "Evaluator": "FinalAnswerFaithfulness",
+      "AvgScore": "0.500",
+      "Evaluated": 32,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "SqlGrounded",
+      "AvgScore": "0.720",
+      "Evaluated": 32,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "GoalSuccess",
+      "AvgScore": "0.470",
+      "Evaluated": 32,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "ExecutionAccuracy",
+      "AvgScore": null,
+      "Evaluated": 27,
+      "Failed": 5
+    },
+    {
+      "Evaluator": "RewardVES",
+      "AvgScore": null,
+      "Evaluated": 27,
+      "Failed": 5
+    }
+  ],
+  "per_row_events": [
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history at all. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind. Since the conversation never reaches a substantive answer, this fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty: there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since no SQL was executed at all, the agent did not run any ungrounded SQL against Athena, which satisfies the degraded-run condition described: 'If there is NO executed SQL in the context ... the grounding invariant was UPHELD \u2014 score 1 (pass) and note no SQL executed (degraded)'."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is completely empty - there is no user prompt, agent response, or tool execution history. There is no final-answer record to evaluate, no conversation content to reconstruct, and no way to verify whether the agent's response matched the expected gold SQL result. Since no substantive answer or clarification exists in the trajectory to assess against the assertion, the goal cannot be confirmed as achieved."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there is no user prompt, no agent response, and no tool execution history. There is no final-answer record span present, and no natural-language assistant message to fall back on. The conversation never reaches any substantive answer, so it cannot match the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty (no user prompt, no agent response, no tool execution history). There is no final-answer record, no conversation content, and no evidence of any substantive answer or clarification being given. Since no answer was ever produced, the expected final answer is not matched, and the goal cannot be considered achieved."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context provided is entirely empty - there is no user prompt content, no agent response, and no tool execution history. There is no retrieved ontology context present, and there is no executed SQL present anywhere in the context. Since there is no executed SQL, the agent did not run any ungrounded SQL against Athena, meaning the grounding invariant was upheld by default (degraded/no-op run). Per the instructions, when there is no executed SQL in the context, this counts as the agent refusing to execute ungrounded SQL, which passes the grounding check."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the count of male clients in the district with the second-highest A15 (crimes in 1995) value, and the query result returned 1. The agent's final-answer response states 'There is 1 male client in the branch (district) with the second-highest number of crimes committed in 1995,' which matches the expected result (count = 1) and correctly describes the query intent. This is consistent with the gold SQL's expected output, and there is no clarification needed since the question was answerable directly. The final answer aligns with the assertion."
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the count of male clients in the district with the second-highest crime count in 1995, using OFFSET 1 LIMIT 1 (i.e., excluding the top result). The tool result returned a single row with value \"1\", and the agent's final answer states there is 1 male client in that district, matching the query result. This aligns with the expected answer's intent (count of male clients = result of the query). Since the executed SQL result matches the gold query's expected output format (a single count value) and the agent correctly reported it as 1, the answer is consistent with the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 173ms, gold_rows=1 in 1894ms)"
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 120ms, gold_rows=1 in 2647ms)"
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 408ms, gold_rows=1 in 1918ms)"
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The provided context does not include an explicit executed SQL query (no reasoning.sqlQuery or executed_sql shown); only the final result columns/rows are given. Per the grading rule, when no executed SQL text is present in the context to inspect for schema grounding, the invariant is considered upheld (agent did not surface ungrounded SQL for review), so this is treated as a pass by default."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context provided is empty\u2014there is no user prompt, agent response, or tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL, which per the instructions means the grounding invariant was upheld (degraded/no-op case). Therefore this qualifies as 'no SQL executed (degraded)' and should be scored as a pass."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context is empty: no user prompt, no agent response, no tool execution history. There is no final-answer record present, no [conversation_so_far] block, and no substantive answer of any kind. Since there is no evidence the agent produced any answer matching the gold SQL result, the assertion cannot be considered satisfied."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is completely empty - there is no user prompt, no agent response, and no tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches a substantive answer, it cannot match the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer computes (sum of amount where status='A')*100/sum(amount) = 18603216*100/103261740 \u2248 18.01%. The agent's final answer states the percentage as 18,603,216/103,261,740*100 \u2248 18.01%, which matches the expected calculation and figures exactly. The numbers (18,603,216 and 103,261,740) align with the gold SQL's underlying values, and the final percentage (~18.01%) matches the expected result."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes 100*SUM(amount where status='A')/SUM(amount) = 18603216/103261740*100 \u2248 18.01%. The agent's final response reports the same underlying figures (18,603,216 for status A out of total 103,261,740) and computes 18.01%, matching the expected result numerically. The agent retrieved correct ontology IRIs, worked around the decimal overflow/serialization errors by querying grouped sums and raw totals, and derived the correct percentage via arithmetic rather than a single failing SPARQL aggregate. The final user-facing answer is a concrete, grounded numeric answer consistent with the gold query's result, satisfying the assertion."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL (SELECT ... FROM BIRD_FINANCIAL.LOAN R1 ... R1.STATUS, R1.AMOUNT, R1.ACCOUNT_ID) references only the LOAN table and its STATUS, AMOUNT, ACCOUNT_ID columns. The retrieved ontology slice explicitly defines the Loan class as mapping to 'bird_financial.loan table' and includes Loan/amount ('principal amount... loan table'), Loan/status ('loan repayment status enum'), and Loan/account_id ('Foreign key to account(account_id)... JOIN account a ON loan.account_id'), all consistent with the columns used. No unmapped tables or columns (e.g., no Order, Trans, Card fields) appear in the executed SQL. All identifiers in the final grounded query trace back to the retrieved ontology context, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes 100*SUM(status='C')/COUNT(account_id) for loans with amount<100000, which the agent's queries confirmed: 143 'C' status out of 305 total loans, i.e., 143/305 \u2248 46.89%. The agent's final answer states exactly this: 143/305 \u2248 46.89%. This matches the expected computation and figures from the gold query, using the correct denominator (all loans, not just non-null status subsets) and correct numerator. The final answer is consistent with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes: 100 * COUNT(status='C')/COUNT(account_id) for loans with amount<100000. The agent's tool execution retrieved rows: A=139, B=16, D=7, C=143, total=305 (matching COUNT(account_id) since account_id IS NOT NULL filter applied). 143/305*100 \u2248 46.89%, which matches the agent's final answer of 46.89%. This aligns with the gold query's expected computation. The agent's final response, though not explicitly marked as a 'Final-answer record', is the last natural-language assistant message and is substantively correct, grounded in actual SPARQL/SQL execution results (143 and 305 counts verified via tool execution). No clarification was needed per assertions, and the agent provided a concrete, correct numeric answer consistent with the gold SQL's intended calculation."
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL (from the successful tool_result) is: SELECT SUM(CASE WHEN R1.STATUS='C' THEN 1 ELSE 0 END) AS sum1, COUNT(*) AS v0 FROM BIRD_FINANCIAL.LOAN R1 WHERE (R1.AMOUNT < 100000 AND R1.AMOUNT IS NOT NULL AND R1.STATUS IS NOT NULL AND R1.ACCOUNT_ID IS NOT NULL). The retrieved ontology context includes the Loan class (mapping to bird_financial.loan table) with properties Loan/status, Loan/amount, and Loan/account_id, all explicitly described as columns of the loan table. The single table referenced (BIRD_FINANCIAL.LOAN) and all three columns (STATUS, AMOUNT, ACCOUNT_ID) are directly grounded in the retrieved ontology slice. No joins are present, and no extraneous tables/columns appear. The final answer (143/305 \u2248 46.89%) matches the executed SQL result rows exactly. Therefore every table and column in the executed SQL maps to the ontology context."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty\u2014there are no user prompts, agent responses, or tool execution history. There is no final-answer record to evaluate against the expected SQL result. Since no substantive answer or clarification was ever produced, the goal cannot be considered achieved."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is entirely empty: no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Per the degraded-run rule, if there is NO executed SQL in the context, the agent is considered to have refused to execute ungrounded SQL, so the grounding invariant is upheld by default (no SQL executed = no hallucinated schema possible)."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history. There is no final-answer record span or any natural-language assistant message to evaluate against the expected answer. The conversation never reaches a substantive answer."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty with no user prompt, agent response, or tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no SQL executed in the context, the agent effectively degraded (produced no output), satisfying the stated invariant that absence of executed SQL constitutes an upheld grounding invariant."
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty\u2014there is no user prompt, no agent response, and no tool execution history. There is no final-answer record span or any natural-language answer to evaluate against the expected gold SQL result. Since the conversation never reaches a substantive answer, the criterion is not satisfied."
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there is no user prompt, no agent response, and no tool execution history. There are no final-answer records to evaluate against the gold SQL/expected answer. Since there is no substantive answer (or any content at all) in the trajectory, the assertion that the conversation's final answer matches the expected result cannot be satisfied."
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is completely empty - there is no user prompt, no agent response, and no tool execution history. There is no final-answer record to evaluate, no conversation to reconstruct, and no substantive answer given at all. Since no answer was provided to match against the gold SQL result, the assertion cannot be satisfied."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context is entirely empty - there is no user prompt, no agent response, and no tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind provided. The conversation never reaches an answer to compare against the expected gold SQL result, so it fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty - there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present in the conversation. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL, meaning the grounding invariant was upheld by default (degraded/no-op run)."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty\u2014there is no user prompt, agent response, or tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind. Since the conversation never reaches a substantive answer matching the expected gold answer, this fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is entirely empty - there is no user prompt, no agent response, no tool execution history, and no retrieved ontology context or executed SQL present. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL, which per the instructions means the grounding invariant was upheld (degraded run scenario - no SQL executed)."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history at all. There is no final-answer record to evaluate, no conversation content to reconstruct, and no substantive answer or clarification question present. Since the conversation contains no content whatsoever, it cannot satisfy the assertion that the final answer matches the expected gold SQL result."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there are no user prompts, agent responses, or tool execution history to evaluate. There is no final-answer record present, no conversation content, and no substantive answer to compare against the expected gold SQL result. Since there is nothing in the trajectory to demonstrate the agent achieved the user's goal, the assertion cannot be satisfied."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty - there is no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Since there is no SQL executed in the context, the agent did not run any ungrounded SQL, which per the instructions means the grounding invariant was upheld (degraded/no-op case)."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The provided session context is empty - there is no user prompt, agent response, or tool execution history at all. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind. Since the conversation never reaches a substantive answer, this fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL finds the account_id for the youngest client (via disp/client/account join), producing a single account_id result. The agent's query returned a single result row with account 2836, and the final answer states 'The account number for the youngest client with the highest average salary is 2836,' matching the expected single-account result. Although a SliceSufficiency tool call flagged missing Account/District classes, the final grounded query still executed and produced a result consistent in form (single account number) with the gold query. Without contrary evidence that 2836 is factually wrong, and given the task requires matching the expected final answer's structure/conclusion, the answer aligns with the expected output pattern (a single account_id). The final-answer record is the substantive answer given, not a clarification, and it directly addresses the question without contradicting the expected result structure."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "evaluator": "RewardVES",
+      "score": 1.0,
+      "label": "PASS",
+      "explanation": "metric=rves value=1.0000 (pred_rows=1 in 1623ms, gold_rows=1 in 2756ms)"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "evaluator": "SoftF1",
+      "score": 1.0,
+      "label": "PASS",
+      "explanation": "metric=soft_f1 value=1.0000 (pred_rows=1 in 2311ms, gold_rows=1 in 2965ms)"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology context contains only Card, Client, Disp, Order, Loan, and Trans classes/properties. It explicitly lacks any Account or District class/property definitions (no account_id, no salary/A11 mapping), and the SliceSufficiency tool call itself flagged Account and District as missing/insufficient. Yet the agent still produced a result (ACCOUNT_ID1m13 = 2836), implying the executed SQL referenced an 'account' table (for account_id) and a district-level average salary column to determine 'highest average salary' \u2014 neither of which map to any ontology term in the provided slice. Since the executed SQL necessarily used unmapped tables/columns (account.account_id, district salary), this violates the grounding invariant: SQL was executed but references schema absent from the retrieved ontology context. The first offending identifier is 'account' (Account class/table), which is nowhere defined in the retrieved ontology."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 1.0,
+      "label": "PASS",
+      "explanation": "metric=ex value=1.0000 (pred_rows=1 in 3197ms, gold_rows=1 in 2962ms)"
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL identifies the account_id of the youngest client (via birth_date DESC) with district grouping, and the tool execution returned a single result row with account_id 2836. The agent's final answer reports this same account number (2836) as the answer to the question, matching the executed result and the intent of the gold query. There is no contradiction in figures or entities, and the answer is presented as a substantive final answer rather than a clarification or intermediate artifact."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the percentage increase rate as ((5835-1100)/1100)*100 \u2248 430.45%. The agent found the same account (1787), same balances (1100 on 1993-03-22, 5835 on 1998-12-27), and computed the same ratio (5835-1100)/1100 \u2248 4.30, explicitly stating this equals 'about a 430% increase.' This matches the expected numeric result and entities. The final answer is factually consistent with the gold answer."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent retrieved ontology context covering Loan (account_id, date), Disp (account_id, client_id, type), Trans (account_id, date, balance), and Client entities. The executed SQL queries ran against BIRD_FINANCIAL.LOAN (ACCOUNT_ID, DATE), BIRD_FINANCIAL.DISP (ACCOUNT_ID, CLIENT_ID, TYPE), and BIRD_FINANCIAL.TRANS (ACCOUNT_ID, DATE, BALANCE) \u2014 all of which correspond directly to the ontology properties Loan/account_id, Loan/date, Disp/account_id, Disp/client_id, Disp/type, Trans/account_id, Trans/date, Trans/balance that were explicitly retrieved via retrieve_ontology calls. No table or column in the executed SQL is absent from the retrieved ontology slice; all joins/filters map cleanly to the ontology properties. The final answer (account 1787, balance 1100 -> 5835, rate \u22484.30) is derived directly from the successfully executed, grounded SQL results."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent traced the loan dated 1993-07-05 to account 1787, retrieved the trans balances at the two required dates (1100 on 1993-03-22, 5835 on 1998-12-27), and computed the increase rate as (5835-1100)/1100 \u2248 4.30, i.e., about a 430% increase. This matches the gold SQL's computation of (5835-1100)*100/1100 \u2248 430.45%. The values and conclusion align closely with the expected result, and the agent's final response is a substantive, non-clarification answer, satisfying the assertion."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer requires the account number(s) of the account tied to the district of the oldest female client, plus the salary gap (MAX(A11) - MIN(A11) across districts). The agent's final answer only reports account 1743 and client birth date, explicitly stating that the salary gap could not be computed/reported. This omits the key requested calculation (the gap between lowest and highest average salary), which is a core part of the question and the expected answer. Since the answer is incomplete and does not include the salary gap figure, it does not match the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold answer requires both the account number of the account associated with the oldest female client's district, and the salary gap (MAX(A11) - MIN(A11) across districts). The agent's final response reports only the account number (1743) and explicitly states that the salary gap calculation is missing and cannot be reported. This omits a required component of the expected answer, failing to match the gold result which includes the computed gap value. Since the assertion requires the final answer to be factually consistent with the expected answer (including the gap), and the agent explicitly failed to provide that gap, the assertion is violated."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context shows no executed SQL or Phase 5 SQL translation output; the only tool call present is SliceSufficiency, which returned sufficient=False with missing entities ['District', 'Account'], indicating the agent determined the ontology slice was insufficient (missing District table needed for salary calculation) and did not proceed to generate/execute grounded SQL for the full question. The agent's final response explicitly states the salary gap calculation cannot be reported from the data, consistent with a degraded run rather than fabricated SQL. Although result columns/rows are shown, there is no visible executed SQL text in the context to verify against the ontology. Since no executed SQL is present, the grounding invariant is upheld by refusal/degradation rather than violated by hallucinated schema."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1508ms, gold_rows=1 in 3530ms)"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 2508ms, gold_rows=1 in 3149ms)"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1638ms, gold_rows=1 in 3111ms)"
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 174ms, gold_rows=1 in 2018ms)"
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The result rows returned by the query show a column named 'uselessVariable' with value '1', which appears to be a count or placeholder, not the actual AVG(a15) value. The agent's final answer states the average is 1, but this is almost certainly a misinterpretation of a meaningless/incorrect query result rather than the true average of A15 values exceeding 4000 (which would be some large crime count, likely in the thousands). The gold answer requires AVG(T1.A15) which should be a large number (>4000), not 1. The agent's answer of '1' contradicts the expected magnitude and is factually inconsistent with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 166ms, gold_rows=1 in 3081ms)"
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record (the only turn here, no prior conversation) reports that the average number of crimes in 1995 for qualifying districts is 1, based on a query result column literally named 'uselessVariable' with value \"1\". This is clearly a malformed/incorrect SQL execution result, not a genuine AVG(A15) computation as specified in the gold_sql. The gold query computes an average of the a15 crime column (which for qualifying regions with a15>4000 would be a value in the thousands, not 1). The agent's answer of 'the average is 1' is factually inconsistent with the expected result and appears to stem from an incorrect or malformed query rather than a correct execution of the intended aggregation. Since the final substantive answer does not match the expected result in the gold_sql assertion, the goal is not achieved."
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 255ms, gold_rows=1 in 1477ms)"
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation provides the retrieved ontology context (classes/properties mapping to bird_financial tables) but does not surface any executed SQL text (no reasoning.sqlQuery, no executed_sql field, no SPARQL-to-SQL translation shown). The tool_execution_history only contains a SliceSufficiency check, not an actual SQL execution artifact. The result set uses a placeholder column name 'uselessVariable', further indicating the underlying SQL query used to produce this result is not exposed in this context. Per the evaluation rule, when no executed SQL is visible in the context, the grounding invariant is considered upheld (the agent either degraded or the SQL was not surfaced for inspection), so this should be scored as a pass with note 'no SQL executed (degraded)' visible in context."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided contains no user prompt, agent response, or tool execution history at all \u2014 it is completely empty. There is no final-answer record, no conversation_so_far block, and no substantive answer to evaluate against the gold SQL expectation. Since there is no evidence the agent produced any answer, let alone one consistent with the expected result, the assertion cannot be satisfied."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty - there is no user prompt, agent response, or tool execution history whatsoever. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind present in the conversation. Since the conversation never reaches any answer, it cannot match the expected gold answer regarding district type filtering with disp table joins."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is entirely empty: no user prompt, no agent response, and no tool execution history. There is no retrieved ontology context present, and there is no executed SQL present either. Since there is no SQL executed in the context, the agent did not run any ungrounded SQL, satisfying the degraded-run condition described in the instructions ('no SQL executed (degraded)'). Per the grounding invariant rules, absence of executed SQL means the grounding invariant was upheld by default, regardless of the missing ontology context, since there is nothing to ground."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL result is 2724, matching the query result row [\"2724\"]. The agent's final answer states 2,724 male customers living in North Bohemia with district average salary greater than 8000, which matches the expected answer's count and conditions (gender M, region North Bohemia, average salary > 8000)."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts male clients in district A3='north Bohemia' with average salary (A11) > 8000, expected result 2724. The query already executed and returned result row ['2724'], and the agent's final-answer response states 'There are 2,724 male customers living in North Bohemia whose district has an average salary greater than 8000.' This matches the expected gold answer numerically and semantically. No clarification was needed since the query had already run and produced a definitive result. The final answer is substantive, factually consistent with the expected result, and directly addresses the question."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1180ms, gold_rows=1 in 1811ms)"
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1253ms, gold_rows=1 in 1818ms)"
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1445ms, gold_rows=1 in 1667ms)"
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology slice contains only Card, Client, Disp, Order, Loan, and Trans classes with their properties; it does NOT include a District class or any average_salary/region properties, even though Client.hasDistrict references District conceptually. The SliceSufficiency tool call explicitly flagged as missing: District, District.region, and District.average_salary \u2014 confirming these are absent from the retrieved ontology context. Yet the question (male clients in North Bohemia with district average salary > 8000) requires filtering on District.region = 'North Bohemia' and District.average_salary > 8000, and the query did execute (result rows returned: 2724). This means the executed SQL must have referenced district table columns (region, average_salary) that are not grounded in the provided ontology slice \u2014 i.e., hallucinated schema not present in the retrieved context. Since SQL was executed (results exist) but the ontology context lacks the District table/columns needed to construct that SQL, this violates the grounding invariant. The first offending identifier is the District table/region and average_salary columns, which have no corresponding mapsToTable/mapsToColumn entries in the retrieved ontology context."
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected gold answer, based on the SQL query, returns a single account_id (account number 1743, based on the query result rows provided). The agent's final answer states the account number is 1743, matching the query result exactly. This aligns with the expected answer's intent and the actual result derived from the gold SQL logic."
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL selects the account_id of the female client who is oldest (earliest birth_date) and has the lowest average salary (district A11), yielding account_id 1743. The agent's final-answer response reports account number '1743', which matches the expected result. The trajectory only shows one turn's final-answer record (the agent's response text), and there's no indication of a clarification request being required or a mismatch. The answer is factually consistent with the gold answer."
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "evaluator": "SoftF1",
+      "score": 1.0,
+      "label": "PASS",
+      "explanation": "metric=soft_f1 value=1.0000 (pred_rows=1 in 1756ms, gold_rows=1 in 2921ms)"
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 1.0,
+      "label": "PASS",
+      "explanation": "metric=ex value=1.0000 (pred_rows=1 in 2632ms, gold_rows=1 in 4134ms)"
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "evaluator": "RewardVES",
+      "score": 1.0,
+      "label": "PASS",
+      "explanation": "metric=rves value=1.0000 (pred_rows=1 in 1945ms, gold_rows=1 in 3143ms)"
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology slice only defines classes/properties for Card, Client, Disp, Order, Loan, and Trans \u2014 there is no Account class or District class with mapsToColumn mappings in this context (Account and District are only mentioned in free-text 'referenceTables' comments, not defined as queryable classes/properties). The question requires account numbers (account.account_id) and average salary (a District attribute, e.g. district.A11/avg_salary), and the SliceSufficiency tool call explicitly flagged 'missing': ['District','Account'], confirming these are absent from the ontology slice. Despite this flagged insufficiency, the query was executed and produced a result (account_id '1743'), meaning SQL referencing the Account table (and likely District for salary) was run against Athena without those tables/columns being grounded in the retrieved ontology context. This constitutes hallucinated schema usage \u2014 the executed SQL necessarily references account.account_id and a salary column neither of which map to any class/property in the provided ontology slice. First offending identifier: 'account' (Account table/account_id), which has no corresponding class or mapsToColumn entry in the retrieved ontology context."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL expects a non-empty list of account_ids matching the criteria (credit card transactions in 1998 below average amount). The agent's query returned zero rows and the final answer stated no matching account holders were found, which contradicts the expected result of an actual list of account holder IDs. The agent's answer does not match the expected substantive answer."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "There is no executed SQL surfaced in the context (no reasoning.sqlQuery/executed_sql, no execute_sql_query tool call). Only a SliceSufficiency tool call is present, and the result columns/rows are reported without any visible SQL. Since no SQL is present in the context to verify against the ontology, this falls under the degraded-run case: the agent either did not execute grounded SQL or the SQL is not surfaced, so the grounding invariant is considered upheld by default per instructions."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL joins trans and account with operation = 'VYBER KARTOU' and amount below the 1998 average, which should return a set of account_id values. The agent's final-answer output states that the query returned 0 rows and offers no substantive account_holder IDs, only a caveat that the empty result 'may reflect the specific filters ... rather than confirming that no such holders exist.' This is not a factually consistent match to the expected result (a list of account IDs). The agent failed to produce the correct account identifiers, effectively delivering an empty/non-substantive answer instead of the expected list, violating the assertion that the final answer must match the gold result."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=0 in 2130ms, gold_rows=4484 in 2428ms)"
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=0 in 1882ms, gold_rows=4484 in 2853ms)"
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=0 in 2451ms, gold_rows=4484 in 3199ms)"
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold answer requires listing the trans_id values for withdrawal (VYBER) transactions for client 3356, with 61 rows matching operation='VYBER'. The agent's final answer correctly identifies 61 cash withdrawal transactions on account 2779 for client 3356, all marked with operation 'VYBER', consistent with the gold query's filter. It summarizes amounts, dates, and balances rather than listing every trans_id, but the core facts (61 withdrawal transactions, correct account, correct operation type) match the expected result set's content. The answer conveys the same substantive conclusion as the gold SQL result (a list of VYBER transactions for client 3356), so it is factually consistent even though it doesn't enumerate every trans_id explicitly."
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=61 in 2020ms, gold_rows=140 in 3464ms)"
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=61 in 2944ms, gold_rows=140 in 2976ms)"
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The user asked to list cash withdrawal transactions for client 3356. The gold SQL selects trans.trans_id for client 3356 filtered by operation='VYBER', which corresponds to the same underlying data returned in the executed query (61 rows, all with operation VYBER). The agent's final user-facing answer accurately summarizes this result set: it correctly identifies the client's account (2779), states there are 61 cash withdrawal transactions, all with operation 'VYBER', consistent amount (15), and a range of dates and balances. This matches the substance of the gold query's expected result (the set of VYBER transactions for client 3356) without contradicting or omitting key facts. No clarification was needed and none was inappropriately asked. Thus the final answer is factually consistent with the expected gold result."
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation contains no explicit executed SQL text (no reasoning.sqlQuery or executed_sql field, and the tool_execution_history only shows a SliceSufficiency check, not an SQL execution call). Although result rows are shown, the actual SQL statement run against Athena is not surfaced in the context for inspection. The result columns (ACCOUNT_ID, AMOUNT, BALANCE, DATE, K_SYMBOL, OPERATION, TRANS_ID) do align with the Trans class properties in the ontology (trans.account_id, trans.amount, trans.balance, trans.date, trans.k_symbol, trans.operation, trans.trans_id), suggesting the underlying query was ontology-grounded, but since no executed SQL is explicitly present to verify against, per the grounding rule this is treated as a degraded run where the agent did not expose ungrounded SQL. Per instructions, this satisfies the invariant."
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=61 in 1974ms, gold_rows=140 in 4169ms)"
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1193ms, gold_rows=1 in 1825ms)"
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1146ms, gold_rows=1 in 1852ms)"
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1674ms, gold_rows=1 in 1829ms)"
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL requires filtering loans by status IN ('C','D') AND joining account with frequency = 'POPLATEK PO OBRATU' (representing 'statement issuance after each transaction'). The tool trace shows the agent itself flagged SliceSufficiency=False, explicitly noting the missing Account.frequency attribute needed for this filter. Despite this, the final answer reports an average (179,232.54) computed without applying the frequency condition, effectively ignoring the 'statement issuance after each transaction' qualifier from the question. This means the SQL executed did not match the gold query's logic, and the reported average is not guaranteed to match the expected result. The agent essentially fabricated a complete answer from an incomplete/insufficient query rather than incorporating the missing filter or clarifying it. This violates the requirement that the final answer matches the expected gold result."
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL requires filtering loans by status IN ('C','D') AND account.frequency = 'POPLATEK PO OBRATU' (i.e., accounts with statement issuance after each transaction). The tool execution history shows a SliceSufficiency check flagging 'Account.frequency' as missing, indicating the agent's executed query likely omitted this frequency filter and only filtered by loan status. The final answer (avg \u2248 179,232.54) is presented as the average for all running-contract loans, not specifically for accounts with the 'POPLATEK PO OBRATU' frequency, so it does not correctly answer the question about statement issuance after each transaction. Without the frequency filter, the computed average is likely incorrect relative to the gold query's intended result, making the final answer inconsistent with the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context provided does not contain the actual executed SQL text (no Phase 5 SQL block, reasoning.sqlQuery, or executed_sql field is shown). The only tool call present is a SliceSufficiency check flagging the slice as insufficient (missing Account and Account.frequency), and the final answer merely reports the pre-computed result values passed in from the prior query execution. Since no SQL statement is surfaced in the context for verification against the ontology slice, per the grading rubric this counts as a degraded run where the grounding invariant is upheld by default (no ungrounded SQL was demonstrably executed in the visible context)."
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL computes each qualifying client's ID and derived age (current year minus birth year) for clients holding a gold card and being an account OWNER. The final-answer record (the only turn, no clarification) instead reports client IDs, card IDs, disposition IDs, and raw birth dates, explicitly stating birth date is 'used to derive age' but never actually computing or reporting the age values themselves. The question explicitly asks for 'the IDs and age of the client,' so omitting the computed age and substituting birth date (plus extraneous card/disp IDs) does not match the expected result. This is a substantive omission relative to the required output, so the final answer is not factually consistent with the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer (gold SQL) returns client_id along with a computed age (current year minus birth year) for gold-card OWNER clients. The agent's final answer lists client IDs (12, 49, 93, 398, 1117, etc.) that match the underlying data, and mentions birth dates, but it never computes or reports the requested age values\u2014it only states birth dates are 'used to derive age' without giving actual age numbers. Since the question explicitly asks for age and the expected answer's key deliverable is the age figure, omitting it means the final answer does not fully satisfy the request."
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context does not include an explicit executed SQL statement (no reasoning.sqlQuery/executed_sql field, and the tool_execution_history only shows a SliceSufficiency validation call, not an execute_sql_query call). Per the grounding rubric, absence of executed SQL in the context means the grounding invariant is treated as upheld. Additionally, the result columns returned (BIRTH_DATE, CARD_ID, CLIENT_ID, DISP_ID) correspond directly to ontology properties Client/birth_date, Card/card_id, Client/client_id, and Disp/disp_id, and the underlying business logic (Card/type='gold' for 'high level' and Disp/type='OWNER' for loan eligibility) is explicitly documented in the ontology comments, so even the implied query logic is consistent with the retrieved schema slice. No hallucinated table or column is evident."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result rows returned by the query match the expected gold query's output pattern (districts ranked by female client count descending, top 9). The agent's final answer reports district 1 with 267, district 70 with 74, district 74 with 66, district 54 with 63, down to district 46 with 32, which matches the provided result rows exactly. This is consistent with the expected gold SQL result structure (district, count) ordered descending limit 9. The answer accurately reports the key numbers and entities from the query results."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL returns top 9 districts by female client count descending, matching the query result rows: district 1 (267), 70 (74), 74 (66), 54 (63), 64 (49), 72 (38), 68 (36), 5 (34), 46 (32). The agent's final answer correctly reports district 1 as highest with 267, followed by 70, 74, 54, down to district 46 with 32, consistent with the result set and the expected gold query output ordering. The answer is factually consistent with the expected result, correctly identifying the top and bottom of the 9 districts and the descending order. No clarification was needed and none was given inappropriately."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=9 in 1770ms, gold_rows=9 in 1909ms)"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=9 in 2336ms, gold_rows=9 in 1836ms)"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=9 in 1947ms, gold_rows=9 in 2008ms)"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The provided context includes the retrieved ontology slice and the tool_execution_history (only a SliceSufficiency check), but no executed SQL text, SPARQL, or Phase 5 SQL translation is surfaced anywhere in the conversation. Only the final result columns/rows are shown, with no SQL query string to inspect for table/column/join grounding. Since the executed SQL itself is not present in the context to audit, per the evaluation instructions this counts as a case where no SQL is surfaced for grounding verification, so the grounding invariant is treated as upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the count of male clients in the district with the second-highest crime count in 1995 (using district.A15 ordered descending, offset 1). The query executed returned 2724, and the agent's final answer states there are 2,724 male clients in the district with the second-highest number of crimes committed in 1995. This matches the expected result numerically and conceptually. No clarification was needed since the query had already been run and produced a definitive result. The agent's response is consistent with the gold answer's intent and value."
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the count of male clients in the district with the second-highest crime count (A15 column) in the district table, resulting in a specific numeric answer. The agent's query result returned 2724, and the final answer states there are 2,724 male clients in the district with the second-highest number of crimes in 1995, which matches the expected computation logic and result count. The answer is consistent with the expected gold query's intent and numeric result."
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 955ms, gold_rows=1 in 2604ms)"
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1672ms, gold_rows=1 in 2730ms)"
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1198ms, gold_rows=1 in 1631ms)"
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The question requires identifying a 'branch' (district) ranked by crime counts in 1995, which necessitates a District class with crime-related columns (e.g., crime95/crime96 or A-series codes) and a way to link to clients' gender. The retrieved ontology context contains no District class at all, no crime columns, and no branch table \u2014 only Card, Client, Disp, Loan, Order, and Trans are defined. The tool_execution_history explicitly shows a SliceSufficiency check that flagged 'missing': ['District'], confirming the agent itself recognized the retrieved slice lacked the District entity needed to answer this question. Despite this, a numeric result (2724) was produced, meaning SQL was executed against Athena using schema (District table, crime columns, gender join through district) that is not present anywhere in the retrieved ontology context provided here. This constitutes execution of SQL referencing hallucinated/ungrounded schema elements, violating the grounding invariant. The first offending identifier would be the District table/crime columns (e.g., district.crime95 or similar), which have no corresponding class/property in the retrieved ontology slice."
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected gold answer is a list of distinct district names (column A2 from the district table) for accounts with January 1996 withdrawals, ordered alphabetically and limited to 10 distinct names. The agent's final answer instead reports the top 10 withdrawal transactions by amount, giving district_id numbers (51, 17, 64, 72, 8, 56, 70, 58) rather than district names, and it never joins to the district table to get actual names. The reported entities (district IDs and transaction amounts) do not match the expected result (district name strings), and the query logic (ranking by amount vs. alphabetical distinct list) is fundamentally different. Thus the final answer is inconsistent with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=10 in 2832ms, gold_rows=10 in 3601ms)"
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=10 in 2752ms, gold_rows=10 in 2901ms)"
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL retrieves the top 10 DISTINCT district names (district.A2), ordered alphabetically ascending, for accounts with VYDAJ transactions in Jan 1996 \u2014 it does NOT rank by transaction amount. The agent's final-answer record instead ranked transactions by withdrawal amount (VYBER/VYDAJ) and reported district_id numbers (51, 17, 64, etc.) rather than actual district names, with amounts described as the primary result. It never joins to obtain district names (A2) and never presents a list of 10 distinct district names sorted alphabetically. The reported entities (transaction amounts, district IDs, dates) do not match the expected result set (district names). This is a substantive mismatch in both the content and structure of the answer relative to the gold query's intent, so the final answer does not satisfy the 'matches gold_sql result' assertion."
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=10 in 2672ms, gold_rows=10 in 2990ms)"
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result columns (ACCOUNT_ID, AMOUNT, CLIENT_ID, DATE, DISTRICT_ID, OPERATION, TYPE(disp), TYPE(trans)) correspond directly to ontology-mapped columns: trans.account_id, trans.amount, trans.date, trans.operation, trans.type (Trans class), client.district_id (Client class), and disp.type/client_id (Disp class). No table or column appears that is absent from the retrieved ontology slice (e.g., no District table or unmapped column is referenced; district_id is used as-is per Client.district_id mapping, not a hallucinated 'district name' column). Although the agent's narrative mislabels district_id values as 'district names' (a faithfulness issue, not a grounding issue), the underlying executed query's schema usage is fully traceable to the ontology's mapsToColumn entries for Trans, Client, and Disp. No hallucinated identifiers are present, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 177ms, gold_rows=1 in 1759ms)"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 175ms, gold_rows=1 in 1773ms)"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts loans between 1995-01-01 and 1997-12-31 with amount >= 250000 for accounts with monthly statement frequency ('POPLATEK MESICNE'). The query result returned a single row with value 1, and the agent's final answer states '1 loan of at least 250,000 was approved for an account with monthly statement issuance' between the given dates, which matches the expected numeric result (count = 1) and the described conditions. The answer is consistent with the expected outcome."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts loans between 1995-01-01 and 1997-12-31 with amount >= 250000 for accounts with monthly statement frequency ('POPLATEK MESICNE'), which should equal 1 based on the executed query result (rows show '1'). The agent's final-answer output states 'only 1 loan of at least 250,000 was approved for an account with monthly statement issuance' between the given dates, which matches the expected numeric result and semantics of the gold query. There is no indication of a clarification request being needed or unresolved ambiguity - the agent proceeded to answer directly with the correct count. This matches the expected final answer."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 178ms, gold_rows=1 in 2107ms)"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology slice defines only Card, Client, Disp, Order, Loan, and Trans classes; there is no Account class or Account.frequency property anywhere in the context (Account only appears as the range of hasAccount object properties, with no datatype properties like frequency, date, or district_id defined). The agent's own SliceSufficiency tool call explicitly flags 'sufficient: False' and lists the missing elements as Account and Account.frequency \u2014 exactly the fields needed to filter for 'monthly statement issuance' (account.frequency = 'monthly issuance'). Despite this self-reported insufficiency, the pipeline still produced a numeric result (\"1\") and the agent reported it as a factual answer, implying SQL was executed that referenced Account.frequency and Account (for the amount/date/account join) \u2014 identifiers absent from the retrieved ontology context. This is a hallucinated schema reference relative to the provided slice, violating the grounding invariant. The first offending identifier is Account.frequency, which has no mapsToColumn/mapsToTable entry in the retrieved context."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The retrieved ontology context includes Loan (amount, date, account_id, hasAccount), Disp (account_id, client_id, hasAccount, hasClient), and Client (client_id, gender) with their table/column mappings implied by the comments (bird_financial.loan, disp, client). The executed SQL selects from BIRD_FINANCIAL.LOAN (AMOUNT, DATE, ACCOUNT_ID), BIRD_FINANCIAL.DISP (ACCOUNT_ID, CLIENT_ID), and BIRD_FINANCIAL.CLIENT (CLIENT_ID, GENDER), joining LOAN.ACCOUNT_ID=DISP.ACCOUNT_ID and DISP.CLIENT_ID=CLIENT.CLIENT_ID, filtering GENDER='M' and DATE substring for year. Every table and column used (LOAN, DISP, CLIENT, AMOUNT, DATE, ACCOUNT_ID, CLIENT_ID, GENDER) corresponds directly to properties present in the retrieved ontology slice (Loan/amount, Loan/date, Loan/account_id, Disp/account_id, Disp/client_id, Client/client_id, Client/gender). No hallucinated schema elements are present; all joins are grounded in the hasAccount/hasClient relations retrieved. Therefore the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL restricts loans to those whose associated disposition type is 'OWNER' (i.e., only loans tied to accounts where the querying client is the account owner), in addition to filtering by client gender = 'M'. The agent's final SPARQL/SQL only filters by client gender via any Disp (both OWNER and DISPONENT), omitting the disp.type='OWNER' condition. This is a substantive difference: an account may have multiple dispositions (owner and disponent), so joining without the type filter can multiply-count loans or include loans for accounts owned by a different-gender client just because a male disponent is linked. This structural mismatch means the computed sums (12,553,044 for 1996 and 15,736,752 for 1997, giving ~25.36% growth) likely diverge from the value computed by the gold query, which enforces the OWNER-only condition. Since the agent's answer's key figures were derived from a materially different query than the gold SQL, the final answer cannot be confirmed to match the expected answer, and the omission of a required filter condition makes it likely incorrect."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL explicitly restricts the join to disposition type 'OWNER' (T3.type = 'OWNER'), reflecting that only account owners can request loans, and also naturally avoids double-counting a loan by joining loan\u2192account\u2192disp only once per account for the owner. The agent's SPARQL/SQL, however, joins Loan\u2192Account\u2192Disp\u2192Client without any disp.type restriction, meaning any client (owner or disponent) with gender 'M' associated with the account is counted, and each qualifying disp row would re-add the loan amount, risking double counting and definitely including loans held via disponent relationships that the gold query intentionally excludes. This is a substantive deviation from the required filter criteria, not a benign rewording. Since the agent's final answer (12,553,044 in 1996, 15,736,752 in 1997, +25.36% growth) was derived from a materially different population (all client dispositions on the account, not just OWNERs), it does not reflect the same query semantics as the gold SQL and is unlikely to match the expected growth rate value. The user-facing final-answer record (the assistant's text stating the specific loan sums and growth rate) is the substantive answer, but it fails to align with the assertion's expected result because the underlying query logic diverges from the gold definition of the population (owners only). Therefore the assertion 'final answer matches the gold result' is not satisfied."
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result was 448, matching the count from the gold SQL logic (accounts with district_id=1 and loan status C or D). The agent's final answer states 448 accounts with running contracts in Branch location 1, which matches the expected answer's key figure and conclusion."
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts accounts with district_id=1 having loans with status C or D, yielding a count. The query result returned 448, matching the expected count value pattern (COUNT of account_id). The agent's final answer states '448 accounts with running contracts (loan status C or D) in Branch location 1', which correctly reflects the numeric result and matches the gold query's intent (status C or D, district/branch 1). This is a substantive, correct answer consistent with the expected result, so the assertion is satisfied."
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 992ms, gold_rows=1 in 2100ms)"
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1282ms, gold_rows=1 in 2506ms)"
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1151ms, gold_rows=1 in 2601ms)"
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology slice defines Card, Client, Disp, Loan, Order, and Trans classes with explicit mapsToTable/mapsToColumn mappings, but it contains no Account class definition (Account is only referenced as the range of object properties like hasAccount, with no mapsToTable/mapsToColumn for an account table) and no District/Branch class at all (no district table, no branch-location column like A3). The question 'accounts with running contracts in Branch location 1' requires joining loan -> account -> district (or similar branch/location field), none of which is grounded in the provided ontology context. This is corroborated by the tool call SliceSufficiency(sufficient=False, missing=['Account']), explicitly flagging that the Account class/table is missing from the assembled slice, yet the pipeline proceeded to execute SQL and return a concrete result (448), indicating it ran SQL against tables/columns (account, district/branch) not present in the retrieved ontology. Since SQL was executed (results returned) rather than the agent refusing/degrading, and the underlying schema needed (account, district/branch location) is absent from the ontology context, this violates the grounding invariant. First offending identifier: the 'account' table (and by extension any district/branch-location column), which lacks a corresponding mapsToTable/mapsToColumn entry in the retrieved ontology context."
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the count of accounts in district_id=1 with loan status C or D, and the expected result is 448. The agent's final answer states 448 accounts with running contracts (loan status C or D) in Branch location 1, matching the expected numeric result and interpretation."
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts accounts in district_id=1 with loan status C or D, yielding 448 per the executed query result. The agent's final answer states '448 accounts with running contracts (loan status C or D) in Branch location 1,' which matches the expected result's value and semantics exactly. No clarification was needed and none was fabricated. The answer is consistent with the gold query's result."
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1007ms, gold_rows=1 in 2399ms)"
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1632ms, gold_rows=1 in 2299ms)"
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1199ms, gold_rows=1 in 2223ms)"
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology context defines classes for Card, Client, Disp, Order, Loan, and Trans, but never defines an 'Account' or 'District/Branch' class with its own properties/mappings (Account and District are only mentioned as foreign-key targets in comments, not as first-class ontology entries with mapsToTable/mapsToColumn). The tool_execution_history explicitly shows a SliceSufficiency check returning sufficient=False with missing=['Account'], confirming the agent itself detected that the Account entity needed to answer 'How many accounts... in Branch location 1' was absent from the slice. Despite this, a query result (448) was surfaced and the agent reported an answer referencing accounts and branch location, which requires joining loan.status with account and district/branch tables that are not grounded in the provided ontology slice. This indicates the executed SQL (not directly shown but implied by the pre-computed result) relied on schema elements (Account, District/Branch) not present in the retrieved ontology context, violating the grounding invariant. The first offending identifier is 'Account', which the agent's own sufficiency check flagged as missing yet was necessarily used to compute an account-level count filtered by branch/district."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer is a count of 77 districts matching the criteria. The agent's final answer states 'There are 77 districts where the female average salary is between 6000 and 10000,' which matches the expected numeric result and conclusion exactly."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL expects a count of 77 districts meeting the salary condition, matching the query result rows ([\"77\"]). The agent's final response states 'There are 77 districts where the female average salary is between 6000 and 10000,' which matches the expected result numerically and semantically. There is no indication of unresolved clarification needed or contradiction with the gold answer."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1098ms, gold_rows=1 in 1783ms)"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 929ms, gold_rows=1 in 1853ms)"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1233ms, gold_rows=1 in 1866ms)"
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_financial",
+      "difficulty": "simple",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The retrieved ontology context contains classes for Card, Client, Disp, Order, Loan, and Trans only. There is no District class defined, and no average_salary property exists anywhere in the ontology \u2014 district_id is only referenced as a foreign key on Client, with no District entity or salary attributes modeled. The agent's own SliceSufficiency tool call explicitly flags 'sufficient': False with missing items ['District', 'District.average_salary'], confirming the ontology cannot ground a query about female average salary by district. Despite this explicit insufficiency signal, the pipeline proceeded to produce a concrete numeric answer (77 districts) based on a query that must have referenced a District table and an average_salary (and likely a gender-split average, e.g., A11/A12-style or a female-salary column) \u2014 none of which map to any class/property in the retrieved ontology context. This is not a case of 'no SQL executed (degraded)': a result set was clearly produced and reported to the user, meaning ungrounded schema (District, average_salary) was used to generate and execute SQL against Athena. The first offending identifier is the District table/average_salary column, which is absent from the ontology slice. This violates the grounding invariant."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts female clients born before 1950 living in district Sokolov, and the executed query returned a result of 1 (row value \"1\"). The agent's final answer states 'There is 1 female customer born before 1950 who lived in Sokolov and had an opened account,' which matches the count of 1 from the result and aligns with the expected query's intent (count of matching clients). The numeric value and entity description are consistent with the expected answer's underlying computation."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts female clients born before 1950 living in district Sokolov, which yields a count value. The tool result returned a single row with value '1' for the count column, and the agent's final answer states 'There is 1 female customer born before 1950 who lived in Sokolov and had an opened account.' This matches the expected result structure and value (assuming the underlying query correctly computed the count). The agent's response is a substantive natural-language answer consistent with the expected numeric result, satisfying the assertion."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 213ms, gold_rows=1 in 1693ms)"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 175ms, gold_rows=1 in 2136ms)"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 273ms, gold_rows=1 in 1809ms)"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_financial",
+      "difficulty": "moderate",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "evaluator": "SqlGrounded",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The tool history shows the agent itself flagged SliceSufficiency as False with missing=['District'], meaning the ontology slice lacks any District class/table mapping needed to filter clients by the region 'Sokolov'. Indeed, scanning the retrieved ontology context, there is no District class definition, no district table mapping, and no column (e.g., A3/region name) that could ground a 'Sokolov' filter \u2014 District only appears as an unresolved rdfs:range target of Client/hasDistrict. Despite this acknowledged insufficiency, a query was executed and returned a result (the suspicious generic column name 'uselessVariable' with value '1'), and the agent confidently reported a specific count filtered by Sokolov, gender, and birth year. This means the executed SQL necessarily relied on schema (district name/region filtering) that is not present anywhere in the retrieved ontology context, constituting hallucinated/ungrounded schema usage rather than a genuine graceful degradation. The agent did not refuse or flag insufficiency to the user; it fabricated an answer despite its own sufficiency check failing. This violates the grounding invariant."
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer states that account 3's frequency of statement requests (k_symbol SLUZBY) was 13, and the k_symbol for which total debited amount equals 3539 is POJISTNE (insurance). The agent's final answer states account 3 requested statement release ('SLUZBY') 13 times, and the 3539 debit was for 'POJISTNE' insurance payments, occurring 13 times (frequency matches). This aligns with the gold SQL result: frequency=13 (SLUZBY) and k_symbol=POJISTNE for total_amount=3539. The agent's answer matches the key facts: frequency 13 and purpose POJISTNE. The extra clause 'which also occurred 13 times' is a minor imprecision (conflating frequency with total sum) but doesn't contradict the core facts asked. Overall the answer conveys the same key numbers and entities as expected."
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=2 in 1434ms, gold_rows=1 in 1952ms)"
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=2 in 1578ms, gold_rows=1 in 1979ms)"
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=2 in 2756ms, gold_rows=1 in 1710ms)"
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation includes only the retrieved ontology slice and a SliceSufficiency tool call; there is no executed SQL (no reasoning.sqlQuery, executed_sql, or Phase 5 SQL output) shown anywhere in the tool_execution_history or agent_response. Although result rows are present, the actual SQL text run against Athena is not surfaced in this context, so we cannot inspect it for schema grounding. Per the evaluation instructions, when no executed SQL is visible in the context, the grounding invariant is considered upheld (the agent did not visibly execute ungrounded SQL), so this counts as a degraded/pass case rather than a failure."
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_financial",
+      "difficulty": "challenging",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL joins account.frequency (a categorical setting describing how often the bank issues account statements, e.g. 'POPLATEK MESICNE'/monthly) with the k_symbol of the order whose total amount equals 3539. The agent's final answer, however, reports a *count* of 13 transactions labeled 'SLUZBY' as the 'frequency' of statement requests, which is a different concept (a count of trans/k_symbol rows) rather than the account's frequency setting. This does not match the expected categorical frequency value the gold query would return. The second part of the answer (k_symbol = 'POJISTNE' for the 3539 debit) is plausible and likely consistent with the gold result, but the first part is a mismatched interpretation of 'how often', producing a factually different answer (a transaction count instead of the account's statement-issuance frequency). Since the final answer's first component does not align with the expected gold answer's key entity (frequency category vs. count), the assertion 'final answer matches' is not fully satisfied."
+    }
+  ],
+  "agent_detail": [
+    {
+      "scenario_id": "gt-row-02",
+      "ontology_id": "vkg-bird_financial",
+      "question": "How many male customers who are living in North Bohemia have average salary greater than 8000?",
+      "agent_sql": "SELECT (COUNT(?c) AS ?n) WHERE {\n  ?c a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> ?gender .\n  FILTER(?gender = \"M\")\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v1\"\nFROM BIRD_FINANCIAL.CLIENT R1\nWHERE ((R1.GENDER = 'M') AND R1.GENDER IS NOT NULL AND R1.CLIENT_ID IS NOT NULL)\n",
+      "degraded": null,
+      "wall_clock_s": 33.7,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Among the account opened, how many female customers who were born before 1950 and stayed in Sokolov?",
+      "agent_sql": "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>\n\nSELECT (COUNT(?client) AS ?n) WHERE {\n  ?client a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?bd .\n  FILTER (?bd < \"1950-01-01\"^^xsd:date)\n}",
+      "executed_sql": "SELECT 1 AS uselessVariable\nFROM (SELECT 1 ) tdummy\n",
+      "degraded": null,
+      "wall_clock_s": 36.62,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "ontology_id": "vkg-bird_financial",
+      "question": "List out the account numbers of clients who are youngest and have highest average salary?",
+      "agent_sql": "SELECT DISTINCT ?account_id WHERE {\n  {\n    SELECT (MAX(?bd) AS ?maxbd) WHERE {\n      ?c a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?bd .\n    }\n  }\n  ?c2 a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n      <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?maxbd ;\n      <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/client_id> ?cid .\n  ?d a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/client_id> ?cid ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/account_id> ?account_id .\n}",
+      "executed_sql": "SELECT DISTINCT R2.ACCOUNT_ID AS \"ACCOUNT_ID1m13\"\nFROM BIRD_FINANCIAL.CLIENT R1, BIRD_FINANCIAL.DISP R2, (SELECT MAX(R3.BIRTH_DATE) AS \"max1\"\nFROM BIRD_FINANCIAL.CLIENT R3\nWHERE (R3.BIRTH_DATE IS NOT NULL AND R3.CLIENT_ID IS NOT NULL)\n) R5\nWHERE (((R5.\"max1\" = R1.BIRTH_DATE AND R5.\"max1\" IS NOT NULL) OR R5.\"max1\" IS NULL) AND R1.BIRTH_DATE IS NOT NULL AND R2.ACCOUNT_ID IS NOT NULL AND R1.CLIENT_ID = R2.CLIENT_ID)\n",
+      "degraded": null,
+      "wall_clock_s": 38.34,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "ontology_id": "vkg-bird_financial",
+      "question": "List out the no. of districts that have female average salary is more than 6000 but less than 10000?",
+      "agent_sql": "SELECT (COUNT(DISTINCT ?district) AS ?n) WHERE {\n  ?client a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/hasDistrict> ?district .\n}",
+      "executed_sql": "SELECT COUNT(DISTINCT(R1.DISTRICT_ID)) AS \"v2\"\nFROM BIRD_FINANCIAL.CLIENT R1\nWHERE ((R1.DISTRICT_ID IS NOT NULL AND R1.CLIENT_ID IS NOT NULL) AND 'F' = R1.GENDER)\n",
+      "degraded": null,
+      "wall_clock_s": 44.46,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "ontology_id": "vkg-bird_financial",
+      "question": "List out the account numbers of female clients who are oldest and has lowest average salary, calculate the gap between this lowest average salary with the highest average salary?",
+      "agent_sql": "SELECT ?account_id WHERE {\n  ?client a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n    <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n    <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?bd ;\n    <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/client_id> ?cid .\n  ?disp a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n    <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/client_id> ?cid ;\n    <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/account_id> ?account_id .\n}\nORDER BY ASC(?bd)\nLIMIT 1",
+      "executed_sql": "SELECT R2.ACCOUNT_ID AS \"ACCOUNT_ID1m13\", R1.BIRTH_DATE AS \"BIRTH_DATE1m8\", R1.CLIENT_ID AS \"CLIENT_ID1m7\"\nFROM BIRD_FINANCIAL.CLIENT R1, BIRD_FINANCIAL.DISP R2\nWHERE (R1.BIRTH_DATE IS NOT NULL AND R2.ACCOUNT_ID IS NOT NULL AND R1.CLIENT_ID = R2.CLIENT_ID AND 'F' = R1.GENDER)\nORDER BY R1.BIRTH_DATE NULLS FIRST\nLIMIT 1",
+      "degraded": null,
+      "wall_clock_s": 45.58,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "ontology_id": "vkg-bird_financial",
+      "question": "What is the percentage of loan amount that has been fully paid with no issue.",
+      "agent_sql": "SELECT (100.0 * SUM(IF(?status = \"A\", xsd:decimal(?amount), 0.0)) / SUM(?amount) AS ?pct)\nWHERE {\n  ?l a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/amount> ?amount ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/status> ?status .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 78.15,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "ontology_id": "vkg-bird_financial",
+      "question": "For loan amount less than USD100,000, what is the percentage of accounts that is still running with no issue.",
+      "agent_sql": "SELECT (100.0 * SUM(IF(?status = \"C\", 1, 0)) / COUNT(*) AS ?percentage)\nWHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/amount> ?amount ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/status> ?status .\n  FILTER (xsd:decimal(?amount) < 100000)\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v0\", CASE WHEN (NOT (COUNT(*) = 0.0)) THEN CAST(((CAST(100.0 AS DECIMAL(38, 18)) * CAST(COALESCE(SUM(CAST(CASE WHEN (R1.STATUS = 'C') THEN '1' ELSE '0' END AS BIGINT)),0) AS DECIMAL(38, 18))) / CAST(COUNT(*) AS DECIMAL(38, 18))) AS VARCHAR) ELSE NULL END AS \"v1\"\nFROM BIRD_FINANCIAL.LOAN R1\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.AMOUNT AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.AMOUNT AS VARCHAR) AS DECIMAL(38, 10)) ELSE NULL END AS DECIMAL(38, 10)) < CAST(100000 AS DECIMAL(38, 10))) AND R1.AMOUNT IS NOT NULL AND R1.STATUS IS NOT NULL AND R1.ACCOUNT_ID IS NOT NULL)",
+      "degraded": null,
+      "wall_clock_s": 95.24,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "ontology_id": "vkg-bird_financial",
+      "question": "How many accounts who choose issuance after transaction are staying in East Bohemia region?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 168.35,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "ontology_id": "vkg-bird_financial",
+      "question": "List the top nine districts, by descending order, from the highest to the lowest, the number of female account holders.",
+      "agent_sql": "SELECT ?district (COUNT(?client) AS ?femaleHolders) WHERE {\n  ?client a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/hasDistrict> ?district .\n  ?disp a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/hasClient> ?client ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/type> \"OWNER\" .\n}\nGROUP BY ?district\nORDER BY DESC(?femaleHolders)\nLIMIT 9",
+      "executed_sql": "SELECT R1.DISTRICT_ID AS \"DISTRICT_ID1m12\", COUNT(*) AS \"v5\"\nFROM BIRD_FINANCIAL.CLIENT R1, BIRD_FINANCIAL.DISP R2\nWHERE (R1.DISTRICT_ID IS NOT NULL AND R2.ACCOUNT_ID IS NOT NULL AND R1.CLIENT_ID = R2.CLIENT_ID AND 'F' = R1.GENDER AND 'OWNER' = R2.TYPE)\nGROUP BY R1.DISTRICT_ID\nORDER BY COUNT(*) DESC NULLS LAST\nLIMIT 9",
+      "degraded": null,
+      "wall_clock_s": 28.99,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "ontology_id": "vkg-bird_financial",
+      "question": "For the client whose loan was approved first in 1993/7/5, what is the increase rate of his/her account balance from 1993/3/22 to 1998/12/27?",
+      "agent_sql": "SELECT ((xsd:decimal(?balEnd) - xsd:decimal(?balStart)) / xsd:decimal(?balStart) AS ?increaseRate)\nWHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/date> \"1993-07-05\"^^xsd:date ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/account_id> ?accId .\n\n  ?transStart a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/account_id> ?accId ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/date> \"1993-03-22\"^^xsd:date ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/balance> ?balStart .\n\n  ?transEnd a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/account_id> ?accId ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/date> \"1998-12-27\"^^xsd:date ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/balance> ?balEnd .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 135.49,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Among the accounts who have approved loan date in 1997, list out the accounts that have the lowest approved amount and choose weekly issuance statement.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 193.55,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Between 1/1/1995 and 12/31/1997, how many loans in the amount of at least 250,000 per account that chose monthly statement issuance were approved?",
+      "agent_sql": "SELECT (COUNT(?loan) AS ?n) WHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/amount> ?amount ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/date> ?date .\n  FILTER(xsd:decimal(?amount) >= 250000)\n  FILTER(?date >= \"1995-01-01\"^^xsd:date && ?date <= \"1997-12-31\"^^xsd:date)\n}",
+      "executed_sql": "SELECT 1 AS uselessVariable\nFROM (SELECT 1 ) tdummy\n",
+      "degraded": null,
+      "wall_clock_s": 27.6,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "ontology_id": "vkg-bird_financial",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "agent_sql": "SELECT (COUNT(DISTINCT ?acc) AS ?n) WHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/account_id> ?acc ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/status> ?status .\n  FILTER(?status IN (\"C\", \"D\"))\n}",
+      "executed_sql": "SELECT COUNT(DISTINCT(R1.ACCOUNT_ID)) AS \"v2\"\nFROM BIRD_FINANCIAL.LOAN R1\nWHERE (((R1.STATUS = 'C') OR (R1.STATUS = 'D')) AND R1.STATUS IS NOT NULL AND R1.ACCOUNT_ID IS NOT NULL)\n",
+      "degraded": null,
+      "wall_clock_s": 27.69,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "ontology_id": "vkg-bird_financial",
+      "question": "For the female client who was born in 1976/1/29, which district did she opened her account?",
+      "agent_sql": "SELECT ?districtName WHERE {\n  ?client a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n          <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Client/birth_date> \"1976-01-29\" .\n  ?disp a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Disp> ;\n        <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Disp/hasClient> ?client ;\n        <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Disp/hasAccount> ?account .\n  ?account a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account> ;\n           <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/hasDistrict> ?district .\n  ?district <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District/a2> ?districtName .\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 165.46,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "ontology_id": "vkg-bird_financial",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "agent_sql": "SELECT (COUNT(*) AS ?n) WHERE {\n  {\n    SELECT ?district_id WHERE {\n      ?d a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District> ;\n         <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District/district_id> ?district_id ;\n         <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District/a15> ?a15 .\n    }\n    ORDER BY DESC(xsd:integer(?a15))\n    LIMIT 1 OFFSET 1\n  }\n  ?c a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Client> ;\n     <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Client/district_id> ?district_id ;\n     <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Client/gender> ?g .\n  FILTER(?g = \"M\")\n}",
+      "executed_sql": "SELECT 1 AS uselessVariable\nFROM (SELECT 1 ) tdummy\n",
+      "degraded": null,
+      "wall_clock_s": 29.69,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "ontology_id": "vkg-bird_financial",
+      "question": "For the branch which located in the south Bohemia with biggest number of inhabitants, what is the percentage of the male clients?",
+      "agent_sql": "SELECT (xsd:decimal(?maleCount) * 100.0 / xsd:decimal(?totalCount) AS ?percentage)\nWHERE {\n  {\n    SELECT (COUNT(?c1) AS ?totalCount) WHERE {\n      ?c1 a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> .\n    }\n  }\n  {\n    SELECT (COUNT(?c2) AS ?maleCount) WHERE {\n      ?c2 a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"M\" .\n    }\n  }\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 187.88,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Among the accounts who have loan validity more than 12 months, list out the accounts that have the highest approved amount and have account opening date in 1993.",
+      "agent_sql": "SELECT ?account_id ?amount WHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan/account_id> ?account_id ;\n        <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan/duration> ?duration ;\n        <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan/amount> ?amount .\n  ?account a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account> ;\n           <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/account_id> ?account_id ;\n           <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/date> ?date .\n  FILTER(xsd:integer(?duration) > 12)\n  FILTER(STRSTARTS(?date, \"1993\"))\n  {\n    SELECT (MAX(?amount2) AS ?maxAmount) WHERE {\n      ?loan2 a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan> ;\n             <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan/account_id> ?account_id2 ;\n             <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan/duration> ?duration2 ;\n             <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Loan/amount> ?amount2 .\n      ?account2 a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account> ;\n                <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/account_id> ?account_id2 ;\n                <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/date> ?date2 .\n      FILTER(xsd:integer(?duration2) > 12)\n      FILTER(STRSTARTS(?date2, \"1993\"))\n    }\n  }\n  FILTER(xsd:integer(?amount) = ?maxAmount)\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 231.37,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Who are the account holder identification numbers whose who have transactions on the credit card with the amount is less than the average, in 1998?",
+      "agent_sql": "SELECT DISTINCT ?client_id WHERE {\n  ?t a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/operation> \"credit card withdrawal\" ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/date> ?date ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/amount> ?amt ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/account_id> ?accId .\n  FILTER(SUBSTR(STR(?date),1,4) = \"1998\")\n\n  ?disp a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/account_id> ?accId ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/type> \"OWNER\" ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/client_id> ?client_id .\n\n  {\n    SELECT (AVG(?amt2) AS ?avgAmt) WHERE {\n      ?t2 a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/operation> \"credit card withdrawal\" ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/date> ?date2 ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/amount> ?amt2 .\n      FILTER(SUBSTR(STR(?date2),1,4) = \"1998\")\n    }\n  }\n\n  FILTER(xsd:decimal(?amt) < ?avgAmt)\n}",
+      "executed_sql": "SELECT DISTINCT R2.CLIENT_ID AS \"CLIENT_ID1m15\"\nFROM BIRD_FINANCIAL.TRANS R1, BIRD_FINANCIAL.DISP R2, (SELECT AVG(R3.AMOUNT) AS \"avg1\"\nFROM BIRD_FINANCIAL.TRANS R3\nWHERE ((SUBSTRING(R3.DATE,1,4) = '1998' AND R3.DATE IS NOT NULL AND R3.AMOUNT IS NOT NULL AND R3.ACCOUNT_ID IS NOT NULL) AND 'credit card withdrawal' = R3.OPERATION)\n) R5\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.AMOUNT AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.AMOUNT AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) < COALESCE(R5.\"avg1\",0)) AND SUBSTRING(R1.DATE,1,4) = '1998' AND R1.DATE IS NOT NULL AND R1.AMOUNT IS NOT NULL AND R2.CLIENT_ID IS NOT NULL AND R1.ACCOUNT_ID = R2.ACCOUNT_ID AND 'credit card withdrawal' = R1.OPERATION AND 'OWNER' = R2.TYPE)\n",
+      "degraded": null,
+      "wall_clock_s": 36.45,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "ontology_id": "vkg-bird_financial",
+      "question": "How many accounts have running contracts in Branch location 1?",
+      "agent_sql": "SELECT (COUNT(DISTINCT ?account) AS ?n)\nWHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/account_id> ?account ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/status> ?status .\n  FILTER(?status IN (\"C\", \"D\"))\n}",
+      "executed_sql": "SELECT COUNT(DISTINCT(R1.ACCOUNT_ID)) AS \"v2\"\nFROM BIRD_FINANCIAL.LOAN R1\nWHERE (((R1.STATUS = 'C') OR (R1.STATUS = 'D')) AND R1.STATUS IS NOT NULL AND R1.ACCOUNT_ID IS NOT NULL)\n",
+      "degraded": null,
+      "wall_clock_s": 42.16,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "ontology_id": "vkg-bird_financial",
+      "question": "In the branch where the second-highest number of crimes were committed in 1995 occurred, how many male clients are there?",
+      "agent_sql": "SELECT (COUNT(*) AS ?n) WHERE {\n  ?c a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> ?g .\n  FILTER(?g = \"M\")\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v0\"\nFROM BIRD_FINANCIAL.CLIENT R1\nWHERE ((R1.GENDER = 'M') AND R1.GENDER IS NOT NULL AND R1.CLIENT_ID IS NOT NULL)\n",
+      "degraded": null,
+      "wall_clock_s": 44.41,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Which are the top ten withdrawals (non-credit card) by district names for the month of January 1996?",
+      "agent_sql": "SELECT ?district_id ?amount WHERE {\n  ?t a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/type> ?type ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/operation> ?operation ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/date> ?date ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/amount> ?amount ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/hasAccount> ?acc .\n  FILTER(?type = \"VYDAJ\")\n  FILTER(!BOUND(?operation) || !CONTAINS(LCASE(?operation), \"credit card\"))\n  BIND(SUBSTR(STR(?date),1,7) AS ?month)\n  FILTER(?month = \"1996-01\")\n  ?d a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/hasAccount> ?acc ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/type> ?dtype ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/hasClient> ?cl .\n  FILTER(?dtype = \"OWNER\")\n  ?cl <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/district_id> ?district_id .\n}\nORDER BY DESC(xsd:decimal(?amount))\nLIMIT 10",
+      "executed_sql": "SELECT R1.ACCOUNT_ID AS \"ACCOUNT_ID1m37\", R1.AMOUNT AS \"AMOUNT1m40\", R2.CLIENT_ID AS \"CLIENT_ID1m18\", R1.DATE AS \"DATE1m43\", R3.DISTRICT_ID AS \"DISTRICT_ID1m10\", R1.OPERATION AS \"OPERATION1m46\", R2.TYPE AS \"TYPE1m19\", R1.TYPE AS \"TYPE1m48\"\nFROM BIRD_FINANCIAL.TRANS R1, BIRD_FINANCIAL.DISP R2, BIRD_FINANCIAL.CLIENT R3\nWHERE ((R2.TYPE = 'OWNER') AND SUBSTRING(R1.DATE,1,7) = '1996-01' AND (NOT (POSITION('credit card' IN LOWER(R1.OPERATION)) > 0)) AND (R1.TYPE = 'VYDAJ') AND R1.TYPE IS NOT NULL AND R1.OPERATION IS NOT NULL AND R1.DATE IS NOT NULL AND R1.AMOUNT IS NOT NULL AND R2.TYPE IS NOT NULL AND R3.DISTRICT_ID IS NOT NULL AND R1.ACCOUNT_ID = R2.ACCOUNT_ID AND R2.CLIENT_ID = R3.CLIENT_ID)\nORDER BY CAST(CASE WHEN REGEXP_LIKE(CAST(R1.AMOUNT AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.AMOUNT AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) DESC NULLS LAST\nLIMIT 10",
+      "degraded": null,
+      "wall_clock_s": 51.92,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "ontology_id": "vkg-bird_financial",
+      "question": "What is the average number of crimes committed in 1995 in regions where the number exceeds 4000 and the region has accounts that are opened starting from the year 1997?",
+      "agent_sql": "SELECT (AVG(?a15) AS ?avgCrimes1995) WHERE {\n  {\n    SELECT DISTINCT ?d ?a15 WHERE {\n      ?d a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District> ;\n         <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District/a15> ?a15 ;\n         <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/District/district_id> ?did .\n      FILTER(xsd:decimal(?a15) > 4000)\n      ?a a <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account> ;\n         <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/district_id> ?did ;\n         <http://bird-bird_financial-ontology-20260805-002537/ontology/vkg-bird_financial/Account/date> ?adate .\n      FILTER(SUBSTR(STR(?adate), 1, 4) >= \"1997\")\n    }\n  }\n}",
+      "executed_sql": "SELECT 1 AS uselessVariable\nFROM (SELECT 1 ) tdummy\n",
+      "degraded": null,
+      "wall_clock_s": 33.26,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "ontology_id": "vkg-bird_financial",
+      "question": "List all the withdrawals in cash transactions that the client with the id 3356 makes.",
+      "agent_sql": "SELECT ?trans_id ?date ?amount ?balance ?operation ?k_symbol WHERE {\n  ?disp a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/client_id> \"3356\"^^xsd:integer ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/account_id> ?account_id .\n  ?trans a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/account_id> ?account_id ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/trans_id> ?trans_id ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/date> ?date ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/amount> ?amount ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/balance> ?balance ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/operation> ?operation ;\n         <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/k_symbol> ?k_symbol .\n  FILTER(?operation = \"VYBER\")\n}",
+      "executed_sql": "SELECT R1.ACCOUNT_ID AS \"ACCOUNT_ID1m13\", R2.AMOUNT AS \"AMOUNT1m40\", R2.BALANCE AS \"BALANCE1m41\", R2.DATE AS \"DATE1m43\", R2.K_SYMBOL AS \"K_SYMBOL1m45\", R2.OPERATION AS \"OPERATION1m46\", R2.TRANS_ID AS \"TRANS_ID1m47\"\nFROM BIRD_FINANCIAL.DISP R1, BIRD_FINANCIAL.TRANS R2\nWHERE ((R2.OPERATION = 'VYBER') AND R2.TRANS_ID IS NOT NULL AND R2.DATE IS NOT NULL AND R2.AMOUNT IS NOT NULL AND R2.BALANCE IS NOT NULL AND R2.OPERATION IS NOT NULL AND R2.K_SYMBOL IS NOT NULL AND R1.ACCOUNT_ID = R2.ACCOUNT_ID AND 3356 = R1.CLIENT_ID)\n",
+      "degraded": null,
+      "wall_clock_s": 32.25,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "ontology_id": "vkg-bird_financial",
+      "question": "For loans contracts which are still running where client are in debt, list the district of the and the state the percentage unemployment rate increment from year 1995 to 1996.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 162.74,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "ontology_id": "vkg-bird_financial",
+      "question": "How often does account number 3 request an account statement to be released? What was the aim of debiting 3539 in total?",
+      "agent_sql": "SELECT ?kind (COUNT(?t) AS ?cnt) (GROUP_CONCAT(DISTINCT ?k; separator=\",\") AS ?purpose)\nWHERE {\n  {\n    BIND(\"statement_requests\" AS ?kind)\n    ?t a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n       <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/account_id> \"3\"^^xsd:integer ;\n       <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/type> \"VYDAJ\" ;\n       <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/k_symbol> ?k .\n    FILTER(?k = \"SLUZBY\")\n  }\n  UNION\n  {\n    BIND(\"debit_3539\" AS ?kind)\n    ?t a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans> ;\n       <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/account_id> \"3\"^^xsd:integer ;\n       <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/amount> \"3539\"^^xsd:integer ;\n       <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Trans/k_symbol> ?k .\n  }\n}\nGROUP BY ?kind",
+      "executed_sql": "SELECT R9.\"str\" AS \"str\", R9.\"v0\" AS \"v0\", R9.\"v3\" AS \"v3\"\nFROM ((SELECT R3.\"str\" AS \"str\", 'statement_requests' AS \"v0\", R3.\"v3\" AS \"v3\"\nFROM (SELECT ARBITRARY(1) AS \"aggv\", ARRAY_JOIN(ARRAY_DISTINCT( ARRAY_AGG(R1.K_SYMBOL)) , ',') AS \"str\", COUNT(*) AS \"v3\"\nFROM BIRD_FINANCIAL.TRANS R1\nWHERE (((R1.K_SYMBOL = 'SLUZBY') AND R1.K_SYMBOL IS NOT NULL) AND (3 = R1.ACCOUNT_ID AND 'VYDAJ' = R1.TYPE))\n) R3\nWHERE R3.\"aggv\" IS NOT NULL\n)UNION ALL \n(SELECT R7.\"str\" AS \"str\", 'debit_3539' AS \"v0\", R7.\"v3\" AS \"v3\"\nFROM (SELECT ARBITRARY(1) AS \"aggv2\", ARRAY_JOIN(ARRAY_DISTINCT( ARRAY_AGG(R5.K_SYMBOL)) , ',') AS \"str\", COUNT(*) AS \"v3\"\nFROM BIRD_FINANCIAL.TRANS R5\nWHERE (R5.K_SYMBOL IS NOT NULL AND (3 = R5.ACCOUNT_ID AND 3539 = R5.AMOUNT))\n) R7\nWHERE R7.\"aggv2\" IS NOT NULL\n)) R9\n",
+      "degraded": null,
+      "wall_clock_s": 44.95,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-30",
+      "ontology_id": "vkg-bird_financial",
+      "question": "What is the average amount of loan which are still on running contract with statement issuance after each transaction?",
+      "agent_sql": "SELECT (AVG(?amount) AS ?avgAmount)\nWHERE {\n  ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/amount> ?amount ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/status> ?status .\n  FILTER(?status IN (\"C\", \"D\"))\n}",
+      "executed_sql": "SELECT AVG(R1.AMOUNT) AS \"avg1\"\nFROM BIRD_FINANCIAL.LOAN R1\nWHERE (((R1.STATUS = 'C') OR (R1.STATUS = 'D')) AND R1.AMOUNT IS NOT NULL AND R1.STATUS IS NOT NULL AND R1.ACCOUNT_ID IS NOT NULL)\n",
+      "degraded": null,
+      "wall_clock_s": 24.75,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Name the account numbers of female clients who are oldest and have lowest average salary?",
+      "agent_sql": "SELECT DISTINCT ?account_id WHERE {\n  ?c a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?bd ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/client_id> ?cid .\n  {\n    SELECT (MIN(?bd2) AS ?minBd) WHERE {\n      ?c2 a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"F\" ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?bd2 .\n    }\n  }\n  FILTER(?bd = ?minBd)\n  ?d a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/client_id> ?cid ;\n     <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/account_id> ?account_id .\n}",
+      "executed_sql": "SELECT DISTINCT R2.ACCOUNT_ID AS \"ACCOUNT_ID1m13\"\nFROM BIRD_FINANCIAL.CLIENT R1, BIRD_FINANCIAL.DISP R2, (SELECT MIN(R3.BIRTH_DATE) AS \"min1\"\nFROM BIRD_FINANCIAL.CLIENT R3\nWHERE ((R3.BIRTH_DATE IS NOT NULL AND R3.CLIENT_ID IS NOT NULL) AND 'F' = R3.GENDER)\n) R5\nWHERE ((R1.BIRTH_DATE = R5.\"min1\") AND R1.BIRTH_DATE IS NOT NULL AND R2.ACCOUNT_ID IS NOT NULL AND R1.CLIENT_ID = R2.CLIENT_ID AND 'F' = R1.GENDER)\n",
+      "degraded": null,
+      "wall_clock_s": 35.73,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-31",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Provide the IDs and age of the client with high level credit card, which is eligible for loans.",
+      "agent_sql": "SELECT ?client_id ?age WHERE {\n  ?card a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Card> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Card/type> \"gold\" ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Card/hasDisp> ?disp .\n  ?disp a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/type> \"OWNER\" ;\n        <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/hasClient> ?client .\n  ?client a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/client_id> ?client_id ;\n          <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/birth_date> ?birthDate .\n  BIND((YEAR(NOW()) - YEAR(?birthDate)) AS ?age)\n}",
+      "executed_sql": "SELECT R3.BIRTH_DATE AS \"BIRTH_DATE1m8\", R1.CARD_ID AS \"CARD_ID1m1\", R2.CLIENT_ID AS \"CLIENT_ID1m18\", R1.DISP_ID AS \"DISP_ID1m4\"\nFROM BIRD_FINANCIAL.CARD R1, BIRD_FINANCIAL.DISP R2, BIRD_FINANCIAL.CLIENT R3\nWHERE (R3.BIRTH_DATE IS NOT NULL AND R1.CARD_ID IS NOT NULL AND R1.DISP_ID = R2.ACCOUNT_ID AND R2.CLIENT_ID = R3.CLIENT_ID AND 'gold' = R1.TYPE AND 'OWNER' = R2.TYPE)\n",
+      "degraded": null,
+      "wall_clock_s": 32.68,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "ontology_id": "vkg-bird_financial",
+      "question": "What was the growth rate of the total amount of loans across all accounts for a male client between 1996 and 1997?",
+      "agent_sql": "SELECT (((?sum1997 - ?sum1996) / ?sum1996) * 100 AS ?growthRatePercent)\nWHERE {\n  {\n    SELECT\n      (SUM(IF(?year = \"1996\", xsd:decimal(?amt), 0)) AS ?sum1996)\n      (SUM(IF(?year = \"1997\", xsd:decimal(?amt), 0)) AS ?sum1997)\n    WHERE {\n      ?loan a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan> ;\n            <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/amount> ?amt ;\n            <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/date> ?date ;\n            <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Loan/hasAccount> ?acc .\n      ?disp a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp> ;\n            <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/hasAccount> ?acc ;\n            <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Disp/hasClient> ?client .\n      ?client a <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client> ;\n              <http://bird-bird_financial-ontology-20260804-131042/ontology/vkg-bird_financial/Client/gender> \"M\" .\n      BIND(SUBSTR(STR(?date), 1, 4) AS ?year)\n      FILTER(?year IN (\"1996\", \"1997\"))\n    }\n  }\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 109.74,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "ontology_id": "vkg-bird_financial",
+      "question": "Please list the account types that are not eligible for loans, and the average income of residents in the district where the account is located exceeds $8000 but is no more than $9000.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 164.98,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "ontology_id": "vkg-bird_financial",
+      "question": "What percentage of clients who opened their accounts in the district with an average salary of over 10000 are women?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 159.21,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "ontology_id": "vkg-bird_financial",
+      "question": "What percentage of male clients request for weekly statements to be issued?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 190.11,
+      "error": null
+    }
+  ],
+  "n_rows": 32
+}

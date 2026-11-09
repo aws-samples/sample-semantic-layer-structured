@@ -195,11 +195,24 @@ class NeptuneGatewayClient:
                     payload.get("catalog"), payload.get("error"))
         return payload
 
-    def run_select(self, *, sparql: str) -> Dict[str, Any]:
-        """Run a SPARQL SELECT via the gateway; return ``{columns, rows}`` (Phase 5).
+    def select_json(self, *, sparql: str) -> Dict[str, Any]:
+        """Run a SPARQL SELECT and return the RAW SPARQL-results JSON.
 
-        Flattens the SPARQL-results JSON bindings to row lists in ``head.vars``
-        order (missing/optional vars → empty strings).
+        ``run_select`` below flattens each binding to its ``value`` string, which
+        discards the term ``type`` and ``datatype``. ``rule_graph.read_rules``
+        rebuilds an RDF graph from the bindings, so it needs those: without the
+        type it cannot tell an IRI from a literal, and every rule field would
+        come back as a string. Hence a second, unflattened accessor rather than a
+        parameter on ``run_select`` — the two callers want different things.
+
+        Args:
+            sparql: The SELECT query to run.
+
+        Returns:
+            The parsed SPARQL-results JSON (``{head: {vars}, results: {bindings}}``).
+
+        Raises:
+            RuntimeError: If the gateway returns non-JSON or an error envelope.
         """
         raw = self._call("execute_sparql_query",
                          {"sparql_query": sparql, "query_type": "SELECT"})
@@ -209,6 +222,15 @@ class NeptuneGatewayClient:
             raise RuntimeError(f"SELECT returned non-JSON: {exc}") from exc
         if "error" in payload:
             raise RuntimeError(f"SELECT failed: {payload['error']}")
+        return payload
+
+    def run_select(self, *, sparql: str) -> Dict[str, Any]:
+        """Run a SPARQL SELECT via the gateway; return ``{columns, rows}`` (Phase 5).
+
+        Flattens the SPARQL-results JSON bindings to row lists in ``head.vars``
+        order (missing/optional vars → empty strings).
+        """
+        payload = self.select_json(sparql=sparql)
         columns: List[str] = list(payload.get("head", {}).get("vars", []) or [])
         rows: List[list] = []
         for binding in payload.get("results", {}).get("bindings", []) or []:

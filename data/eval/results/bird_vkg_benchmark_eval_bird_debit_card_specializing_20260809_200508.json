@@ -1,0 +1,2227 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "agent_id": "semantic_layer_dev_ontology_query-1zqUpC6ywe",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology_query-1zqUpC6ywe",
+  "benchmark_eval_lambda_arns": {
+    "ExecutionAccuracy": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerExec-DuyG09fJOxhs",
+    "RewardVES": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerRewa-vd5mvCQaJG0f",
+    "SoftF1": "arn:aws:lambda:us-east-1:********4087:function:semantic-layer-dev-agentc-BenchmarkEvalHandlerSoft-sa9YvZSVyLzx"
+  },
+  "batch_evaluation_id": "bird_vkg_bench_bird_debit_card_speciali_a29be8fe-86ff962474",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/bird_vkg_bench_bird_debit_card_speciali_a29be8fe-86ff962474",
+  "status": "COMPLETED_WITH_ERRORS",
+  "bird_db_scope": "bird_debit_card_specializing",
+  "db_ids": [
+    "bird_debit_card_specializing"
+  ],
+  "max_concurrent_scenarios": 8,
+  "evaluator_suffix": "bird_vkg_v1",
+  "evaluator_ids": [
+    "GoalSuccess_bird_vkg_v1-20o5fP78jb",
+    "FinalAnswerFaithfulness_bird_vkg_v1-e7fJnt5vEj",
+    "SqlGrounded_bird_vkg_v1-9Wp51CGhfr",
+    "bird_ExecutionAccuracy_bird_vkg_v1-b5oCqp41Uw",
+    "bird_RewardVES_bird_vkg_v1-AQzlzN7GGn",
+    "bird_SoftF1_bird_vkg_v1-sTjo5BHQEZ"
+  ],
+  "llm_judges": {
+    "GoalSuccess": "GoalSuccess_bird_vkg_v1-20o5fP78jb",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_bird_vkg_v1-e7fJnt5vEj",
+    "SqlGrounded": "SqlGrounded_bird_vkg_v1-9Wp51CGhfr"
+  },
+  "exec_metric_evaluators": {
+    "ExecutionAccuracy": "bird_ExecutionAccuracy_bird_vkg_v1-b5oCqp41Uw",
+    "RewardVES": "bird_RewardVES_bird_vkg_v1-AQzlzN7GGn",
+    "SoftF1": "bird_SoftF1_bird_vkg_v1-sTjo5BHQEZ"
+  },
+  "llm_judge_aggregates": {
+    "GoalSuccess": 0.63,
+    "FinalAnswerFaithfulness": 0.55,
+    "SqlGrounded": 1.0
+  },
+  "exec_metric_aggregates": {
+    "ExecutionAccuracy": null,
+    "RewardVES": null,
+    "SoftF1": null
+  },
+  "exec_metrics_by_difficulty": {
+    "simple": {
+      "ExecutionAccuracy": 0.0,
+      "ExecutionAccuracy_n": 13,
+      "SoftF1": 0.0028,
+      "SoftF1_n": 13,
+      "RewardVES": 0.0,
+      "RewardVES_n": 13
+    },
+    "challenging": {
+      "SoftF1": 0.0,
+      "SoftF1_n": 3,
+      "RewardVES": 0.0,
+      "RewardVES_n": 3,
+      "ExecutionAccuracy": 0.0,
+      "ExecutionAccuracy_n": 3
+    },
+    "moderate": {
+      "SoftF1": 0.0184,
+      "SoftF1_n": 11,
+      "RewardVES": 0.0,
+      "RewardVES_n": 11,
+      "ExecutionAccuracy": 0.0,
+      "ExecutionAccuracy_n": 11
+    }
+  },
+  "exec_metrics_by_db": {
+    "bird_debit_card_specializing": {
+      "ExecutionAccuracy": 0.0,
+      "ExecutionAccuracy_n": 27,
+      "SoftF1": 0.0089,
+      "SoftF1_n": 27,
+      "RewardVES": 0.0,
+      "RewardVES_n": 27
+    }
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "SoftF1",
+      "AvgScore": null,
+      "Evaluated": 27,
+      "Failed": 3
+    },
+    {
+      "Evaluator": "FinalAnswerFaithfulness",
+      "AvgScore": "0.550",
+      "Evaluated": 29,
+      "Failed": 1
+    },
+    {
+      "Evaluator": "SqlGrounded",
+      "AvgScore": "1.000",
+      "Evaluated": 30,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "GoalSuccess",
+      "AvgScore": "0.630",
+      "Evaluated": 30,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "ExecutionAccuracy",
+      "AvgScore": null,
+      "Evaluated": 27,
+      "Failed": 3
+    },
+    {
+      "Evaluator": "RewardVES",
+      "AvgScore": null,
+      "Evaluated": 27,
+      "Failed": 3
+    }
+  ],
+  "per_row_events": [
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes CZE discount stations minus SVK discount stations = 3 (5 CZE - 2 SVK). The agent's final answer states CZE has 3 more discount stations than Slovakia, with 5 in CZE and 2 in SVK, matching the expected result exactly."
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result row [3, 5, 2] corresponds to difference=3, CZE count=5, SVK count=2, matching the gold SQL logic (CZE count - SVK count = 5-2=3). The agent's final answer states CZE has 3 more Discount gas stations than Slovakia (5 vs 2), which is factually consistent with the expected result. The answer is substantive and correctly reported, satisfying the assertion."
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 985ms, gold_rows=1 in 1130ms) | pred_row0=['3', '5', '2'] gold_row0=['176']"
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context includes the retrieved ontology slice covering GasStation (gasstationid, country, segment) and related classes, but no executed SQL (no SPARQL-to-SQL translation, reasoning.sqlQuery, or explicit Athena query text) is shown anywhere in the conversation or tool_execution_history. Only the SliceSufficiency tool call and the final result rows/columns (v0, v4, v7) are visible, with no SQL string to inspect for schema grounding. Per the instructions, when no executed SQL is present in the context, the grounding invariant is considered upheld and the run is treated as degraded but passing."
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 2638ms, gold_rows=1 in 1122ms) | pred_row0=['3', '5', '2'] gold_row0=['176']"
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 2035ms, gold_rows=1 in 1478ms) | pred_row0=['3', '5', '2'] gold_row0=['176']"
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL, SPARQL query, or Phase 5 SQL output is present anywhere in the given context. Only the retrieved ontology context, the SliceSufficiency tool call, and the final agent response are shown. Since there is no visible executed SQL to check against the ontology, this counts as a degraded run per the instructions, and the grounding invariant is considered upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the percentage of customers with consumption > 528.3 for Date = '201202' (February 2012), expected to yield approximately 68.79% (matching the result row values 17112, 11771, 68.********973819% found in the executed query). The agent's final answer states 'about 68.79% of customers (11,771 out of 17,112) had consumption greater than 528.3', which matches the expected numeric result exactly. The answer is consistent with the gold query's intent and produces the same percentage figure."
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold answer computes the percentage of customers with consumption > 528.3 in Feb 2012 (date='201202'), expected to be roughly 68.79% based on 11771/17112 matching the result row shown. The agent's final answer states 68.79% (11,771 out of 17,112), which matches the computed value in the result rows and is consistent with the expected gold calculation. The agent's response is a substantive, factually consistent answer, not a clarification or fabrication, and directly addresses the question."
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1868ms, gold_rows=1 in 1071ms) | pred_row0=['17112', '11771', '68.********973819'] gold_row0=['66.62301']"
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1978ms, gold_rows=1 in 1158ms) | pred_row0=['17112', '11771', '68.********973819'] gold_row0=['66.62301']"
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 2724ms, gold_rows=1 in 1018ms) | pred_row0=['17112', '11771', '68.********973819'] gold_row0=['66.62301']"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL, Phase 5 output, or reasoning.sqlQuery is present in the context; only the ontology schema context and the tool_execution_history containing a SliceSufficiency check are shown. Since there is no executed SQL surfaced in the context, the agent's grounding invariant is considered upheld per the instructions (no SQL executed / degraded scenario), so this passes by default."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1369ms, gold_rows=1 in 1342ms) | pred_row0=['445279.69'] gold_row0=['5.********3999984E7']"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes, for each month in 2012, the total consumption summed across customers, then returns the maximum such monthly total. The agent's executed query (aliased max1) returned 445279.69, and the agent's final answer states the highest monthly consumption in 2012 was 445,279.69, which matches the expected result in value and interpretation. No contradiction or missing information is present in the final answer."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1964ms, gold_rows=1 in 1125ms) | pred_row0=['445279.69'] gold_row0=['5.********3999984E7']"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1158ms, gold_rows=1 in 2788ms) | pred_row0=['445279.69'] gold_row0=['5.********3999984E7']"
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record (the assistant's response) states the highest monthly consumption in 2012 was 445,279.69, based on the executed query's max1=445279.69. This value is consistent with the gold SQL, which sums consumption per month in 2012 and returns the maximum monthly total (a value expected to be much larger than a single yearmonth.consumption row, matching the 445k figure rather than a single customer's monthly value like ~500). The agent's answer directly reports this single numeric result without contradiction, omission, or unnecessary clarification-seeking, and the number aligns with the expected gold result. No clarification was needed here since the question is a straightforward aggregate query, and the agent provided a substantive, factually consistent answer."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty\u2014there is no user prompt, no agent response, and no tool execution history. There is no final-answer record span, no SPARQL/SQL query, and no natural-language assistant message present at all. Since the conversation never reaches any substantive answer, it cannot match the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty - there is no user prompt, no agent response, no tool execution history, and no ontology context or executed SQL present. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL against Athena. Per the instructions, if there is no executed SQL in the context, the grounding invariant is considered upheld (degraded run), warranting a pass score with note 'no SQL executed (degraded)'."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty \u2014 there is no user prompt, agent response, or tool execution history at all. There is no final-answer record present in the conversation, and no substantive answer, clarification, or any content to evaluate against the expected gold SQL result. Since no answer was ever produced, the assertion regarding the conversation's final answer matching the expected result cannot be satisfied."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold answer expects a list of product descriptions for transactions in September 2013 (date='201309'), derived via joining transactions_1k, yearmonth, and products. The executed query returned zero rows, and the agent's final answer states that no product descriptions were found, without providing any actual descriptions. This contradicts the expected result, which presumably contains actual product description values (a non-empty list). The agent's answer fails to deliver the substantive result and instead reports an empty/failed outcome, which does not match the expected answer's content."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=0 in 1874ms, gold_rows=976 in 2723ms) | pred_row0=<no rows> gold_row0=['Nafta']"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The provided context includes the retrieved ontology slice and shows that a query ran (empty result with column 'DESCRIPTION1m10'), but no executed SQL text, SPARQL, or Phase 5 SQL translation is surfaced anywhere in the conversation or tool_execution_history (only a SliceSufficiency tool call is logged, not the actual query). Since there is no visible executed SQL to check against the ontology mappings, per the grounding rules this counts as a degraded/non-visible SQL case rather than a hallucinated schema reference. Therefore the grounding invariant is considered upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=0 in 1619ms, gold_rows=976 in 2219ms) | pred_row0=<no rows> gold_row0=['Nafta']"
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL joins transactions_1k, yearmonth, and products on customerid, filtering yearmonth.date='201309', which should yield a set of product descriptions consumed in September 2013. The agent's executed query returned zero rows, and the final-answer record (the assistant's response) merely reports 'no rows found' without asking for clarification or providing any product descriptions. This directly contradicts the expected non-empty result implied by the gold query, indicating the underlying SQL likely mis-joined or mis-filtered the data (e.g., date format mismatch) leading to an empty, incorrect result. Since the assertion requires the final answer to match the expected substantive result (a list of product descriptions), and the agent instead delivered a degraded 'no data' explanation without matching the gold outcome, this violates the assertion. No clarification was warranted here, so the empty-result explanation is a failure to answer correctly rather than a valid clarification."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=0 in 1562ms, gold_rows=976 in 2748ms) | pred_row0=<no rows> gold_row0=['Nafta']"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result was 2119.********99997, matching the gold SQL's expected sum for customer 6 between 201308 and 201311. The agent's final answer states approximately 2119.78, which matches the numeric result and correctly answers the question."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes SUM(Consumption) for CustomerID=6 between 201308 and 201311, expected result 2119.78. The query already executed returned sum1=2119.********99997, matching the expected value. The agent's final-answer response reports 'approximately 2119.78', which matches the gold answer factually. No clarification was needed, and the agent provided a substantive, correct answer."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the retrieved ontology context and a tool call confirming SliceSufficiency are shown, followed directly by result rows and the agent's answer. Since there is no visible SQL query (no Phase 5 output, sqlQuery field, or executed_sql shown), this appears to be a degraded run where the SQL is not surfaced in the context, or the agent's execution details are omitted. Per instructions, if there is no executed SQL in the context, the grounding invariant is upheld by default (score 1, degraded). The result values (yearmonth.consumption for customerid=6 between 201308-201311) plausibly map to Yearmonth.consumption and Yearmonth.customerid and Yearmonth.date in the ontology, which are all valid mapped properties, but since no explicit SQL is shown, I default to the degraded-run rule."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1256ms, gold_rows=1 in 1067ms) | pred_row0=['2119.78'] gold_row0=['1224.96']"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1290ms, gold_rows=1 in 1112ms) | pred_row0=['2119.********99997'] gold_row0=['1224.96']"
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 1404ms, gold_rows=1 in 2893ms) | pred_row0=['2119.********99997'] gold_row0=['1224.96']"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "There is no executed SQL query shown in the context\u2014only a result column name 'COUNTRY1m7' and empty rows, with no visible SQL text or Phase 5 SQL output. Since no executed SQL is present in the context, the agent's grounding invariant cannot be violated; this aligns with the degraded-run condition where no SQL is surfaced, so it should be treated as upheld."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL joins transactions_1k, gasstations, and yearmonth on customerid with yearmonth.Date = '201306' to find countries of gas stations with transactions in June 2013, expecting non-empty results (Czech Republic, and possibly others). The agent's query returned 0 rows and the final answer states no gas station countries were found, which contradicts the expected non-empty result set. The agent's query likely used an incorrect join (e.g., filtering transaction date directly instead of joining via yearmonth), leading to an empty and incorrect result. This does not match the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record's output states that the query returned no rows and that no gas station countries were found for June 2013 transactions, explicitly noting this might be due to filter/join issues rather than actual data absence. The gold SQL joins transactions_1k with gasstations and yearmonth (filtering yearmonth.Date='201306') and would return actual country values (e.g., CZE, SVK) rather than an empty result. Since the agent's final answer reports an empty/null result while the expected answer is a non-empty list of countries, the agent's answer contradicts the gold result. The agent did not attempt to correct the query (e.g., re-check the join logic against yearmonth) and instead reported a degraded/empty answer as final. This violates the assertion that the final answer must match the expected gold result."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=0 in 1951ms, gold_rows=2 in 2667ms) | pred_row0=<no rows> gold_row0=['CZE']"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=0 in 2944ms, gold_rows=2 in 2216ms) | pred_row0=<no rows> gold_row0=['CZE']"
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=0 in 2665ms, gold_rows=2 in 2582ms) | pred_row0=<no rows> gold_row0=['CZE']"
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts transactions on 2012-08-26 between 08:00:00-09:00:00 in gas stations located in CZE, matching result row [\"2524\"]. The agent's final-answer response states 'There were 2,524 transactions in CZE between 8:00\u20139:00 on 2012/8/26,' which is factually consistent with the expected result value. The answer is substantive, directly addresses the question, and matches the gold query's output."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The tool result returned a single value of 2524, and the agent's final answer stated there were 2,524 transactions in CZE between 8:00-9:00 on 2012/8/26. This matches the expected gold SQL result count for the same filter conditions (date, time range, country). No contradicting or invented figures are present, and the answer directly addresses the question."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL, SPARQL, or Phase 5 SQL query is shown anywhere in the context. Only the retrieved ontology context and a final result table with column 'v0' and one row value '2524' are present, along with a SliceSufficiency tool call marking the ontology slice as sufficient. Since there is no executed SQL surfaced in the context to check against the ontology mappings, per the instructions this counts as a degraded run where the grounding invariant is upheld by default (no ungrounded SQL was exposed/verifiable). Thus the score should be 1 with note 'no SQL executed (degraded)'."
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 3407ms, gold_rows=1 in 1772ms) | pred_row0=['2524'] gold_row0=['14']"
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 3978ms, gold_rows=1 in 1787ms) | pred_row0=['2524'] gold_row0=['14']"
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 3412ms, gold_rows=1 in 2472ms) | pred_row0=['2524'] gold_row0=['14']"
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is completely empty\u2014there is no user prompt, no agent response, and no tool execution history. There are no final-answer records to evaluate, no conversation_so_far block, and no substantive answer of any kind. Since no answer was ever produced that matches or contradicts the expected gold SQL result, the assertion that the conversation's final answer matches the expected result cannot be satisfied."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The provided session context is empty - there is no user prompt, no agent response, and no tool execution history. There is no final-answer record span, no natural-language assistant message, and no substantive answer of any kind. The conversation never reaches an answer matching the expected gold SQL result, so it fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty: there is no user prompt, no agent response, no tool execution history, and no ontology context or executed SQL present anywhere in the conversation. Since there is no executed SQL in the context, the agent did not run any ungrounded SQL, which satisfies the degraded-run condition described in the instructions ('no SQL executed (degraded)'). Per the stated rule, this means the grounding invariant was upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer span shows the agent still asking a clarification question about the meaning of 'gas', rather than providing the expected year with highest gas consumption paid in CZK. The conversation never reaches a substantive answer matching the expected result, so it fails the criterion."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response is a clarification question asking the user to disambiguate 'gas' among multiple ontology terms (gasstation, gasstationid, hasgasstations). No SQL was executed in this turn - the agent degraded to a clarification request rather than running SQL against an ambiguous or ungrounded schema reference. Since there is no executed SQL present in the context, the grounding invariant is upheld by default per the scoring rules for degraded runs."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record shows the agent asked a clarification question about which 'gas' entity the user meant, offering options like gasstation, gasstationid, hasgasstations. However, the user's question is about 'gas consumption paid in CZK', which in the actual schema refers to the 'gas station' consumption data joined via customers and yearmonth tables - a legitimate, unambiguous query per the gold SQL. The clarification offered is irrelevant/confusing since none of the offered options (gasstation, gasstationid, hasgasstations) relate to the actual query intent, which is about consumption/currency data, not gas station identification. The gold SQL shows this is a well-defined question answerable directly without clarification. The agent never provided a substantive answer matching the expected result (year with highest gas consumption in CZK), instead getting stuck asking about an unrelated interpretation of 'gas'. This violates the requirement to reach a substantive answer consistent with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The executed SQL (inferred from result columns) selected amount, currency, customerid, and price with a filter on price=548.4 and date=2012-08-24. All these map directly to ontology properties: Transaction.amount -> transactions_1k.amount, Transaction.price -> transactions_1k.price, Transaction.customerid -> transactions_1k.customerid, Customer.currency -> customers.currency, and the join between transactions_1k and customers on customerid is explicitly defined in the ontology (Transactions1k/hasCustomers). No table or column outside the ontology slice (e.g., no 'nationality' field) was used; the agent correctly noted nationality isn't available and stuck to currency. Thus the executed query is fully grounded in the retrieved ontology context."
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold answer requires joining transactions_1k to gasstations on date='2012-08-24' and price=548.4 to get gasstations.country (e.g., CZE, SVK). The agent's executed query instead pulled customers.currency (CZK/EUR) as a proxy for 'nationality', which is a different concept and table (customers, not gasstations). The final-answer record states the dataset doesn't track nationality and that currencies are mostly CZK with one EUR, concluding no single nationality can be determined. This does not match the expected result (country codes from gasstations), and it never surfaces the country field at all. The agent essentially answered a different question (currency) rather than the intended one (country), and its conclusion contradicts/omits the expected gold answer. Since the final substantive answer is inconsistent with the expected result, the assertion is violated."
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=29 in 2060ms, gold_rows=1 in 2509ms) | pred_row0=['24', 'CZK', '14370', '548.4'] gold_row0=['CZE']"
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL joins transactions_1k with gasstations on GasStationID to retrieve the station's Country for the transaction with Date='2012-08-24' and Price=548.4. The agent instead queried customer currency (CZK/EUR) and concluded that no nationality could be determined, stating the dataset doesn't track nationality. This does not match the expected answer, which is derivable (a country code) via the correct join. The agent used the wrong table/column (customer currency instead of gas station country) and gave up without providing the country, so it fails to match the expected result."
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=29 in 3177ms, gold_rows=1 in 1702ms) | pred_row0=['24', 'CZK', '14370', '548.4'] gold_row0=['CZE']"
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=29 in 2604ms, gold_rows=1 in 2541ms) | pred_row0=['24', 'CZK', '14370', '548.4'] gold_row0=['CZE']"
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold query selects distinct transaction times for chain 11, and the executed query returned 106 distinct rows matching this intent. The agent's final answer correctly reports 106 distinct times with example values matching the result set (05:51:00, 06:32:00, etc.), consistent with the expected answer's intent and data. The answer accurately reflects the query result without contradicting or omitting key information."
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold query selects DISTINCT transaction times for gas stations in chain 11, expected to return 106 distinct time values. The agent's query result matches this exactly (106 rows, TIME1m21 column showing distinct times), and the final-answer response correctly reports 'There are 106 distinct transaction times recorded at gas stations belonging to chain no. 11', citing example values from the result set. This is consistent with the gold SQL's expected output in count and content. No clarification was needed or given, and the answer is substantive and factually aligned with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result implies SQL selecting DISTINCT time from transactions_1k joined with gasstations on gasstationid, filtered by gasstations.chainid = 11. All referenced elements\u2014transactions_1k.time, transactions_1k.gasstationid, gasstations.gasstationid, gasstations.chainid\u2014are explicitly defined in the retrieved ontology slice (Transaction/time, Transaction/gasstationid, GasStation/gasstationid, GasStation/chainid) with correct mapsToColumn mappings. No table or column outside the ontology context appears to be used, and the join (transactions_1k.gasstationid = gasstations.gasstationid) matches the documented referenceTables relationship. Thus the executed SQL is fully grounded in the retrieved schema context."
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=106 in 2421ms, gold_rows=2 in 2168ms) | pred_row0=['07:02:00'] gold_row0=['14:29:00']"
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=106 in 2726ms, gold_rows=2 in 1885ms) | pred_row0=['07:52:00'] gold_row0=['14:29:00']"
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "evaluator": "SoftF1",
+      "score": 0.037037037037037035,
+      "label": "PASS",
+      "explanation": "metric=soft_f1 value=0.0370 (pred_rows=106 in 3598ms, gold_rows=2 in 1476ms) | pred_row0=['07:02:00'] gold_row0=['14:29:00']"
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result was 1, matching the gold SQL's expected count. The agent's final answer states 'only 1 has a monthly consumption exceeding 1000', which is factually consistent with the expected answer of 1."
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result returned a count of 1, matching the gold SQL's expected count of customers paying in EUR with monthly consumption over 1000. The agent's final answer states 'only 1 has a monthly consumption exceeding 1000', which is factually consistent with the expected answer. No clarification was needed and none was given inappropriately."
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL, SPARQL, or Phase 5 translation is present anywhere in the visible context. Only a SliceSufficiency tool call marking the ontology slice as sufficient is shown, followed directly by the final answer. Since there is no executed SQL surfaced in the context, the agent's grounding invariant cannot be violated here; per instructions, this counts as a degraded run where the invariant was upheld (no SQL executed/visible)."
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 2084ms, gold_rows=1 in 1695ms) | pred_row0=['1'] gold_row0=['2730']"
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 2047ms, gold_rows=1 in 2087ms) | pred_row0=['1'] gold_row0=['2730']"
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 2713ms, gold_rows=1 in 2562ms) | pred_row0=['1'] gold_row0=['2730']"
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "There is no executed SQL surfaced in the context (no reasoning.sqlQuery or executed_sql shown), only a query result table with columns v0, v4, v7 and the agent's interpretation. Per instructions, if no executed SQL is present in the context, the agent degraded rather than running ungrounded SQL, so the grounding invariant is considered upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record (the agent's user-facing response) states: 'No, that is not true... 0 more SMEs paying in koruna than in euros.' The gold SQL computes SUM(Currency='CZK') - SUM(Currency='EUR') for SME customers, and the returned result row ['0','1','1'] indicates a difference of 0 (with 1 CZK and 1 EUR customer). The agent correctly interpreted this as no difference (0 more), which is factually consistent with the gold answer's expected value of 0. There is no clarification needed and no fabrication\u2014the agent directly answered using the query result. This matches the expected final answer."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes SUM(Currency='CZK') - SUM(Currency='EUR') for SME customers, which is a difference statistic. The tool result shows v0=\"0\" (the difference), and v4/v7 both equal 1 (counts for each currency), confirming the difference is 0. The agent's final answer correctly reports that the counts are equal (1 EUR vs 1 CZK SME customer), concluding that it's not true that more SMEs pay in CZK, and the difference is 0. This matches the expected gold answer's computed value of 0, both in numeric result and in the qualitative conclusion (statement is false)."
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL, SPARQL, or Phase 5 SQL query is surfaced anywhere in the provided context or tool execution history. Only a SliceSufficiency tool call is present, with no reasoning.sqlQuery or executed_sql field shown. Since there is no executed SQL visible in the context, the agent either degraded or the SQL was not surfaced; per the instructions, absence of executed SQL means the grounding invariant is upheld by default (score 1, degraded/no SQL executed)."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 155ms, gold_rows=1 in 2593ms) | pred_row0=['0'] gold_row0=['4.********1699992E8']"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 215ms, gold_rows=1 in 1957ms) | pred_row0=['0'] gold_row0=['4.********1699992E8']"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 215ms, gold_rows=1 in 1535ms) | pred_row0=['0'] gold_row0=['4.********1699992E8']"
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL computes SUM(CZK consumption) - SUM(EUR consumption) for 2012, which in the actual BIRD dataset is a nonzero value (a well-known difference figure). The agent's final answer reports a difference of exactly 0, which does not match the expected non-zero result and indicates the underlying query used to produce the answer was flawed (e.g., mis-specified currency comparison or aggregation). Since the final answer contradicts the expected magnitude and conclusion (no difference vs. a real, substantial difference), it fails to satisfy the assertion."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record (the natural-language response) states that the difference in gas consumption between CZK-paying and EUR-paying customers in 2012 was 0, directly reflecting the tool's returned result row ['0']. This matches the semantics of the gold SQL, which computes SUM(CZK consumption) - SUM(EUR consumption) for 2012, and the executed query's result was exactly 0. The agent's answer is a substantive, non-clarifying response that faithfully reports the computed value without fabrication or omission. There is no indication of a clarification request or contradiction with the expected result. Therefore, the final answer is consistent with the assertion's expected gold SQL outcome."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result row shows v0=1.********84269662 (percentage) and v2=178 (total count of SVK gas stations). The gold SQL computes percentage of Premium segment among SVK stations, matching v0=1.685%. The agent's final answer states 'Among the 178 gas stations in Slovakia (SVK), about 1.69% are classified as Premium segment,' which correctly reports both the total count and the percentage, consistent with the expected computation. The numbers align (1.69% rounds from 1.685%, and 178 matches the total). The answer is factually consistent with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the ontology schema, the tool call for SliceSufficiency, and the final result rows are shown. There is no Phase 5 SQL query or reasoning.sqlQuery visible. Per the instructions, if there is no executed SQL in the context, the agent degraded rather than running ungrounded SQL, so the grounding invariant is upheld by default. The result values (percentage 1.685% and count 178) are plausible outputs of a query on gasstations filtered by country='SVK' and segment='Premium', which would map cleanly to GasStation.country and GasStation.segment in the ontology, but since the actual SQL text is not shown, we cannot verify it token-by-token. Following the stated rule, absence of visible executed SQL means score 1 with note 'no SQL executed (degraded)' status, though functionally the agent did produce a result presumably from a grounded query."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 1439ms, gold_rows=1 in 981ms) | pred_row0=['1.********84269662', '178'] gold_row0=['35.68182']"
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 2281ms, gold_rows=1 in 1220ms) | pred_row0=['1.********84269662', '178'] gold_row0=['35.68182']"
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The user's question asks for the percentage of gas stations with a 'Premium' segment among all SVK stations. The gold SQL computes exactly this percentage (premium count / total SVK count * 100). The tool result returned v0 = 1.********84269662 (the percentage) and v2 = 178 (total SVK stations), matching the expected computation. The agent's final-answer record states: 'Among the 178 gas stations in Slovakia (SVK), about 1.69% are classified as \"Premium\" segment.' This directly reflects the retrieved values and correctly interprets v0 as the percentage and v2 as the total station count, consistent with the gold SQL's intent and result. No clarification was needed, and the answer is substantive and numerically consistent with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 2157ms, gold_rows=1 in 1451ms) | pred_row0=['1.********84269662', '178'] gold_row0=['35.68182']"
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; the result set only contains a placeholder column 'uselessVariable' with value '1', indicating no real SQL was run against the ontology-mapped tables. This matches the degraded-run case where the agent did not execute grounded SQL, so the grounding invariant is upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold answer requires computing SUM(price) for customer 38508 across all gas stations and SUM(price) filtered to January 2012, expected to return actual numeric totals. The agent's query returned only a placeholder value ('1') with no real spending figures, and the final-answer response explicitly states the total spend and January 2012 spend 'cannot be determined from this result.' This fails to provide the substantive numeric answer required by the assertion, and does not match the expected gold result in any factual sense (no numbers, no conclusion). Since the agent did not deliver a valid answer and did not appropriately ask a clarifying question either, the assertion is violated."
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer requires reporting the total amount spent by customer 38508 at gas stations and the amount spent in January 2012, based on SUM(Price) values. The agent's final answer states that the query returned no meaningful data (just a placeholder value) and that the spend figures cannot be determined. This fails to provide the actual numeric answer, contradicting the requirement to report the total and January 2012 spend. Thus it does not match the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold answer computes ratio = EUR count / CZK count = 2002/30459 \u2248 0.0657. The agent's final answer reports EUR=2002 and CZK=30459, and states the ratio as '2002:30459 \u2248 1:15.2 (\u22480.0657)', which matches the gold computation (EUR/CZK \u2248 0.0657). The numeric values and the ratio direction/magnitude align with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes EUR count / CZK count = 2002/30459 \u2248 0.0657. The agent's final response reports EUR=2002 and CZK=30459, and states the ratio as EUR:CZK = 2002:30459 \u2248 1:15.2 (\u22480.0657), which matches the expected ratio's magnitude and direction (EUR/CZK \u2248 0.0657). The counts match the gold data exactly. The final answer is a substantive, grounded numeric answer consistent with the expected result, not a clarification or fabrication."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The retrieved ontology context includes Customer class with properties currency (mapping to customers.CURRENCY) and customerid (mapping to customers.CUSTOMERID). The final executed SQL queries FROM \"bird_debit_card_specializing\".\"customers\" R1, selecting R1.CURRENCY and R1.CUSTOMERID, filtering on NOT NULL, and aggregating with SUM/CASE WHEN for CZK/EUR counts. Both the table (customers) and columns (CURRENCY, CUSTOMERID) are grounded in the ontology's Customer class and its currency/customerid properties as confirmed via the retrieve_ontology call and the comments describing the mapping to the bird_debit_card_specializing.customers table. No hallucinated tables or columns are present; SUM/CASE/CAST are SQL builtins, not schema elements. The final answer's counts (30459 CZK, 2002 EUR) match the executed SQL result rows exactly. Therefore the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is completely empty\u2014there is no user prompt, no agent response, and no tool execution history. There is no final-answer record present, nor any conversation_so_far block to reconstruct prior turns. Since there is no substantive answer at all, the agent never provided the expected final answer matching the gold SQL result. Thus the assertion is violated."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The session context is empty - there is no user prompt, no agent response, and no tool execution history provided. There is no retrieved ontology context and no executed SQL present anywhere in the conversation. Per the grounding rule, if there is no executed SQL in the context, the agent degraded rather than running ungrounded SQL, and the grounding invariant is considered upheld. Since no SQL execution is evident, this qualifies as a degraded run with no SQL executed."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The session context provided is empty (no user prompt, no agent response, no tool execution history). There is no final-answer record span or any natural-language assistant message to evaluate. Since the conversation never reaches any substantive answer, it cannot match the expected gold SQL result."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "No predicted SQL found in the trace spans; scored 0."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL identifies the month with peak SME consumption in 2013 by extracting the month part (MM) via SUBSTR(Date,5,2), ordering by descending SUM(consumption) and returning the top month. The result row shown was DATE1m26='201310', sum1=4.********18999803E8, i.e., month 10 (October) 2013 with total consumption ~404,599,783.19. This matches the gold answer's expected month (October, '10') and the agent's final answer correctly reports October 2013 as the peak month with the corresponding total consumption. The agent's response is consistent with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes, for SME customers in 2013, the month (MM) with the highest total consumption. The query result shows month '201310' (October) as the peak, with sum 4.********18999803E8. The agent's final answer states October 2013 (month '201310') was the peak, consistent with the gold answer's expected month value ('10'). The reported total consumption figure matches the tool result. This aligns with the expected answer's key entity (peak month = October/10) for SME customers in 2013."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 2609ms, gold_rows=1 in 1929ms) | pred_row0=['201310', '4.********1899981E8'] gold_row0=['04']"
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 2325ms, gold_rows=1 in 2018ms) | pred_row0=['201310', '4.********1899983E8'] gold_row0=['04']"
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation provides the ontology slice (classes Customer, GasStation, Product, Yearmonth, Transaction with their mapsToTable/mapsToColumn) but does not surface the actual executed SQL text (no Phase 5 SQL, reasoning.sqlQuery, or executed_sql field is present in the context). Only the result columns ['DATE1m26','sum1'] and rows are shown, without the underlying SQL statement to inspect for table/column grounding. Per the evaluation rule, when no executed SQL is present in the context, the grounding invariant is considered upheld by default (the agent cannot be faulted for SQL we cannot inspect), so this is treated as a degraded/no-SQL-visible case and passes."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 2167ms, gold_rows=1 in 2273ms) | pred_row0=['201310', '4.********18999827E8'] gold_row0=['04']"
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold query asks for the distinct product descriptions of transactions at CZE gas stations. The agent's final answer reports the count of transactions (3,283) and lists a few example product descriptions (Nemrz.kapal., Nafta, Natural Plus) as illustrative examples, not a complete or distinct list. While it does mention some correct product descriptions, it frames the answer around transaction count rather than providing a full list of distinct product descriptions as requested. It omits many other distinct products that should appear in the result and does not present a clean list of descriptions, which is the actual requested output. This is only partially consistent with the expected answer and doesn't fully satisfy the request for a list of product descriptions."
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No explicit SQL text is shown in the context, but the result columns (AMOUNT, CHAINID, COUNTRY, DESCRIPTION, GASSTATIONID, PRODUCTID) correspond directly to ontology-mapped properties: Transaction.amount\u2192transactions_1k.amount, GasStation.chainid\u2192gasstations.chainid, GasStation.country\u2192gasstations.country, Product.description\u2192products.description, GasStation.gasstationid\u2192gasstations.gasstationid, and productid\u2192products.productid/transactions_1k.productid. The implied joins (transactions_1k\u2194gasstations via gasstationid, transactions_1k\u2194products via productid) are explicitly documented in the ontology's referenceTables. No table or column outside the retrieved ontology slice appears to be referenced, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The user asked for product descriptions of transactions at CZE gas stations, and was told to report the answer in 1-2 sentences given a 3283-row result set. The agent's final-answer output correctly identifies the country filter (CZE) and lists several actual product descriptions from the result set (Nemrz.kapal., Nafta, Natural Plus), noting there are more in the full result. This is consistent with the gold SQL's intent of returning distinct product descriptions for CZE gas stations - the entities and filter match, and no contradictory or fabricated information is presented. Given the 1-2 sentence reporting constraint, a full exhaustive list of all distinct products was not required, and the summary correctly represents the underlying data (correct country, correct sample of correct product names, correct total count). This satisfies the factual-consistency requirement of the assertion."
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=3283 in 4576ms, gold_rows=21 in 2294ms) | pred_row0=['0', '1', 'CZE', 'Nemrz.kapal.', '1133', '11'] gold_row0=['Natural']"
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=3283 in 5280ms, gold_rows=21 in 3224ms) | pred_row0=['0', '4', 'CZE', 'Nemrz.kapal.', '621', '11'] gold_row0=['Nafta']"
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=3283 in 8363ms, gold_rows=21 in 2406ms) | pred_row0=['0', '33', 'CZE', 'Nemrz.kapal.', '2968', '11'] gold_row0=['Natural']"
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts transactions at CZE gas stations with year >= 2012, resulting in the query result '2507'. The agent's final answer reports 2,507 transactions, matching the executed query result exactly. The answer is consistent with the expected gold answer."
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL counts transactions at CZE gas stations with date year >= 2012 (essentially >= 2012-01-01). The executed query returned 2507, and the agent's final answer states '2,507 transactions took place at Czech Republic (CZE) gas stations after January 1, 2012.' This matches the expected result's numeric value and semantics (count of CZE transactions from 2012 onward). The answer is substantive, consistent with the gold query's intent, and no clarification was needed."
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context includes the retrieved ontology slice covering transactions_1k and gasstations mappings, but no executed SQL text (no Phase 5 SQL, reasoning.sqlQuery, or executed_sql) is present anywhere in the session. The only tool call recorded is SliceSufficiency, and the result rows are given without the underlying query. Per instructions, when no executed SQL is present in the context, the grounding invariant is considered upheld (degraded run), so this should be scored as a pass."
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 3631ms, gold_rows=1 in 2813ms) | pred_row0=['2507'] gold_row0=['933']"
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 3251ms, gold_rows=1 in 2353ms) | pred_row0=['2507'] gold_row0=['933']"
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 3714ms, gold_rows=1 in 2373ms) | pred_row0=['2507'] gold_row0=['933']"
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the percentage of transactions/customers using EUR on 2012-08-25 as (EUR count *100)/total count = 41/506*100 \u2248 8.1027667%. The result rows returned were [8.********8419, 41, 506], matching exactly. The agent's final answer states 'About 8.10% of customers on 2012-08-25 used EUR (41 out of 506 customers).' This matches the expected percentage, numerator, and denominator precisely. No clarification was needed, and the answer is substantive and consistent with the gold result."
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes the percentage of transactions on 2012-08-25 where the customer's currency is EUR, out of all transactions on that date, yielding ~8.10% (41/506). The agent's final answer states 'About 8.10% of customers on 2012-08-25 used EUR (41 out of 506 customers).' This matches the expected numeric result (8.102766...%, 41, 506) closely, with only a minor semantic imprecision (transactions vs customers) that does not change the core factual answer."
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 3240ms, gold_rows=1 in 1679ms) | pred_row0=['8.********8419', '41', '506'] gold_row0=['1.6470588']"
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation contains the retrieved ontology slice but no executed SQL text (no Phase 5 SQL, reasoning.sqlQuery, or executed_sql field is present anywhere in the context). Only a SliceSufficiency tool call and the pre-computed result rows are shown. Per the grounding protocol, since there is no executed SQL surfaced to inspect, the agent's grounding invariant cannot be violated - this is treated as a degraded/no-SQL-shown case, which passes by default (no SQL executed/visible = no hallucinated schema to detect)."
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 2256ms, gold_rows=1 in 2056ms) | pred_row0=['8.********8419', '41', '506'] gold_row0=['1.6470588']"
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 3266ms, gold_rows=1 in 2212ms) | pred_row0=['8.********8419', '41', '506'] gold_row0=['1.6470588']"
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL returns raw consumption values for August 2012 (date='201208') for customers meeting the price/unit and product criteria. The agent's final answer reports 79 consumption values with examples matching the returned rows (e.g., 61.92, 158233.78, 138251.61), consistent with the expected result set. The answer accurately summarizes the query results without contradicting the expected answer's data or intent."
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL joins transactions_1k and yearmonth on customerid, filtering for price/amount>29 on productid=5 and yearmonth.date='201208', returning the raw Consumption values. The tool execution correctly ran an equivalent query, returning 79 consumption values matching the same shape as the gold query's expected output. The agent's final-answer record (the only visible one, since no conversation_so_far indicates prior turns) summarizes these 79 values accurately, citing representative min/max figures consistent with the shown result set. This is a substantive, correct answer that faithfully reports the query result without fabrication or omission, matching the expected gold answer's semantics."
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation shows tool_execution_history containing only a SliceSufficiency validation call; no execute_sql_query tool call or explicit executed SQL (e.g., reasoning.sqlQuery) is present anywhere in the context. While the question states the query 'already ran' and returned rows, the actual SQL text is not surfaced in the provided context for inspection. Per the evaluation protocol, when no executed SQL is present in the context, the grounding invariant is considered upheld (the agent did not expose ungrounded SQL), so this should be scored as a pass with the note that no SQL was executed/visible (degraded)."
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "evaluator": "SoftF1",
+      "score": 0.20224719101123595,
+      "label": "PASS",
+      "explanation": "metric=soft_f1 value=0.2022 (pred_rows=79 in 2264ms, gold_rows=10 in 2572ms) | pred_row0=['9604.07'] gold_row0=['1903.2']"
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=79 in 2294ms, gold_rows=10 in 2592ms) | pred_row0=['2057.03'] gold_row0=['1903.2']"
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=79 in 2353ms, gold_rows=10 in 2983ms) | pred_row0=['11.36'] gold_row0=['1903.2']"
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold answer indicates all transactions at 16:25:00 on 2012-08-24 used CZK currency (DISTINCT Currency = CZK). The agent's final answer states 'All 147 transactions at 16:25:00 on 2012-08-24 were paid in CZK currency', which matches the expected result data (all CZK rows shown) and the gold SQL's expected output. The answer is factually consistent with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold answer expects the distinct currency used by customers transacting at 16:25:00 on 2012-08-24, which per the gold SQL should be CZK (matching the result rows shown, all CZK). The agent's final-answer response states that all 147 transactions at that time were paid in CZK currency, which is consistent with the expected result. The answer is substantive, factually consistent with the gold SQL's expected output, and does not fabricate or omit the key finding (CZK). No clarification was needed or given, and none was required per the assertions."
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=147 in 2277ms, gold_rows=1 in 3868ms) | pred_row0=['0', 'CZK', '11126'] gold_row0=['CZK']"
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No explicit executed SQL text is shown in the context, only the result columns (AMOUNT1m13, CURRENCY1m1, CUSTOMERID1m16) and rows. These auto-generated aliases correspond to ontology-mapped properties: Transaction/amount (transactions_1k.amount), Customer/currency (customers.currency), and Transaction/customerid or Yearmonth/customerid (transactions_1k.customerid), all of which are present in the retrieved ontology slice with valid mapsToColumn mappings. The implied join (transactions_1k.customerid = customers.customerid) is explicitly documented in the ontology's referenceTables/commonQueryPatterns for Transaction and Customer classes. Since the actual SQL string is not surfaced in the conversation, and the columns/joins that can be inferred are fully grounded in the ontology context, there is no evidence of hallucinated schema elements. This aligns with either a fully grounded query or a degraded scenario where no ungrounded SQL was exposed\u2014both satisfy the grounding invariant."
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=147 in 1925ms, gold_rows=1 in 3132ms) | pred_row0=['0', 'CZK', '6266'] gold_row0=['CZK']"
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=147 in 2294ms, gold_rows=1 in 3108ms) | pred_row0=['0', 'CZK', '11126'] gold_row0=['CZK']"
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=1 in 2213ms, gold_rows=1 in 1778ms) | pred_row0=['0.********0000********0000********0000', '2'] gold_row0=['98.526794']"
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=ex value=0.0000 (pred_rows=1 in 2002ms, gold_rows=1 in 2061ms) | pred_row0=['0.********0000********0000********0000', '2'] gold_row0=['98.526794']"
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation only shows the schema context, the question, and the already-executed query results (columns v0, v1). No SPARQL or executed SQL text (e.g., via reasoning.sqlQuery or executed_sql) is present anywhere in the context to inspect. Since there is no executed SQL surfaced for grounding verification, per the evaluation rule this counts as an upheld grounding invariant (agent did not expose ungrounded SQL), so the run is treated as passing by default - 'no SQL executed (degraded)' applies literally to the visible context."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=soft_f1 value=0.0000 (pred_rows=1 in 1197ms, gold_rows=1 in 1656ms) | pred_row0=['0.********0000********0000********0000', '2'] gold_row0=['98.526794']"
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL computes the percentage of LAM customer-month records (from the customers/yearmonth join) with consumption > 46.73, which based on sample yearmonth values (all in the hundreds) should be a high percentage, likely close to 100%. The agent's final answer states 0% of LAM customers had consumption greater than 46.73, based on only 2 customers evaluated. This directly contradicts the expected high percentage and indicates the underlying query logic (and thus the final answer) is incorrect. The agent's answer does not match the expected result in magnitude or conclusion."
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record simply reports the SQL result verbatim: 0% of LAM customers exceeded 46.73, based on the returned row (v0=\"0.000...\", v1=\"2\"). However, the gold SQL computes the percentage of LAM customers whose yearmonth.consumption exceeds 46.73, and the schema's own sample data shows typical yearmonth.consumption values in the hundreds (e.g., 294.38, 439.49, 528.3, 1931), far above the 46.73 threshold. This strongly suggests that nearly all (not 0%) LAM customers should exceed 46.73, making the reported 0% figure implausible and inconsistent with what the gold query should yield. The underlying query that produced this result appears flawed (e.g., wrong join, wrong direction of comparison, or miscounted customers), and the agent uncritically reported this incorrect result as the final answer without any caveat. Since the final answer's key number (0%) contradicts the expected outcome implied by the gold SQL and the domain data, the assertion that the conversation's final answer matches the expected gold answer is not satisfied."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "evaluator": "RewardVES",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "evaluator": "ExecutionAccuracy",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The gold SQL computes differences between segment averages (SME-LAM, LAM-KAM, KAM-SME) for customers with minimum consumption in CZK for 2013. The executed query results show v0, v1, v2 values of ~1.8e-11, ~9.1e-12, ~-2.7e-11, which are effectively 0 due to floating-point rounding noise, consistent with all three averages (avg0, avg1, avg2) being ~8742.36. This matches the gold expectation that the differences are essentially zero (since presumably only one segment or all segments tie for minimum consumption, making the differences trivial/zero). The agent's final answer correctly reports that the annual average consumption is essentially identical across SME, LAM, and KAM segments, with differences being negligible (~0, attributable to floating-point rounding). This is factually consistent with the computed result and matches the gold answer's expected near-zero differences. The agent's natural-language summary accurately reflects the numeric result without fabrication or contradiction."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "evaluator": "SoftF1",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation provides the retrieved ontology slice but does not surface any executed SQL text (no reasoning.sqlQuery, no explicit Phase 5 SQL output). Only the query result rows/columns are shown, with no visible SQL statement to inspect for schema grounding. Per the instructions, when no executed SQL is present in the context, the grounding invariant is considered upheld (degraded run scenario), so the score should be 1 with the note 'no SQL executed (degraded)'."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "challenging",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected gold answer requires joining transactions_1k and customers on customerid, filtered by the specific date and time, yielding a single segment value. The executed query instead produced 6 rows covering two different customers with all three possible segment values, indicating an incorrect or overly broad query (likely missing a proper filter/join). The agent's final answer reports this ambiguity and does not provide a definitive segment matching the expected single-value answer. Thus it fails to align with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold query joins transactions_1k to customers on customerid, filtered by the exact date/time, and should return a single definitive segment value for the customer who made that transaction. The agent's final-answer record (the only user-facing text) instead reports that the result set contains two customers (9627, 34780), each appearing with all three segment values (SME, LAM, KAM), and concludes it 'doesn't pinpoint a single definitive segment.' This is a degraded, non-substantive answer that fails to identify the correct segment for the customer at 2012-08-23 21:20:00, and it does not match the gold answer's expected single, specific segment value. Since the trajectory never resolves to a factually consistent substantive answer, the assertion (which requires the final answer to match the gold SQL result) is violated."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The provided context includes the retrieved ontology slice and the tool_execution_history, but nowhere does it surface the actual executed SQL text (no reasoning.sqlQuery, executed_sql, or Phase 5 SQL block). Only the result columns (with generated aliases like AMOUNT1m13, CURRENCY1m1, CUSTOMERID1m16, SEGMENT1m4) and rows are shown, not the underlying SQL statement itself. Since no executed SQL is present in the context to inspect for table/column/join grounding, per the evaluation rule this counts as a degraded/inaccessible SQL case rather than a verifiable ungrounded query, so the grounding invariant is considered upheld."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "metric=rves value=0.0000 (pred_rows=6 in 92910ms, gold_rows=1 in 2385ms) | pred_row0=['91', 'CZK', '34780', 'SME'] gold_row0=['KAM']"
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query bce118b5-ab07-492b-8502-e1006343abb2 unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "simple",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query a9a7df1d-4c74-422c-ba4c-b3580d201c3d unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the retrieved ontology schema and the final query result (columns 'avg1', one row with value 8137.29) are shown, with no Phase 5 SQL text, reasoning.sqlQuery, or executed_sql surfaced. Per the instructions, when there is no executed SQL visible in the context, the agent is treated as having degraded rather than running ungrounded SQL, so the grounding invariant is upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL computes AVG(yearmonth.consumption) for SME customers in 2013, then divides by 12, which given the sample consumption values (roughly 300-2000 per month) would yield a small number (likely in the tens to low hundreds). The agent's final answer reports an average monthly consumption of ~8137.29, which is an order of magnitude larger and does not reflect the division by 12 specified in the gold query. This indicates the agent's underlying SQL differs substantially from the gold logic (e.g., missing the /12 normalization or aggregating incorrectly), producing a result inconsistent with the expected answer's magnitude and likely value. Since the reported number does not match the expected computation, the final answer fails to align with the gold result."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The gold SQL computes AVG(yearmonth.consumption) for SME customers in 2013, then divides by 12. Given sample yearmonth.consumption values range roughly 294\u20131931, a correctly computed average (even without the /12 division) should fall in the low hundreds to low thousands range, and dividing by 12 would make it even smaller (tens to low hundreds). The agent's reported answer of 8,137.29 is an order of magnitude larger than any plausible value consistent with the schema's sample data and the gold formula, strongly suggesting the underlying query used by the agent did not correctly replicate the gold logic (e.g., missing division by 12 or an incorrect join causing inflated aggregation). Since the final user-facing answer (8,137.29) is not consistent with the expected result implied by the gold SQL, the assertion that the conversation's final answer matches the gold answer is not satisfied."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query 680721d1-0ecb-44b3-907b-7e81c0e4d0e7 unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query 245f690f-50b2-4a72-8ae4-be8aca5a099c unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query a06ee5d4-08aa-499f-a698-8d9b12864eca unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected answer identifies customer 38175 as the LAM customer with least (lowest) consumption in 2012, matching gold SQL logic (ORDER BY SUM ASC LIMIT 1). The agent's final answer reports customer 38175 with sum -6173.13, which matches the identity of the customer required by the gold answer. The gold query only asks for CustomerID, and the agent correctly provides that ID as the answer, with the sum as supporting detail. This is consistent with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer reports customer 38175 as the LAM-segment customer with the lowest total consumption in 2012, which aligns with the gold SQL's intent (grouping by customerid, filtering segment='LAM' and year=2012, ordering by sum(consumption) ascending, limit 1). The result row returned customerid 38175 with sum -6173.13, and the agent faithfully reported this as the answer. This matches the expected key entity (customer 38175) required by the gold query."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context includes the retrieved ontology slice and the result columns/rows returned by the query, but no executed SQL text (no Phase 5 SQL output, no reasoning.sqlQuery, no executed_sql field) is present anywhere in the conversation or tool_execution_history (which only shows a SliceSufficiency check). Since there is no executed SQL surfaced in the context to inspect for schema grounding, per instructions this is treated as a degraded run and the grounding invariant is considered upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "evaluator": "RewardVES",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query 63abcf1b-5646-4b30-88e2-********2172 unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "evaluator": "ExecutionAccuracy",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query 78a3942d-72e8-416f-a686-cf64036f1ae1 unfinished in 120.0s); scored 0."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "db_id": "bird_debit_card_specializing",
+      "difficulty": "moderate",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "evaluator": "SoftF1",
+      "score": 0.0,
+      "label": "FAIL",
+      "explanation": "Predicted SQL failed to execute (Athena query b1548877-2274-4e14-918d-002e370efd90 unfinished in 120.0s); scored 0."
+    }
+  ],
+  "agent_detail": [
+    {
+      "scenario_id": "gt-row-04",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Which year recorded the most consumption of gas paid in CZK?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 8.33,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "How much did customer 6 consume in total between August and November 2013?",
+      "agent_sql": "SELECT (SUM(?consumption) AS ?total)\nWHERE {\n  ?y a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?customerid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?date ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption .\n  FILTER(?customerid = 6)\n  FILTER(?date >= \"201308\" && ?date <= \"201311\")\n}",
+      "executed_sql": "SELECT SUM(CAST(R4.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) AS \"sum1\"\nFROM (SELECT DISTINCT R1.CONSUMPTION AS \"CONSUMPTION1m23\", R1.CUSTOMERID AS \"CUSTOMERID1m25\", R2.DATE AS \"DATE1m26\"\nFROM \"bird_debit_card_specializing\".\"yearmonth\" R1, \"bird_debit_card_specializing\".\"yearmonth\" R2\nWHERE ((R2.DATE >= '201308') AND (R2.DATE <= '201311') AND (R1.CUSTOMERID = 6) AND R1.CUSTOMERID IS NOT NULL AND R2.DATE IS NOT NULL AND R1.CONSUMPTION = R2.CONSUMPTION)\n) R4\n",
+      "degraded": null,
+      "wall_clock_s": 19.11,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What was the difference in gas consumption between CZK-paying customers and EUR-paying customers in 2012?",
+      "agent_sql": "SELECT (SUM(IF(?currency = \"CZK\", xsd:decimal(?consumption), 0)) - SUM(IF(?currency = \"EUR\", xsd:decimal(?consumption), 0)) AS ?diff)\nWHERE {\n  ?y a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?date ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/hasCustomers> ?c .\n  ?c <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> ?currency .\n  FILTER(SUBSTR(?date, 1, 4) = \"2012\")\n}",
+      "executed_sql": "SELECT (0 - 0) AS \"v0\"\nFROM (SELECT 1 ) tdummy\n",
+      "degraded": null,
+      "wall_clock_s": 31.12,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What was the gas consumption peak month for SME customers in 2013?",
+      "agent_sql": "SELECT ?date\nWHERE {\n  ?ym a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?date ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption .\n  ?cust a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n        <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid ;\n        <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"SME\" .\n  FILTER(STRSTARTS(?date, \"2013\"))\n}\nGROUP BY ?date\nORDER BY DESC(SUM(?consumption))\nLIMIT 1",
+      "executed_sql": "SELECT R6.\"DATE1m26\" AS \"DATE1m26\", SUM(CAST(R6.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) AS \"sum1\"\nFROM (SELECT DISTINCT R1.CONSUMPTION AS \"CONSUMPTION1m23\", R3.CURRENCY AS \"CURRENCY1m1\", R1.CUSTOMERID AS \"CUSTOMERID1m25\", R2.DATE AS \"DATE1m26\"\nFROM \"bird_debit_card_specializing\".\"yearmonth\" R1, \"bird_debit_card_specializing\".\"yearmonth\" R2, \"bird_debit_card_specializing\".\"customers\" R3, \"bird_debit_card_specializing\".\"customers\" R4\nWHERE (SUBSTRING(R2.DATE,1,LENGTH('2013')) = '2013' AND R2.DATE IS NOT NULL AND R1.CONSUMPTION = R2.CONSUMPTION AND R1.CUSTOMERID = R3.CUSTOMERID AND R3.CURRENCY = R4.CURRENCY AND 'SME' = R4.SEGMENT)\n) R6\nGROUP BY R6.\"DATE1m26\"\nORDER BY SUM(CAST(R6.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) DESC NULLS LAST\nLIMIT 1",
+      "degraded": null,
+      "wall_clock_s": 37.74,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What is the difference in the annual average consumption of the customers with the least amount of consumption paid in CZK for 2013 between SME and LAM, LAM and KAM, and KAM and SME?",
+      "agent_sql": "SELECT (?avgSME - ?avgLAM AS ?diff_SME_LAM) (?avgLAM - ?avgKAM AS ?diff_LAM_KAM) (?avgKAM - ?avgSME AS ?diff_KAM_SME)\nWHERE {\n  {\n    SELECT (AVG(?cons1) AS ?avgSME)\n    WHERE {\n      ?c1 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"SME\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"CZK\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid1 .\n      ?ym1 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid1 ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?d1 ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?cons1 .\n      FILTER(STRSTARTS(STR(?d1), \"2013\"))\n    }\n  }\n  {\n    SELECT (AVG(?cons2) AS ?avgLAM)\n    WHERE {\n      ?c2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"LAM\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"CZK\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid2 .\n      ?ym2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid2 ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?d2 ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?cons2 .\n      FILTER(STRSTARTS(STR(?d2), \"2013\"))\n    }\n  }\n  {\n    SELECT (AVG(?cons3) AS ?avgKAM)\n    WHERE {\n      ?c3 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"KAM\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"CZK\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid3 .\n      ?ym3 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid3 ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?d3 ;\n           <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?cons3 .\n      FILTER(STRSTARTS(STR(?d3), \"2013\"))\n    }\n  }\n}",
+      "executed_sql": "SELECT R32.\"avg0\" AS \"avg0\", R16.\"avg1\" AS \"avg1\", R48.\"avg2\" AS \"avg2\", CASE WHEN R32.\"avg0\" IS NOT NULL THEN CAST((COALESCE(R32.\"avg0\",0) - COALESCE(R48.\"avg2\",0)) AS VARCHAR) ELSE CASE WHEN R48.\"avg2\" IS NOT NULL THEN CAST((COALESCE(R32.\"avg0\",0) - COALESCE(R48.\"avg2\",0)) AS VARCHAR) ELSE CAST((CAST(COALESCE(R32.\"avg0\",0) AS BIGINT) - CAST(COALESCE(R48.\"avg2\",0) AS BIGINT)) AS VARCHAR) END END AS \"v0\", CASE WHEN R16.\"avg1\" IS NOT NULL THEN CAST((COALESCE(R16.\"avg1\",0) - COALESCE(R32.\"avg0\",0)) AS VARCHAR) ELSE CASE WHEN R32.\"avg0\" IS NOT NULL THEN CAST((COALESCE(R16.\"avg1\",0) - COALESCE(R32.\"avg0\",0)) AS VARCHAR) ELSE CAST((CAST(COALESCE(R16.\"avg1\",0) AS BIGINT) - CAST(COALESCE(R32.\"avg0\",0) AS BIGINT)) AS VARCHAR) END END AS \"v1\", CASE WHEN R48.\"avg2\" IS NOT NULL THEN CAST((COALESCE(R48.\"avg2\",0) - COALESCE(R16.\"avg1\",0)) AS VARCHAR) ELSE CASE WHEN R16.\"avg1\" IS NOT NULL THEN CAST((COALESCE(R48.\"avg2\",0) - COALESCE(R16.\"avg1\",0)) AS VARCHAR) ELSE CAST((CAST(COALESCE(R48.\"avg2\",0) AS BIGINT) - CAST(COALESCE(R16.\"avg1\",0) AS BIGINT)) AS VARCHAR) END END AS \"v2\"\nFROM (SELECT AVG(CAST(R14.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) AS \"avg1\"\nFROM (SELECT DISTINCT R11.CONSUMPTION AS \"CONSUMPTION1m23\", R10.CUSTOMERID AS \"CUSTOMERID1m3\", R12.DATE AS \"DATE1m26\"\nFROM (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R1\nWHERE 'CZK' = R1.CURRENCY\nLIMIT 1) R3, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R4\nWHERE ('CZK' = R4.CURRENCY AND 'SME' = R4.SEGMENT)\nLIMIT 1) R6, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R7\nWHERE 'CZK' = R7.CURRENCY\nLIMIT 1) R9, \"bird_debit_card_specializing\".\"customers\" R10, \"bird_debit_card_specializing\".\"yearmonth\" R11, \"bird_debit_card_specializing\".\"yearmonth\" R12\nWHERE (SUBSTRING(R12.DATE,1,LENGTH('2013')) = '2013' AND R12.DATE IS NOT NULL AND R10.CUSTOMERID = R11.CUSTOMERID AND R11.CONSUMPTION = R12.CONSUMPTION AND 'CZK' = R10.CURRENCY)\n) R14\n) R16, (SELECT AVG(CAST(R30.\"CONSUMPTION1m29\" AS DOUBLE PRECISION)) AS \"avg0\"\nFROM (SELECT DISTINCT R27.CONSUMPTION AS \"CONSUMPTION1m29\", R26.CUSTOMERID AS \"CUSTOMERID1m21\", R28.DATE AS \"DATE1m39\"\nFROM (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R17\nWHERE 'CZK' = R17.CURRENCY\nLIMIT 1) R19, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R20\nWHERE ('CZK' = R20.CURRENCY AND 'LAM' = R20.SEGMENT)\nLIMIT 1) R22, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R23\nWHERE 'CZK' = R23.CURRENCY\nLIMIT 1) R25, \"bird_debit_card_specializing\".\"customers\" R26, \"bird_debit_card_specializing\".\"yearmonth\" R27, \"bird_debit_card_specializing\".\"yearmonth\" R28\nWHERE (SUBSTRING(R28.DATE,1,LENGTH('2013')) = '2013' AND R28.DATE IS NOT NULL AND R26.CUSTOMERID = R27.CUSTOMERID AND R27.CONSUMPTION = R28.CONSUMPTION AND 'CZK' = R26.CURRENCY)\n) R30\n) R32, (SELECT AVG(CAST(R46.\"CONSUMPTION1m65\" AS DOUBLE PRECISION)) AS \"avg2\"\nFROM (SELECT DISTINCT R43.CONSUMPTION AS \"CONSUMPTION1m65\", R42.CUSTOMERID AS \"CUSTOMERID1m61\", R44.DATE AS \"DATE1m75\"\nFROM (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R33\nWHERE 'CZK' = R33.CURRENCY\nLIMIT 1) R35, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R36\nWHERE ('CZK' = R36.CURRENCY AND 'KAM' = R36.SEGMENT)\nLIMIT 1) R38, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R39\nWHERE 'CZK' = R39.CURRENCY\nLIMIT 1) R41, \"bird_debit_card_specializing\".\"customers\" R42, \"bird_debit_card_specializing\".\"yearmonth\" R43, \"bird_debit_card_specializing\".\"yearmonth\" R44\nWHERE (SUBSTRING(R44.DATE,1,LENGTH('2013')) = '2013' AND R44.DATE IS NOT NULL AND R42.CUSTOMERID = R43.CUSTOMERID AND R43.CONSUMPTION = R44.CONSUMPTION AND 'CZK' = R42.CURRENCY)\n) R46\n) R48\n",
+      "degraded": null,
+      "wall_clock_s": 44.26,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-09",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "How many more \"discount\" gas stations does the Czech Republic have compared to Slovakia?",
+      "agent_sql": "SELECT (?cze - ?svk AS ?diff) WHERE {\n  { SELECT (COUNT(?g1) AS ?cze) WHERE {\n      ?g1 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> \"CZE\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/segment> \"Discount\" .\n  } }\n  { SELECT (COUNT(?g2) AS ?svk) WHERE {\n      ?g2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> \"SVK\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/segment> \"Discount\" .\n  } }\n}",
+      "executed_sql": "SELECT (R6.\"v4\" - R12.\"v7\") AS \"v0\", R6.\"v4\" AS \"v4\", R12.\"v7\" AS \"v7\"\nFROM (SELECT COUNT(*) AS \"v4\"\nFROM (SELECT DISTINCT R1.CHAINID AS \"CHAINID1m5\"\nFROM \"bird_debit_card_specializing\".\"gasstations\" R1, \"bird_debit_card_specializing\".\"gasstations\" R2\nWHERE (R1.CHAINID = R2.CHAINID AND 'CZE' = R1.COUNTRY AND 'Discount' = R2.SEGMENT)\n) R4\n) R6, (SELECT COUNT(*) AS \"v7\"\nFROM (SELECT DISTINCT R7.CHAINID AS \"CHAINID1m3\"\nFROM \"bird_debit_card_specializing\".\"gasstations\" R7, \"bird_debit_card_specializing\".\"gasstations\" R8\nWHERE (R7.CHAINID = R8.CHAINID AND 'SVK' = R7.COUNTRY AND 'Discount' = R8.SEGMENT)\n) R10\n) R12\n",
+      "degraded": null,
+      "wall_clock_s": 22.26,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-10",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Is it true that more SMEs pay in Czech koruna than in euros? If so, how many more?",
+      "agent_sql": "SELECT (xsd:integer(?czk) - xsd:integer(?eur) AS ?diff) WHERE {\n  { SELECT (COUNT(?c1) AS ?czk) WHERE {\n      ?c1 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"SME\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"CZK\" .\n    } }\n  { SELECT (COUNT(?c2) AS ?eur) WHERE {\n      ?c2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"SME\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"EUR\" .\n    } }\n}",
+      "executed_sql": "SELECT (R11.\"v4\" - R22.\"v7\") AS \"v0\", R11.\"v4\" AS \"v4\", R22.\"v7\" AS \"v7\"\nFROM (SELECT COUNT(*) AS \"v4\"\nFROM (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R1\nWHERE 'CZK' = R1.CURRENCY\nLIMIT 1) R3, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R4\nWHERE ('CZK' = R4.CURRENCY AND 'SME' = R4.SEGMENT)\nLIMIT 1) R6, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R7\nWHERE 'CZK' = R7.CURRENCY\nLIMIT 1) R9\n) R11, (SELECT COUNT(*) AS \"v7\"\nFROM (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R12\nWHERE 'EUR' = R12.CURRENCY\nLIMIT 1) R14, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R15\nWHERE ('EUR' = R15.CURRENCY AND 'SME' = R15.SEGMENT)\nLIMIT 1) R17, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R18\nWHERE 'EUR' = R18.CURRENCY\nLIMIT 1) R20\n) R22\n",
+      "degraded": null,
+      "wall_clock_s": 25.03,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What is the highest monthly consumption in the year 2012?",
+      "agent_sql": "SELECT (MAX(?consumption) AS ?maxConsumption) WHERE {\n  ?ym a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?date ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption .\n  FILTER(STRSTARTS(STR(?date), \"2012\"))\n}",
+      "executed_sql": "SELECT MAX(CAST(R3.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) AS \"max1\"\nFROM (SELECT DISTINCT R1.CONSUMPTION AS \"CONSUMPTION1m23\", R1.DATE AS \"DATE1m26\"\nFROM \"bird_debit_card_specializing\".\"yearmonth\" R1\nWHERE (SUBSTRING(R1.DATE,1,LENGTH('2012')) = '2012' AND R1.DATE IS NOT NULL AND R1.CONSUMPTION IS NOT NULL)\n) R3\n",
+      "degraded": null,
+      "wall_clock_s": 17.56,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-11",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "How many percent of LAM customer consumed more than 46.73?",
+      "agent_sql": "SELECT ((?highCount*100.0)/?totalCount AS ?percentage)\nWHERE {\n  {\n    SELECT (COUNT(DISTINCT ?c1) AS ?totalCount)\n    WHERE {\n      ?c1 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"LAM\" .\n    }\n  }\n  {\n    SELECT (COUNT(DISTINCT ?c2) AS ?highCount)\n    WHERE {\n      ?c2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> \"LAM\" .\n      ?ym a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/hasCustomers> ?c2 ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?cons .\n      FILTER(xsd:decimal(?cons) > 46.73)\n    }\n  }\n}",
+      "executed_sql": "SELECT CASE WHEN (NOT (COUNT(DISTINCT(R3.\"CURRENCY1m1\")) = 0.0)) THEN CAST(((CAST(0 AS DECIMAL(38, 18)) * CAST(100.0 AS DECIMAL(38, 18))) / CAST(COUNT(DISTINCT(R3.\"CURRENCY1m1\")) AS DECIMAL(38, 18))) AS VARCHAR) ELSE NULL END AS \"v0\", COUNT(DISTINCT(R3.\"CURRENCY1m1\")) AS \"v1\"\nFROM (SELECT DISTINCT R1.CURRENCY AS \"CURRENCY1m1\"\nFROM \"bird_debit_card_specializing\".\"customers\" R1\nWHERE (R1.CURRENCY IS NOT NULL AND 'LAM' = R1.SEGMENT)\n) R3\n",
+      "degraded": null,
+      "wall_clock_s": 30.52,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-12",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "In February 2012, what percentage of customers consumed more than 528.3?",
+      "agent_sql": "SELECT ((?matched * 100.0) / ?total AS ?percentage)\nWHERE {\n  {\n    SELECT (COUNT(*) AS ?total) WHERE {\n      ?y a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> \"201202\" .\n    }\n  }\n  {\n    SELECT (COUNT(*) AS ?matched) WHERE {\n      ?y2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> \"201202\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?c .\n      FILTER(xsd:decimal(?c) > 528.3)\n    }\n  }\n}",
+      "executed_sql": "SELECT R5.\"v0\" AS \"v0\", R10.\"v1\" AS \"v1\", CASE WHEN (R10.\"v1\" IS NOT NULL AND (NOT (R5.\"v0\" = 0.0))) THEN CAST(((CAST(R10.\"v1\" AS DOUBLE) * CAST(100.0 AS DOUBLE)) / CAST(R5.\"v0\" AS DOUBLE)) AS VARCHAR) ELSE NULL END AS \"v2\"\nFROM (SELECT COUNT(*) AS \"v0\"\nFROM (SELECT DISTINCT R1.CONSUMPTION AS \"CONSUMPTION1m23\"\nFROM \"bird_debit_card_specializing\".\"yearmonth\" R1\nWHERE (R1.CONSUMPTION IS NOT NULL AND '201202' = R1.DATE)\n) R3\n) R5, (SELECT COUNT(*) AS \"v1\"\nFROM (SELECT DISTINCT R6.CONSUMPTION AS \"CONSUMPTION1m3\"\nFROM \"bird_debit_card_specializing\".\"yearmonth\" R6\nWHERE (((CAST(CASE WHEN REGEXP_LIKE(CAST(R6.CONSUMPTION AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R6.CONSUMPTION AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(528.3 AS DECIMAL(38, 18))) AND R6.CONSUMPTION IS NOT NULL) AND '201202' = R6.DATE)\n) R8\n) R10",
+      "degraded": null,
+      "wall_clock_s": 36.13,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Please list the product description of the products consumed in September, 2013.",
+      "agent_sql": "SELECT DISTINCT ?description WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> ?date ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/productid> ?pid .\n  FILTER(STRSTARTS(STR(?date), \"2013-09\"))\n  ?p a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Product> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Product/productid> ?pid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Product/description> ?description .\n}",
+      "executed_sql": "SELECT DISTINCT R3.DESCRIPTION AS \"DESCRIPTION1m10\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"products\" R3\nWHERE (SUBSTRING(R1.DATE,1,LENGTH('2013-09')) = '2013-09' AND R1.DATE IS NOT NULL AND R3.DESCRIPTION IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R2.PRODUCTID = R3.PRODUCTID)\n",
+      "degraded": null,
+      "wall_clock_s": 24.74,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What is the ratio of customers who pay in EUR against customers who pay in CZK?",
+      "agent_sql": "SELECT (xsd:decimal(?eur)/xsd:decimal(?czk) AS ?ratio) WHERE {\n  {\n    SELECT (COUNT(?c1) AS ?eur) WHERE {\n      ?c1 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"EUR\" .\n    }\n  }\n  {\n    SELECT (COUNT(?c2) AS ?czk) WHERE {\n      ?c2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"CZK\" .\n    }\n  }\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 87.54,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Please list the countries of the gas stations with transactions taken place in June, 2013.",
+      "agent_sql": "SELECT DISTINCT ?country WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> ?date ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/gasstationid> ?gsid .\n  ?g a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/gasstationid> ?gsid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> ?country .\n  FILTER(STRSTARTS(?date, \"2013-06\"))\n}",
+      "executed_sql": "SELECT DISTINCT R4.COUNTRY AS \"COUNTRY1m7\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"gasstations\" R3, \"bird_debit_card_specializing\".\"gasstations\" R4\nWHERE (SUBSTRING(R1.DATE,1,LENGTH('2013-06')) = '2013-06' AND R1.DATE IS NOT NULL AND R4.COUNTRY IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R2.GASSTATIONID = R3.GASSTATIONID AND R3.CHAINID = R4.CHAINID)\n",
+      "degraded": null,
+      "wall_clock_s": 21.73,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-16",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Among the customers who paid in euro, how many of them have a monthly consumption of over 1000?",
+      "agent_sql": "SELECT (COUNT(DISTINCT ?c) AS ?n) WHERE {\n  ?c a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"EUR\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid .\n  ?ym a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?cons .\n  FILTER(xsd:decimal(?cons) > 1000)\n}",
+      "executed_sql": "SELECT COUNT(DISTINCT('http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/EUR')) AS \"v4\"\nFROM (SELECT DISTINCT R8.CONSUMPTION AS \"CONSUMPTION1m23\", R7.CUSTOMERID AS \"CUSTOMERID1m3\"\nFROM (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R1\nWHERE 'EUR' = R1.CURRENCY\nLIMIT 1) R3, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R4\nWHERE 'EUR' = R4.CURRENCY\nLIMIT 1) R6, \"bird_debit_card_specializing\".\"customers\" R7, \"bird_debit_card_specializing\".\"yearmonth\" R8\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R8.CONSUMPTION AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R8.CONSUMPTION AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) > CAST(1000 AS DECIMAL(38, 18))) AND R8.CONSUMPTION IS NOT NULL AND R7.CUSTOMERID = R8.CUSTOMERID AND 'EUR' = R7.CURRENCY)\n) R10\n",
+      "degraded": null,
+      "wall_clock_s": 23.53,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-18",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Please list the disparate time of the transactions taken place in the gas stations from chain no. 11.",
+      "agent_sql": "SELECT DISTINCT ?time WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/gasstationid> ?gsid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/time> ?time .\n  ?g a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/gasstationid> ?gsid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/chainid> ?chainid .\n  FILTER(?chainid = 11)\n}",
+      "executed_sql": "SELECT DISTINCT R2.TIME AS \"TIME1m21\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"gasstations\" R3\nWHERE ((R3.CHAINID = 11) AND R2.TIME IS NOT NULL AND R3.CHAINID IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.GASSTATIONID = R3.GASSTATIONID)\n",
+      "degraded": null,
+      "wall_clock_s": 20.65,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-17",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Please list the product descriptions of the transactions taken place in the gas stations in the Czech Republic.",
+      "agent_sql": "SELECT ?description WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/gasstationid> ?gid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/productid> ?pid .\n  ?g a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/gasstationid> ?gid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> ?country .\n  FILTER(?country = \"CZE\")\n  ?p a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Product> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Product/productid> ?pid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Product/description> ?description .\n}",
+      "executed_sql": "SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R3.CHAINID AS \"CHAINID1m5\", R4.COUNTRY AS \"COUNTRY1m7\", R5.DESCRIPTION AS \"DESCRIPTION1m10\", R1.GASSTATIONID AS \"GASSTATIONID1m18\", R2.PRODUCTID AS \"PRODUCTID1m20\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"gasstations\" R3, \"bird_debit_card_specializing\".\"gasstations\" R4, \"bird_debit_card_specializing\".\"products\" R5\nWHERE ((R4.COUNTRY = 'CZE') AND R4.COUNTRY IS NOT NULL AND R5.DESCRIPTION IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.GASSTATIONID = R3.GASSTATIONID AND R3.CHAINID = R4.CHAINID AND R2.PRODUCTID = R5.PRODUCTID)\n",
+      "degraded": null,
+      "wall_clock_s": 26.53,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-20",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What kind of currency did the customer paid at 16:25:00 in 2012/8/24?",
+      "agent_sql": "SELECT ?currency WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> \"2012-08-24\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/time> \"16:25:00\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid .\n  ?c a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> ?currency .\n}",
+      "executed_sql": "SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R4.CURRENCY AS \"CURRENCY1m1\", R3.CUSTOMERID AS \"CUSTOMERID1m16\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"transactions_1k\" R3, \"bird_debit_card_specializing\".\"customers\" R4\nWHERE (R4.CURRENCY IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.AMOUNT = R3.AMOUNT AND R3.CUSTOMERID = R4.CUSTOMERID AND '2012-08-24' = R1.DATE AND '16:25:00' = R2.TIME)\n",
+      "degraded": null,
+      "wall_clock_s": 21.54,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-19",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Among the transactions made in the gas stations in the Czech Republic, how many of them are taken place after 2012/1/1?",
+      "agent_sql": "SELECT (COUNT(*) AS ?n) WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/gasstationid> ?gsid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> ?date .\n  ?g a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/gasstationid> ?gsid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> ?country .\n  FILTER(?country = \"CZE\")\n  FILTER(?date > \"2012-01-01\")\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v0\"\nFROM (SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R3.CHAINID AS \"CHAINID1m5\", R4.COUNTRY AS \"COUNTRY1m7\", R2.DATE AS \"DATE1m17\", R1.GASSTATIONID AS \"GASSTATIONID1m18\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"gasstations\" R3, \"bird_debit_card_specializing\".\"gasstations\" R4\nWHERE ((R2.DATE > '2012-01-01') AND (R4.COUNTRY = 'CZE') AND R2.DATE IS NOT NULL AND R4.COUNTRY IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.GASSTATIONID = R3.GASSTATIONID AND R3.CHAINID = R4.CHAINID)\n) R6\n",
+      "degraded": null,
+      "wall_clock_s": 24.91,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-22",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "For all the transactions happened during 8:00-9:00 in 2012/8/26, how many happened in CZE?",
+      "agent_sql": "SELECT (COUNT(*) AS ?n) WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> ?date ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/time> ?time ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/gasstationid> ?gid .\n  ?g a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/gasstationid> ?gid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> ?country .\n  FILTER(?date = \"2012-08-26\")\n  FILTER(?time >= \"08:00:00\" && ?time <= \"09:00:00\")\n  FILTER(?country = \"CZE\")\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v0\"\nFROM (SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R4.CHAINID AS \"CHAINID1m5\", R5.COUNTRY AS \"COUNTRY1m7\", R1.DATE AS \"DATE1m17\", R3.GASSTATIONID AS \"GASSTATIONID1m18\", R2.TIME AS \"TIME1m21\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"transactions_1k\" R3, \"bird_debit_card_specializing\".\"gasstations\" R4, \"bird_debit_card_specializing\".\"gasstations\" R5\nWHERE ((R5.COUNTRY = 'CZE') AND (R2.TIME >= '08:00:00') AND (R2.TIME <= '09:00:00') AND (R1.DATE = '2012-08-26') AND R1.DATE IS NOT NULL AND R2.TIME IS NOT NULL AND R5.COUNTRY IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.AMOUNT = R3.AMOUNT AND R3.GASSTATIONID = R4.GASSTATIONID AND R4.CHAINID = R5.CHAINID)\n) R7\n",
+      "degraded": null,
+      "wall_clock_s": 22.35,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-23",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What's the nationality of the customer who spent 548.4 in 2012/8/24?",
+      "agent_sql": "SELECT ?currency WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/price> ?price ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> \"2012-08-24\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid .\n  FILTER(xsd:decimal(?price) = 548.4)\n  ?c a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> ?currency .\n}",
+      "executed_sql": "SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R4.CURRENCY AS \"CURRENCY1m1\", R3.CUSTOMERID AS \"CUSTOMERID1m16\", R1.PRICE AS \"PRICE1m19\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"transactions_1k\" R3, \"bird_debit_card_specializing\".\"customers\" R4\nWHERE ((CAST(CASE WHEN REGEXP_LIKE(CAST(R1.PRICE AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]*$') THEN CAST(CAST(R1.PRICE AS VARCHAR) AS DECIMAL(38, 18)) ELSE NULL END AS DECIMAL(38, 18)) = CAST(548.4 AS DECIMAL(38, 18))) AND R1.PRICE IS NOT NULL AND R4.CURRENCY IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.AMOUNT = R3.AMOUNT AND R3.CUSTOMERID = R4.CUSTOMERID AND '2012-08-24' = R2.DATE)\n",
+      "degraded": null,
+      "wall_clock_s": 27.62,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-24",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What is the percentage of the customers who used EUR in 2012/8/25?",
+      "agent_sql": "SELECT ((?eur*100.0)/?total AS ?percentage)\nWHERE {\n  {\n    SELECT (COUNT(DISTINCT ?cid) AS ?eur)\n    WHERE {\n      ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> \"2012-08-25\" ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid .\n      ?cust a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n            <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid ;\n            <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> \"EUR\" .\n    }\n  }\n  {\n    SELECT (COUNT(DISTINCT ?cid2) AS ?total)\n    WHERE {\n      ?t2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> \"2012-08-25\" ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid2 .\n    }\n  }\n}",
+      "executed_sql": "SELECT CASE WHEN (R13.\"v6\" IS NOT NULL AND (NOT (R19.\"v9\" = 0.0))) THEN CAST(((CAST(R13.\"v6\" AS DECIMAL(38, 6)) * CAST(100.0 AS DECIMAL(38, 6))) / CAST(R19.\"v9\" AS DECIMAL(38, 6))) AS VARCHAR) ELSE NULL END AS \"v0\", R13.\"v6\" AS \"v6\", R19.\"v9\" AS \"v9\"\nFROM (SELECT COUNT(DISTINCT(R11.\"CUSTOMERID1m16\")) AS \"v6\"\nFROM (SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R2.CUSTOMERID AS \"CUSTOMERID1m16\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R3\nWHERE 'EUR' = R3.CURRENCY\nLIMIT 1) R5, \"bird_debit_card_specializing\".\"customers\" R6, (SELECT 1 AS uselessVariable\nFROM \"bird_debit_card_specializing\".\"customers\" R7\nWHERE 'EUR' = R7.CURRENCY\nLIMIT 1) R9\nWHERE (R1.AMOUNT = R2.AMOUNT AND R2.CUSTOMERID = R6.CUSTOMERID AND '2012-08-25' = R1.DATE AND 'EUR' = R6.CURRENCY)\n) R11\n) R13, (SELECT COUNT(DISTINCT(R17.\"CUSTOMERID1m19\")) AS \"v9\"\nFROM (SELECT DISTINCT R14.AMOUNT AS \"AMOUNT1m6\", R15.CUSTOMERID AS \"CUSTOMERID1m19\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R14, \"bird_debit_card_specializing\".\"transactions_1k\" R15\nWHERE (R15.CUSTOMERID IS NOT NULL AND R14.AMOUNT = R15.AMOUNT AND '2012-08-25' = R14.DATE)\n) R17\n) R19",
+      "degraded": null,
+      "wall_clock_s": 41.58,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-26",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What is the percentage of \"premium\" against the overall segment in Country = \"SVK\"?",
+      "agent_sql": "SELECT (100.0 * SUM(IF(?segment = \"Premium\", 1.0, 0.0)) / COUNT(?g) AS ?percentage)\nWHERE {\n  ?g a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/country> \"SVK\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/GasStation/segment> ?segment .\n}",
+      "executed_sql": "SELECT CASE WHEN (NOT (COUNT(*) = 0.0)) THEN CAST(((CAST(100.0 AS DOUBLE) * COALESCE(SUM(CAST(CASE WHEN (R4.\"SEGMENT1m9\" = 'Premium') THEN '1.0' ELSE '0.0' END AS DOUBLE)),0)) / CAST(COUNT(*) AS DOUBLE)) AS VARCHAR) ELSE NULL END AS \"v0\", COUNT(*) AS \"v2\"\nFROM (SELECT DISTINCT R1.CHAINID AS \"CHAINID1m5\", R2.SEGMENT AS \"SEGMENT1m9\"\nFROM \"bird_debit_card_specializing\".\"gasstations\" R1, \"bird_debit_card_specializing\".\"gasstations\" R2\nWHERE (R2.SEGMENT IS NOT NULL AND R1.CHAINID = R2.CHAINID AND 'SVK' = R1.COUNTRY)\n) R4",
+      "degraded": null,
+      "wall_clock_s": 33.9,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-27",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What is the amount spent by customer \"38508\" at the gas stations? How much had the customer spent in January 2012?",
+      "agent_sql": "SELECT ?totalSpent ?januarySpent WHERE {\n  {\n    SELECT (SUM(?price) AS ?totalSpent) WHERE {\n      ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> \"38508\"^^xsd:long ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/price> ?price .\n    }\n  }\n  {\n    SELECT (SUM(?consumption) AS ?januarySpent) WHERE {\n      ?y a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> \"38508\"^^xsd:long ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> \"201201\" ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption .\n    }\n  }\n}",
+      "executed_sql": "SELECT 1 AS uselessVariable\nFROM (SELECT 1 ) tdummy\n",
+      "degraded": null,
+      "wall_clock_s": 25.04,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "In 2012, who had the least consumption in LAM?",
+      "agent_sql": "SELECT ?customerid WHERE {\n  {\n    SELECT ?customerid (SUM(?consumption) AS ?total)\n    WHERE {\n      ?c a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?customerid ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> ?segment .\n      FILTER(?segment = \"LAM\")\n      ?y a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?customerid ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?date ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption .\n      BIND(SUBSTR(STR(?date),1,4) AS ?year)\n      FILTER(?year = \"2012\")\n    }\n    GROUP BY ?customerid\n  }\n}\nORDER BY ASC(?total)\nLIMIT 1",
+      "executed_sql": "SELECT R6.\"CUSTOMERID1m3\" AS \"CUSTOMERID1m3\", SUM(CAST(R6.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) AS \"sum1\"\nFROM (SELECT DISTINCT R3.CONSUMPTION AS \"CONSUMPTION1m23\", R1.CURRENCY AS \"CURRENCY1m1\", R1.CUSTOMERID AS \"CUSTOMERID1m3\", R4.DATE AS \"DATE1m26\", R2.SEGMENT AS \"SEGMENT1m4\"\nFROM \"bird_debit_card_specializing\".\"customers\" R1, \"bird_debit_card_specializing\".\"customers\" R2, \"bird_debit_card_specializing\".\"yearmonth\" R3, \"bird_debit_card_specializing\".\"yearmonth\" R4\nWHERE (SUBSTRING(R4.DATE,1,4) = '2012' AND (R2.SEGMENT = 'LAM') AND R2.SEGMENT IS NOT NULL AND R4.DATE IS NOT NULL AND R1.CURRENCY = R2.CURRENCY AND R1.CUSTOMERID = R3.CUSTOMERID AND R3.CONSUMPTION = R4.CONSUMPTION)\n) R6\nGROUP BY R6.\"CUSTOMERID1m3\"\nORDER BY SUM(CAST(R6.\"CONSUMPTION1m23\" AS DOUBLE PRECISION)) NULLS FIRST\nLIMIT 1",
+      "degraded": null,
+      "wall_clock_s": 185.45,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-29",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "For all the people who paid more than 29.00 per unit of product id No.5. Give their consumption status in the August of 2012.",
+      "agent_sql": "SELECT DISTINCT ?consumption WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/productid> 5 ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/price> ?price ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/amount> ?amount ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid .\n  FILTER(xsd:double(?amount) > 0)\n  BIND(xsd:double(?price) / xsd:double(?amount) AS ?perUnit)\n  FILTER(?perUnit > 29.00)\n  ?y a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> \"201208\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?consumption .\n}",
+      "executed_sql": "SELECT DISTINCT R4.CONSUMPTION AS \"CONSUMPTION1m23\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"transactions_1k\" R3, \"bird_debit_card_specializing\".\"yearmonth\" R4, \"bird_debit_card_specializing\".\"yearmonth\" R5\nWHERE (((CAST(R2.PRICE AS DOUBLE PRECISION) / CAST(CASE WHEN NOT REGEXP_LIKE(CAST(R1.AMOUNT AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$') THEN NULL ELSE CAST(CAST(R1.AMOUNT AS VARCHAR) AS DOUBLE) END AS DOUBLE PRECISION)) > CAST(29.00 AS DOUBLE PRECISION)) AND (CAST(CASE WHEN NOT REGEXP_LIKE(CAST(R1.AMOUNT AS VARCHAR), '^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$') THEN NULL ELSE CAST(CAST(R1.AMOUNT AS VARCHAR) AS DOUBLE) END AS DOUBLE PRECISION) > CAST(0 AS DOUBLE PRECISION)) AND R2.PRICE IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.AMOUNT = R3.AMOUNT AND R3.CUSTOMERID = R4.CUSTOMERID AND R4.CONSUMPTION = R5.CONSUMPTION AND 5 = R1.PRODUCTID AND '201208' = R5.DATE)\n",
+      "degraded": null,
+      "wall_clock_s": 29.39,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-21",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What segment did the customer have at 2012/8/23 21:20:00?",
+      "agent_sql": "SELECT ?segment WHERE {\n  ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> \"2012-08-23\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/time> \"21:20:00\" ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid .\n  ?c a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?cid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/segment> ?segment .\n}",
+      "executed_sql": "SELECT DISTINCT R1.AMOUNT AS \"AMOUNT1m13\", R4.CURRENCY AS \"CURRENCY1m1\", R3.CUSTOMERID AS \"CUSTOMERID1m16\", R5.SEGMENT AS \"SEGMENT1m4\"\nFROM \"bird_debit_card_specializing\".\"transactions_1k\" R1, \"bird_debit_card_specializing\".\"transactions_1k\" R2, \"bird_debit_card_specializing\".\"transactions_1k\" R3, \"bird_debit_card_specializing\".\"customers\" R4, \"bird_debit_card_specializing\".\"customers\" R5\nWHERE (R5.SEGMENT IS NOT NULL AND R1.AMOUNT = R2.AMOUNT AND R1.AMOUNT = R3.AMOUNT AND R3.CUSTOMERID = R4.CUSTOMERID AND R4.CURRENCY = R5.CURRENCY AND '2012-08-23' = R1.DATE AND '21:20:00' = R2.TIME)\n",
+      "degraded": null,
+      "wall_clock_s": 147.24,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-25",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "For the customer who paid 634.8 in 2012/8/25, what was the consumption decrease rate from Year 2012 to 2013?",
+      "agent_sql": "SELECT (((?sum2012 - ?sum2013) / ?sum2012) AS ?rate)\nWHERE {\n  {\n    SELECT ?cid\n           (SUM(IF(?year = \"2012\", xsd:decimal(?cons), 0)) AS ?sum2012)\n           (SUM(IF(?year = \"2013\", xsd:decimal(?cons), 0)) AS ?sum2013)\n    WHERE {\n      ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/price> ?price ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/date> \"2012-08-25\" ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?cid .\n      FILTER(xsd:decimal(?price) = 634.8)\n\n      ?ym a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth> ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/customerid> ?cid ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/date> ?ymdate ;\n          <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Yearmonth/consumption> ?cons .\n      BIND(SUBSTR(?ymdate,1,4) AS ?year)\n    }\n    GROUP BY ?cid\n  }\n}",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 303.47,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-28",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Who is the top spending customer and how much is the average price per single item purchased by this customer? What currency was being used?",
+      "agent_sql": "SELECT ?customerid ?avgUnitPrice ?currency\nWHERE {\n  {\n    SELECT ?customerid (SUM(?price) AS ?total)\n    WHERE {\n      ?t a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?customerid ;\n         <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/price> ?price .\n    }\n    GROUP BY ?customerid\n    ORDER BY DESC(?total)\n    LIMIT 1\n  }\n  ?t2 a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction> ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/customerid> ?customerid ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/price> ?price2 ;\n      <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Transaction/amount> ?amount2 .\n  FILTER(xsd:decimal(?amount2) != 0)\n  BIND(xsd:decimal(?price2) / xsd:decimal(?amount2) AS ?unitPrice)\n  ?c a <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer> ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/customerid> ?customerid ;\n     <http://bird-bird_debit_card_specializing-ontology-20260804-234332/ontology/vkg-bird_debit_card_specializing/Customer/currency> ?currency .\n}\nGROUP BY ?customerid ?currency",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 277.61,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "What was the average monthly consumption of customers in SME for the year 2013?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 918.68,
+      "error": "The read operation timed out"
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "ontology_id": "vkg-bird_debit_card_specializing",
+      "question": "Which of the three segments\u2014SME, LAM and KAM\u2014has the biggest and lowest percentage increases in consumption paid in EUR between 2012 and 2013?",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": null,
+      "wall_clock_s": 948.84,
+      "error": "The read operation timed out"
+    }
+  ],
+  "n_rows": 30
+}

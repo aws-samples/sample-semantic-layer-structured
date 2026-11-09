@@ -44,7 +44,13 @@ from strands.models import BedrockModel
 from botocore.config import Config
 from boto3.dynamodb.conditions import Key as DKey
 
-from .token_manager import count_tokens
+try:
+    from agents.shared.token_manager import count_tokens
+    # set_boto_session re-exported for notebook/test credential injection.
+    from agents.shared.boto_session import get_boto_session, set_boto_session  # noqa: F401
+except ImportError:
+    from shared.token_manager import count_tokens  # type: ignore
+    from shared.boto_session import get_boto_session, set_boto_session  # type: ignore  # noqa: F401
 from .doc_validator import validate_and_clean
 from .prompt_builder import (
     MODEL_ID,
@@ -59,8 +65,16 @@ from .prompt_builder import (
 # Support both the packaged ('shared') and repo-relative ('agents.shared') paths.
 try:
     from shared import cw_metrics  # type: ignore
+    from shared.delta_fingerprint import (  # type: ignore
+        schema_hash, make_fingerprint, write_table_fingerprint,
+        iceberg_snapshot_id, ddb_count_marker,
+        is_count_free_catalog, unmeasurable_data_marker)
 except ImportError:  # pragma: no cover - exercised only outside the container
     from agents.shared import cw_metrics  # type: ignore
+    from agents.shared.delta_fingerprint import (  # type: ignore
+        schema_hash, make_fingerprint, write_table_fingerprint,
+        iceberg_snapshot_id, ddb_count_marker,
+        is_count_free_catalog, unmeasurable_data_marker)
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -99,27 +113,8 @@ _layer_tables_var: contextvars.ContextVar[Set[str]] = contextvars.ContextVar(
 # ---------------------------------------------------------------------------
 # Boto3 session (injectable for notebooks / tests)
 # ---------------------------------------------------------------------------
-_boto_session: Optional[boto3.Session] = None
-
-
-def set_boto_session(session: boto3.Session) -> None:
-    """Inject a boto3 Session (useful in notebooks and tests)."""
-    global _boto_session
-    _boto_session = session
-    logger.info(f"Boto3 session set with region: {session.region_name}")
-
-
-def get_boto_session() -> boto3.Session:
-    """Return the active boto3 Session, creating a default one if needed."""
-    global _boto_session
-    if _boto_session is None:
-        region = os.environ.get('AWS_REGION')
-        if not region:
-            temp = boto3.Session()
-            region = temp.region_name or 'us-east-1'
-        _boto_session = boto3.Session(region_name=region)
-        logger.info(f"Created default boto3 session with region: {region}")
-    return _boto_session
+# boto3 session management (set_boto_session / get_boto_session) is provided by
+# agents.shared.boto_session, imported above.
 
 
 # ===========================================================================
@@ -205,6 +200,12 @@ def get_single_table_schema(
     )
     session = get_boto_session()
     athena_error: Optional[Exception] = None
+    # Bound up-front so the terminal `top_error = athena_error or glue_error_val`
+    # cannot hit an unbound name when the Glue fallback SUCCEEDS but returns a
+    # zero-column table (empty StorageDescriptor.Columns) — in that case `if
+    # columns:` is False and control falls through without entering the Glue
+    # `except`. Mirrors ontology_agent.get_single_table_schema.
+    glue_error_val: Optional[Exception] = None
 
     # S3 Tables (Iceberg) catalogs reject `DESCRIBE "db"."table"` with
     # InvalidRequestException — skip Athena entirely and read from Glue directly.
@@ -262,13 +263,28 @@ def get_single_table_schema(
                 )
                 raise RuntimeError(f"DESCRIBE TABLE query {state}: {reason}")
 
-            results = athena.get_query_results(QueryExecutionId=qid)
-            raw_rows = results["ResultSet"]["Rows"]
+            # Athena returns <=1000 rows per page; loop NextToken to fetch the
+            # FULL result set. A wide table (Spider2-scale, >1000 columns) yields
+            # >1000 DESCRIBE rows, and a single call would silently truncate the
+            # schema. Accumulate every page into raw_rows; the downstream [1:]
+            # then skips only the page-1 header row, exactly as before.
+            raw_rows = []
+            next_token = ""
+            while True:
+                page_kwargs: Dict[str, Any] = {"QueryExecutionId": qid}
+                if next_token:
+                    page_kwargs["NextToken"] = next_token
+                page = athena.get_query_results(**page_kwargs)
+                raw_rows.extend(page["ResultSet"]["Rows"])
+                next_token = page.get("NextToken", "") or ""
+                if not next_token:
+                    break
             logger.info(
                 f"Athena query '{qid}' returned {len(raw_rows)} raw rows "
                 f"(including header) for '{database_name}.{table_name}'"
             )
             columns = []
+            _seen_cols: Set[str] = set()
             for row in raw_rows[1:]:  # skip result-set header row
                 data = row.get("Data", [])
                 if len(data) < 2:
@@ -281,6 +297,16 @@ def get_single_table_schema(
                 # DESCRIBE output includes section headers like "# Partition Information"
                 if not col_name or col_name.startswith("#") or col_type == "":
                     continue
+                # Athena DESCRIBE repeats partition columns under the
+                # "# Partition Information" section (they also appear in the main
+                # list). Dedup by name (first occurrence wins) so the column SET
+                # matches what the delta planner hashes via GlueService columns +
+                # partitionKeys — otherwise a partitioned table would hash
+                # differently on each side and read as permanently schemaChanged.
+                _key = col_name.lower()
+                if _key in _seen_cols:
+                    continue
+                _seen_cols.add(_key)
                 columns.append({"name": col_name, "type": col_type, "comment": col_comment})
 
             # Fetch existing table description from Glue (best-effort).
@@ -400,7 +426,7 @@ def get_single_table_schema(
         )
         glue_error_val = glue_error
 
-    top_error = athena_error or glue_error_val  # type: ignore[possibly-undefined]
+    top_error = athena_error or glue_error_val
     return json.dumps(
         {"error": str(top_error), "database_name": database_name, "table_name": table_name}
     )
@@ -941,13 +967,19 @@ def _ddb_query_coordinate(
         session: Active boto3 session.
         database_name: Glue database the table was described from.
         table_name: Glue table name.
-        catalog_id: The catalog the table was described under. For a DDB-connector
-            table this is already the connector catalog (e.g. ``dynamodb_catalog``);
-            it is preserved as-is in the returned coordinate.
+        catalog_id: The catalog the table was described under. It is NOT reused in the
+            returned coordinate: in practice it is ``AWSDataCatalog``, because the admin
+            data-source picker denylists the connector catalog and surfaces DynamoDB tables
+            through the Glue database ``<project>_dynamodb``. Once the Location is confirmed
+            to be a DynamoDB ARN the connector is the only place the table can be read, so
+            the describe-time catalog is irrelevant and the connector catalog is used instead.
+            Only consulted to decide whether to pass a ``CatalogId`` to ``glue.get_table``.
 
     Returns:
-        ``(catalog_id, "default", <arn_tail>)`` when the table is DynamoDB-backed,
-        else ``None`` (so non-DDB tables — S3 Tables, plain Glue — are unchanged).
+        ``(<connector catalog>, "default", <arn_tail>)`` when the table is DynamoDB-backed,
+        where the connector catalog comes from the ``DYNAMODB_CONNECTOR_CATALOG`` env var
+        (default ``dynamodb_catalog``); else ``None`` (so non-DDB tables — S3 Tables, plain
+        Glue — are unchanged).
 
     Raises:
         ValueError: when the Location IS a DynamoDB ARN but the ``:table/`` tail
@@ -992,7 +1024,11 @@ def _ddb_query_coordinate(
             f"DynamoDB Location ARN for {database_name}.{table_name} has an empty "
             f"table name: {location!r}."
         )
-    return catalog_id, "default", ddb_table
+    # Deliberately NOT catalog_id: see the Args note. Echoing the describe-time catalog is the
+    # bug — it records `AWSDataCatalog` + `default` in the sidecar, and the query agent's SQL
+    # then fails `Schema 'default' does not exist`.
+    connector_catalog = os.environ.get("DYNAMODB_CONNECTOR_CATALOG", "dynamodb_catalog")
+    return connector_catalog, "default", ddb_table
 
 
 def _fetch_real_columns(
@@ -1302,6 +1338,78 @@ def _version_num(v: str) -> int:
     """Parse the integer suffix from a version string like 'v1', 'v10'."""
     m = re.search(r'\d+', v or 'v0')
     return int(m.group()) if m else 0
+
+
+def _filter_delta_targets(valid_tables: list, delta_targets) -> list:
+    """Restrict the per-table loop to a delta rebuild set.
+
+    Args:
+        valid_tables: The list of {database, table, catalogId, ...} dicts.
+        delta_targets: A list of 'database.table' names, or None/empty for a full
+            build (returns valid_tables unchanged).
+
+    Returns:
+        The subset of valid_tables whose 'database.table' is in delta_targets, or
+        the full list when delta_targets is falsy. A target with no match is simply
+        skipped (an admin may have deselected a table between plan and build — a
+        loud failure is NOT wanted here).
+    """
+    if not delta_targets:
+        return valid_tables
+    wanted = set(delta_targets)
+    return [t for t in valid_tables
+            if f"{t['database']}.{t['table']}" in wanted]
+
+
+def _data_marker_for_table(db, tbl, cat):
+    """Return (marker, kind) via the SAME shared functions the planner uses.
+
+    Args:
+        db: Database name.
+        tbl: Table name.
+        cat: Catalog id ('s3tablescatalog/<bucket>' or 'AWSDataCatalog').
+
+    Returns:
+        (marker_str, marker_kind) — Iceberg snapshot for S3 Tables, 'unmeasurable' for
+        a federated connector with no aggregation pushdown, else DDB count.
+    """
+    region = os.environ.get("AWS_REGION", "us-east-1")
+    bucket = os.environ.get("ARTIFACTS_BUCKET", "")
+    if str(cat).startswith("s3tablescatalog/"):
+        return iceberg_snapshot_id(db=db, tbl=tbl, catalog_id=cat, region=region), "iceberg_snapshot"
+    # A non-DynamoDB Lambda catalog (e.g. Snowflake) gets no aggregation pushdown, so
+    # the COUNT(*) below would become a full remote scan that outlives its own Lambda.
+    if is_count_free_catalog(catalog_id=str(cat), region=region):
+        return unmeasurable_data_marker(db=db, tbl=tbl, catalog_id=str(cat)), "unmeasurable"
+    return ddb_count_marker(db=db, tbl=tbl, catalog_id=cat, region=region,
+                            artifacts_bucket=bucket), "ddb_count"
+
+
+def _record_table_fingerprint(table, layer_id, version, db, tbl, cat):
+    """Compute + persist this table's fingerprint. Called ONLY on success.
+
+    Args:
+        table: boto3 DynamoDB Table resource for the metadata table.
+        layer_id: The layer/config id.
+        version: The active layer version.
+        db: Database name.
+        tbl: Table name.
+        cat: Catalog id.
+
+    Returns:
+        None.
+    """
+    raw = json.loads(get_single_table_schema(database_name=db, table_name=tbl, catalog_id=cat))
+    # get_single_table_schema ALREADY appends partition keys into `columns`
+    # (metadata_agent/main.py Glue path), so do NOT call merge_columns here — the set
+    # is already in the canonical (data cols + PKs) order the planner reproduces via
+    # merge_columns. Double-merging would duplicate PKs.
+    cols = raw.get("columns", [])
+    marker, kind = _data_marker_for_table(db, tbl, cat)
+    fp = make_fingerprint(schema_h=schema_hash(cols), data_marker=marker,
+                          marker_kind=kind, version=version, catalog_id=cat)
+    write_table_fingerprint(table, layer_id=layer_id, version=version,
+                            db_table=f"{db}.{tbl}", fp=fp)
 
 
 def _resolve_active_version(table, job_id: str) -> str:
@@ -1780,7 +1888,11 @@ def _run_annotation_mode(
     ANNOTATION_SYSTEM_PROMPT for every table and writes a versioned history
     record on completion.
     """
-    target_version = config.get('targetVersion')
+    # Fail loud: a revision run with no target version is a config/programming
+    # error. Silently accepting None would write a None-keyed DynamoDB item (or
+    # emit S3 docs under .../None/...) — mirror ontology_agent._run_revision_mode,
+    # which reads config["targetVersion"] directly.
+    target_version = config['targetVersion']
     valid_tables = [t for t in tables_list if t.get('database') and t.get('table')]
     total = len(valid_tables)
     failures: list = []
@@ -1993,16 +2105,23 @@ def invoke(payload, context):
 
             # Normal enrichment path — always uses SYSTEM_PROMPT.
             valid_tables = [t for t in tables_list if t.get('database') and t.get('table')]
+            # The in-layer table inventory is the FULL selected set (all databases'
+            # tables), computed BEFORE the delta filter. A delta build rebuilds only a
+            # subset, but a rebuilt table may legitimately reference an UNCHANGED
+            # sibling still in the layer — deriving the inventory from the filtered
+            # subset would make the doc validator strip those valid cross-references.
+            layer_tables = [t['table'] for t in valid_tables]
+            # Now scope the per-table processing loop to the delta rebuild set.
+            delta_targets = config.get("deltaTargetTables")
+            valid_tables = _filter_delta_targets(valid_tables, delta_targets)
             total = len(valid_tables)
             failures: list = []
             processed = 0
 
-            # The in-layer table inventory — every table the agent is allowed to
-            # cross-reference. Threaded into each table prompt so the agent never
-            # redirects an empty/bridge table to a plausible-but-unbuilt ACORD
-            # table (e.g. `participant`/`payout`), which the query agent would
-            # then search for, fail to find, and wrongly report as missing data.
-            layer_tables = [t['table'] for t in valid_tables]
+            # Threaded into each table prompt so the agent never redirects an
+            # empty/bridge table to a plausible-but-unbuilt ACORD table (e.g.
+            # `participant`/`payout`), which the query agent would then search for,
+            # fail to find, and wrongly report as missing data.
             # Expose the inventory to save_metadata_document_to_s3 (runs in this
             # same thread/context) so the doc validator can drop out-of-layer
             # reference edges as a backstop to the prompt restriction.
@@ -2030,6 +2149,13 @@ def invoke(payload, context):
                     )
                     agent(table_prompt)
                     processed += 1
+                    try:
+                        _record_table_fingerprint(
+                            get_boto_session().resource('dynamodb').Table(
+                                os.environ.get('ONTOLOGY_METADATA_TABLE', 'semantic-layer-metadata')),
+                            id, active_version, db, tbl, cat)
+                    except Exception as fp_err:  # noqa: BLE001 — never fail a build on fingerprinting
+                        logger.warning("fingerprint write failed for %s.%s: %s", db, tbl, fp_err)
                 except Exception as table_err:
                     logger.warning(
                         f"[Table {idx}/{total}] Failed {db}.{tbl}: {table_err} — skipping",

@@ -1,0 +1,74 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-ZUa3LPAcs8",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology-ZUa3LPAcs8",
+  "batch_evaluation_id": "cwd_vkg_gen_batch_cdd1e104-aad06dfef6",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/cwd_vkg_gen_batch_cdd1e104-aad06dfef6",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_775d822a-28SWVpCtNL"
+  ],
+  "custom_evaluators": {
+    "OntologyQuality": "OntologyQuality_775d822a-28SWVpCtNL"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": "1.000",
+      "Evaluated": 1,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "OntologyQuality_775d822a-28SWVpCtNL",
+      "AvgScore": "1.000",
+      "Evaluated": 1,
+      "Failed": 0
+    }
+  ],
+  "per_scenario_events": [
+    {
+      "scenario_id": "cwd_acme",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The agent successfully completed all required tasks: (1) OWL/RDF ontology with owl:Class and owl:DatatypeProperty (with rdfs:comment) was generated for all 13 tables including Premium; (2) FK relationships were modeled as owl:ObjectProperty for all applicable tables including Premium's hasPolicyAmount linking to PolicyAmount; (3) Per-table N-Quad fragments were persisted via save_intermediate_ontology for all 13 tables; (4) The specific Phase 2 task for Premium was completed - append_fk_triples returned success:true with fk_triples_added:6, persist_file_to_neptune returned success:true with 26 triples persisted, and update_glue_metadata_from_ontology was called (the AccessDeniedException is noted as expected behavior per the task instructions). The DynamoDB/progress tracking showed 13/13 tables at 100%. The Glue failures are consistent across all tables and are explicitly noted in the task instructions as expected behavior for DynamoDB connector catalogs."
+    },
+    {
+      "scenario_id": "cwd_acme",
+      "evaluator": "OntologyQuality_775d822a",
+      "score": 1.0,
+      "label": "good",
+      "explanation": "The Premium table has a single source column (policy_amount_identifier), and the agent correctly modeled: (1) an owl:Class Premium with a business-meaningful rdfs:comment and label; (2) an owl:DatatypeProperty for the sole column with domain/range and a descriptive comment; (3) the FK relationship (policy_amount_identifier \u2192 Policy_Amount) modeled as an owl:ObjectProperty hasPolicyAmount with correct rdfs:domain/rdfs:range and mapsToColumn, appended via append_fk_triples and confirmed success. Neptune persistence succeeded (26 triples). The class also carries rich annotations (businessPurpose, businessConcepts, referenceTables, sampleData, notes) beyond the minimum. The only shortfall across the session is the Glue metadata update failing due to Lake Formation permissions, but the task explicitly treats this as expected/non-blocking and the agent correctly reported it without treating it as a hard failure. All three scoring axes (coverage, relationship modeling, annotation quality) are strong for this table: exactly one class, the one column has a datatype property with domain/range, the FK is modeled as an ObjectProperty, and comments are business-meaningful rather than restated column names."
+    }
+  ],
+  "scenario_runs": {
+    "cwd_acme": {
+      "layer_id": "vkg-cwd_acme",
+      "session_id": "cwd_acme-471b8c63-ba9a-42e3-9a19-5d029dde9678",
+      "status": "completed",
+      "num_tables": 13,
+      "tables": [
+        "Agreement_Party_Role",
+        "Catastrophe",
+        "Claim",
+        "Claim_Amount",
+        "Claim_Coverage",
+        "Expense_Payment",
+        "Expense_Reserve",
+        "Loss_Payment",
+        "Loss_Reserve",
+        "Policy",
+        "Policy_Amount",
+        "Policy_Coverage_Detail",
+        "Premium"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 1443.0
+    }
+  },
+  "performance": {
+    "scenarios": 1,
+    "avg_build_seconds": 1443.0,
+    "total_build_seconds": 1443.0
+  }
+}

@@ -15,6 +15,8 @@ from agents.shared.eval_judges import (
     RAG_JUDGE_PROMPTS,
     VKG_JUDGE_PROMPTS,
     create_custom_judges,
+    find_evaluator_id_by_name,
+    get_or_create_custom_judges,
 )
 
 
@@ -154,3 +156,134 @@ def test_blank_suffix_autogenerates_unique_names():
     a_names = {c["evaluatorName"] for c in a.calls}
     b_names = {c["evaluatorName"] for c in b.calls}
     assert a_names.isdisjoint(b_names)
+
+
+# ── Evaluator REUSE (get_or_create_custom_judges / find_evaluator_id_by_name) ──
+# AgentCore never garbage-collects evaluators, and CreateEvaluator does not enforce
+# name uniqueness. nb12 is run once per BIRD database (11 runs), so create-always
+# would mint 66 duplicates and score each database with different evaluator objects.
+
+
+class _ListingControlClient(_MockControlClient):
+    """A mock control client that also serves a canned paginated list_evaluators."""
+
+    def __init__(self, existing):
+        """Store the evaluator dicts that list_evaluators should return.
+
+        Args:
+            existing: List of evaluator summary dicts (evaluatorName / evaluatorId
+                / status / createdAt), split across two pages to exercise paging.
+        """
+        super().__init__()
+        self.existing = existing
+
+    def get_paginator(self, operation_name):
+        """Return a stub paginator for ``list_evaluators`` only."""
+        assert operation_name == "list_evaluators"
+        pages = [
+            {"evaluators": self.existing[:1]},
+            {"evaluators": self.existing[1:]},
+        ]
+
+        class _Paginator:
+            def paginate(self_inner):
+                return iter(pages)
+
+        return _Paginator()
+
+
+def _summary(name, evaluator_id, *, status="ACTIVE", created=1):
+    """Build one list_evaluators summary dict for the mock client."""
+    return {
+        "evaluatorName": name,
+        "evaluatorId": evaluator_id,
+        "status": status,
+        "createdAt": created,
+    }
+
+
+def test_find_evaluator_id_matches_name_across_pages():
+    """Lookup matches on evaluatorName (not id) and walks every page."""
+    client = _ListingControlClient([
+        _summary("GoalSuccess_other", "GoalSuccess_other-aaa"),
+        _summary("GoalSuccess_bird_vkg_v1", "GoalSuccess_bird_vkg_v1-zzz"),
+    ])
+    found = find_evaluator_id_by_name(
+        control_client=client, evaluator_name="GoalSuccess_bird_vkg_v1",
+    )
+    # The id carries a service-assigned -<hash>, so matching must be on the name.
+    assert found == "GoalSuccess_bird_vkg_v1-zzz"
+
+
+def test_find_evaluator_id_prefers_newest_and_ignores_inactive():
+    """Among same-named evaluators the newest ACTIVE one wins; DELETING is skipped."""
+    client = _ListingControlClient([
+        _summary("SqlGrounded_v1", "SqlGrounded_v1-old", created=1),
+        _summary("SqlGrounded_v1", "SqlGrounded_v1-new", created=9),
+        _summary("SqlGrounded_v1", "SqlGrounded_v1-dead", status="DELETING", created=99),
+    ])
+    found = find_evaluator_id_by_name(
+        control_client=client, evaluator_name="SqlGrounded_v1",
+    )
+    assert found == "SqlGrounded_v1-new"
+
+
+def test_find_evaluator_id_returns_none_when_absent():
+    """No match returns None so the caller can create it."""
+    client = _ListingControlClient([_summary("GoalSuccess_x", "GoalSuccess_x-1")])
+    assert find_evaluator_id_by_name(
+        control_client=client, evaluator_name="GoalSuccess_y",
+    ) is None
+
+
+def test_get_or_create_reuses_all_three_existing_judges():
+    """When all three names already exist, nothing new is created."""
+    client = _ListingControlClient([
+        _summary("GoalSuccess_s", "GoalSuccess_s-1"),
+        _summary("FinalAnswerFaithfulness_s", "FinalAnswerFaithfulness_s-2"),
+        _summary("SqlGrounded_s", "SqlGrounded_s-3"),
+    ])
+    ids = get_or_create_custom_judges(
+        control_client=client, family="vkg", name_suffix="s",
+    )
+    assert ids == [
+        "GoalSuccess_s-1", "FinalAnswerFaithfulness_s-2", "SqlGrounded_s-3",
+    ]
+    assert client.calls == []  # no CreateEvaluator on the reuse path
+
+
+def test_get_or_create_creates_only_the_missing_judge():
+    """A partially-created generation is completed, not duplicated."""
+    client = _ListingControlClient([
+        _summary("GoalSuccess_s", "GoalSuccess_s-1"),
+        _summary("SqlGrounded_s", "SqlGrounded_s-3"),
+    ])
+    ids = get_or_create_custom_judges(
+        control_client=client, family="vkg", name_suffix="s",
+    )
+    assert ids == [
+        "GoalSuccess_s-1", "FinalAnswerFaithfulness_s-id", "SqlGrounded_s-3",
+    ]
+    created = [c["evaluatorName"] for c in client.calls]
+    assert created == ["FinalAnswerFaithfulness_s"]
+
+
+def test_get_or_create_is_idempotent_ordering_matches_create():
+    """Reuse returns the canonical [GoalSuccess, FAF, SqlGrounded] order."""
+    client = _ListingControlClient([_summary("noise", "noise-1"), _summary("n2", "n2-2")])
+    first = get_or_create_custom_judges(
+        control_client=client, family="rag", name_suffix="gen1",
+    )
+    assert first == [
+        "GoalSuccess_gen1-id", "FinalAnswerFaithfulness_gen1-id", "SqlGrounded_gen1-id",
+    ]
+
+
+def test_get_or_create_blank_suffix_raises():
+    """A blank reuse key fails loudly — a random suffix would defeat reuse."""
+    client = _ListingControlClient([])
+    with pytest.raises(ValueError, match="name_suffix is required"):
+        get_or_create_custom_judges(
+            control_client=client, family="vkg", name_suffix="   ",
+        )
+    assert client.calls == []

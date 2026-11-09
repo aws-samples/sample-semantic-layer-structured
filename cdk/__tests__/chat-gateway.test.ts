@@ -24,7 +24,14 @@ const handlerSrc = fs.readFileSync(
 // but a runtime-target gateway must be non-MCP). It is therefore created via
 // a Lambda-backed CloudFormation custom resource that calls the control-plane
 // API. These tests assert that custom-resource shape — NOT a CfnGateway.
-const app = new cdk.App();
+// The chat-gateway custom-resource Lambdas bundle a Python asset (local pip
+// bundling, Docker fallback). These tests only assert the synthesized TEMPLATE
+// (IAM, custom-resource props, Lambda count) — they never need real asset
+// content. The CI image (node:22) has neither python/pip nor a Docker daemon,
+// so bundling would fail with "spawnSync docker ENOENT". `aws:cdk:bundling-stacks: []`
+// is CDK's supported switch to skip asset bundling for all stacks, keeping the
+// test hermetic (matches the no-subprocess approach of the other suites).
+const app = new cdk.App({ context: { 'aws:cdk:bundling-stacks': [] } });
 const stack = new McpServerStack(app, 'ChatGatewayTestStack', {
   env: { account: '123456789012', region: 'us-east-1' },
   projectName: 'semantic-layer',

@@ -34,7 +34,7 @@ glue_service = GlueService()
 class OntologyConfig(BaseModel):
     id: Optional[str] = None
     name: Optional[str] = None  # Normalized namespace (lowercase, no spaces)
-    type: Optional[str] = None  # 'VKG' or 'SemanticRAG'
+    type: Optional[str] = None  # 'VKG', 'SemanticRAG', or 'Hybrid'
     dataSources: Optional[List[Dict[str, Any]]] = None
     configuration: Optional[Dict[str, Any]] = {}
 
@@ -48,7 +48,9 @@ class OntologyConfig(BaseModel):
 
 
 class BuildOntologyRequest(BaseModel):
-    dataSources: List[Dict[str, str]]
+    scope: Optional[str] = "full"
+    targetTables: Optional[List[str]] = None
+    removedTables: Optional[List[str]] = None
 
 
 class ReviseOntologyRequest(BaseModel):
@@ -147,7 +149,7 @@ async def delete_ontology(ontology_id: str):
 # ============================================================================
 
 @app.post("/build/{ontology_id}")
-async def build_ontology(ontology_id: str):
+async def build_ontology(ontology_id: str, body: BuildOntologyRequest = BuildOntologyRequest()):
     """
     Build an ontology from configured data sources using AgentCore Runtime (ASYNC)
 
@@ -175,8 +177,19 @@ async def build_ontology(ontology_id: str):
     try:
         logger.info(f"Starting async ontology build for: {ontology_id}")
 
-        # Start async build (returns immediately)
-        result = ontology_service.start_build_metadata_async(ontology_id)
+        # Start async build (returns immediately). dispatch_build reads the
+        # stored layer `type` and routes: VKG/SemanticRAG -> the existing
+        # metadata build entrypoint; Hybrid -> the creation agent. Defaulting to
+        # VKG when type is absent preserves the prior behavior for old layers.
+        # For a delta-scoped VKG/SemanticRAG build, the target/removed tables are
+        # forwarded so the service can scope the build (deltaTargetTables) and run
+        # VKG cleanup for removed tables; for a full build (default) both are None
+        # and behavior is unchanged. (Hybrid ignores delta params — full build only.)
+        result = ontology_service.dispatch_build(
+            ontology_id,
+            target_tables=body.targetTables if body.scope == "delta" else None,
+            removed_tables=body.removedTables if body.scope == "delta" else None,
+        )
 
         logger.info(f"Async ontology build triggered for: {ontology_id}")
         return JSONResponse(content=result, status_code=202)  # 202 Accepted
@@ -188,6 +201,28 @@ async def build_ontology(ontology_id: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error starting ontology build: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/delta/{ontology_id}")
+async def compute_ontology_delta(ontology_id: str):
+    """Compute (do not run) the delta plan for a VKG layer.
+
+    Returns the diff preview (rebuild set, FK neighbors, removed tables) without
+    triggering a build. Mirrors the metadata API's /delta endpoint.
+
+    Args:
+        ontology_id: Unique identifier for the ontology (VKG layer)
+
+    Returns:
+        The delta plan dict
+    """
+    try:
+        return JSONResponse(content=ontology_service.compute_delta_plan(ontology_id))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.warning(f"ontology delta compute failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -49,16 +49,16 @@ flowchart TD
 
 ## Where the flow lives in code
 
-| Step                        | Entry point                                                       | Module                                             |
-| --------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
-| Entrypoint / orchestration  | `@app.entrypoint invoke(payload, context)`                        | [`main.py`](main.py)                               |
-| Config + status (DynamoDB)  | config read, `processing` / `completed` / `failed`                | [`main.py`](main.py)                               |
-| System prompts + MODEL_ID   | `SYSTEM_PROMPT`, `ANNOTATION_SYSTEM_PROMPT`, `build_table_prompt` | [`prompt_builder.py`](prompt_builder.py)           |
-| Hallucination defense       | column/join schema validation; out-of-layer ref drop              | [`doc_validator.py`](doc_validator.py)             |
-| Token budgeting             | tiktoken counts; per-request + per-batch limits                   | [`token_manager.py`](token_manager.py)             |
-| KB ingestion + eval trigger | `_trigger_kb_ingestion`, `_trigger_eval`                          | [`main.py`](main.py)                               |
-| Model manifest (IAM grants) | `foundation_models`                                               | [`models.json`](models.json)                       |
-| Container                   | `opentelemetry-instrument python -m metadata_agent.main`          | [`../Dockerfile.metadata`](../Dockerfile.metadata) |
+| Step                        | Entry point                                                       | Module                                                     |
+| --------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| Entrypoint / orchestration  | `@app.entrypoint invoke(payload, context)`                        | [`main.py`](main.py)                                       |
+| Config + status (DynamoDB)  | config read, `processing` / `completed` / `failed`                | [`main.py`](main.py)                                       |
+| System prompts + MODEL_ID   | `SYSTEM_PROMPT`, `ANNOTATION_SYSTEM_PROMPT`, `build_table_prompt` | [`prompt_builder.py`](prompt_builder.py)                   |
+| Hallucination defense       | column/join schema validation; out-of-layer ref drop              | [`doc_validator.py`](doc_validator.py)                     |
+| Token budgeting             | tiktoken counts; per-request + per-batch limits                   | [`../shared/token_manager.py`](../shared/token_manager.py) |
+| KB ingestion + eval trigger | `_trigger_kb_ingestion`, `_trigger_eval`                          | [`main.py`](main.py)                                       |
+| Model manifest (IAM grants) | `foundation_models`                                               | [`models.json`](models.json)                               |
+| Container                   | `opentelemetry-instrument python -m metadata_agent.main`          | [`../Dockerfile.metadata`](../Dockerfile.metadata)         |
 
 ## Invocation
 

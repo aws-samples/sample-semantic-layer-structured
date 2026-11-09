@@ -1,0 +1,101 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-ZUa3LPAcs8",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology-ZUa3LPAcs8",
+  "batch_evaluation_id": "ontology_gen_batch_9e10b9e9-abf33cf55f",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/ontology_gen_batch_9e10b9e9-abf33cf55f",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_cf296204-kkPcOCDHeA"
+  ],
+  "custom_evaluators": {
+    "OntologyQuality": "OntologyQuality_cf296204-kkPcOCDHeA"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": "1.000",
+      "Evaluated": 1,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "OntologyQuality_cf296204-kkPcOCDHeA",
+      "AvgScore": "1.000",
+      "Evaluated": 1,
+      "Failed": 0
+    }
+  ],
+  "per_scenario_events": [
+    {
+      "scenario_id": "ontology_curated_layer",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 1.0,
+      "label": "Yes",
+      "explanation": "The agent successfully completed all required tasks for the type_codes table. 1) OWL/RDF ontology was generated with owl:Class (TypeCode) and 12 owl:DatatypeProperty entries (pk, sk, code_id, code_type, code_value, code_description, display_order, is_active, effective_date, expiry_date, created_date, updated_date) with rdfs:comment annotations. 2) No FK relationships were identified for type_codes, so no owl:ObjectProperty was needed (consistent with 'FK RELATIONSHIPS: none identified'). 3) N-Quad fragments were persisted via append_nquads calls (not save_intermediate_ontology directly for type_codes in Phase 2, but the intermediate save was done during Phase 1 at step 40). 4) persist_file_to_neptune returned success with 85 triples. 5) update_glue_metadata_from_ontology returned success with 12 columns updated. The agent's summary correctly states 'ObjectProperties added: 0' and 'Neptune: success'. All success assertions are satisfied - OWL ontology generated, FK relationships handled (none applicable), fragments persisted, and operations completed successfully."
+    },
+    {
+      "scenario_id": "ontology_curated_layer",
+      "evaluator": "OntologyQuality_cf296204",
+      "score": 1.0,
+      "label": "good",
+      "explanation": "For type_codes: get_single_table_schema shows 12 columns (pk, sk, code_id, code_type, code_value, code_description, display_order, is_active, effective_date, expiry_date, created_date, updated_date). The append_nquads calls create exactly one owl:Class (TypeCode) and a owl:DatatypeProperty for every one of the 12 columns, each with rdfs:domain/rdfs:range and mapsToColumn \u2014 full coverage on axis 1. For relationship modeling, the table has no genuine FK (confirmed by the prompt 'FK RELATIONSHIPS: none identified' and the enrichment brief describing type_codes as a generic (code_type, code_value) lookup, not a foreign-key join target/source); the agent correctly added no append_fk_triples/ObjectProperty for type_codes, avoiding invented relationships \u2014 this satisfies axis 2's 'genuinely no FKs' case. For annotation quality, the class and properties carry rich, business-meaningful rdfs:comments (e.g., explaining pk format, code_type domain values, caution against unnecessary joins) plus extensive extra annotations (businessPurpose, businessConcepts, referenceTables, commonQueryPatterns, sampleData, notes) that go well beyond restating column names. All three axes are strong, warranting the top score."
+    }
+  ],
+  "scenario_runs": {
+    "ontology_curated_layer": {
+      "case_id": "vkg-ontology_curated_layer-ed486e6f",
+      "session_id": "ontology_curated_layer-4644eab4-3c5d-41f2-9e8a-cd1023160fc7",
+      "status": "completed",
+      "num_tables": 40,
+      "tables": [
+        "address",
+        "admin_codes",
+        "annuity_detail",
+        "arrangement_destination",
+        "arrangement_source",
+        "carrier_appointment",
+        "coverage",
+        "coverage_product",
+        "distribution_level",
+        "email_address",
+        "financial_activity",
+        "financial_statement",
+        "govt_id_info",
+        "holding",
+        "holding_activity",
+        "holding_arrangement",
+        "holding_dbg",
+        "holding_loan",
+        "holding_payout",
+        "holding_projection",
+        "holding_restriction",
+        "holding_subaccount",
+        "invest_product",
+        "life_detail",
+        "life_participant",
+        "loan_activity",
+        "party",
+        "party_banking",
+        "party_license",
+        "phone",
+        "policy_loan_summary",
+        "policy_product",
+        "producer_agreement",
+        "reinsurance_info",
+        "relation",
+        "rider",
+        "rider_participant",
+        "subaccount_activity",
+        "substandard_rating",
+        "type_codes"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 7506.2
+    }
+  },
+  "performance": {
+    "scenarios": 1,
+    "avg_build_seconds": 7506.2,
+    "total_build_seconds": 7506.2
+  }
+}

@@ -1,0 +1,22 @@
+# Client-side deps for the eval notebooks and scripts/run_eval_notebooks.py.
+# Install into the repo venv from the repo root:
+#   uv pip install --python .venv/bin/python -r notebooks/requirements.txt
+#
+# The notebooks import agents.shared.* and scripts.benchmarks.*, so they need the
+# agent pins (strands, boto3, mcp-proxy-for-aws) and the benchmark-ingest pins.
+-r ../agents/requirements.txt
+-r ../scripts/benchmarks/requirements.txt
+
+# Headless execution (scripts/run_eval_notebooks.py) and the python3 kernel.
+nbclient==0.11.0
+nbformat==5.11.1
+ipykernel==7.4.0
+
+pandas==3.0.6
+python-dotenv==1.2.2
+
+# AgentCore batch-eval runner. The `simulation` extra pulls strands-agents-evals,
+# which notebooks 2/5/15 use for simulated multi-turn scenarios (scripted-only
+# without it). Resolves against the strands-agents pin in agents/requirements.txt.
+bedrock-agentcore[simulation]==1.11.0
+bedrock-agentcore-starter-toolkit==0.3.9

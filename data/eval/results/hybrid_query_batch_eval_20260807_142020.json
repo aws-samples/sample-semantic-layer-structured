@@ -1,0 +1,1603 @@
+{
+  "agent_id": "semantic_layer_dev_semantic_layer_query-gtCakK89mL",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_semantic_layer_query-gtCakK89mL",
+  "eval_id": "hybrid-curated_layer",
+  "eval_k": 3,
+  "kmean_file": "hybrid_query_kmean_eval_20260807_142020.json",
+  "batch_evaluation_id": "hybridquery_gt_batch_r3_060a4c33-6567d33109",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/hybridquery_gt_batch_r3_060a4c33-6567d33109",
+  "status": "COMPLETED_WITH_ERRORS",
+  "evaluator_ids": [
+    "GoalSuccess_5b3d9ad2-Mm8Vhy8K4O",
+    "FinalAnswerFaithfulness_5b3d9ad2-D7Z20496de",
+    "SqlGrounded_5b3d9ad2-SS0taWGkQT"
+  ],
+  "custom_evaluators": {
+    "GoalSuccess": "GoalSuccess_5b3d9ad2-Mm8Vhy8K4O",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_5b3d9ad2-D7Z20496de",
+    "SqlGrounded": "SqlGrounded_5b3d9ad2-SS0taWGkQT"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "GoalSuccess_5b3d9ad2-Mm8Vhy8K4O",
+      "AvgScore": "0.500",
+      "Evaluated": 14,
+      "Failed": 1
+    },
+    {
+      "Evaluator": "FinalAnswerFaithfulness_5b3d9ad2-D7Z20496de",
+      "AvgScore": "0.600",
+      "Evaluated": 15,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "SqlGrounded_5b3d9ad2-SS0taWGkQT",
+      "AvgScore": "1.000",
+      "Evaluated": 15,
+      "Failed": 0
+    }
+  ],
+  "per_query_events": [
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's response indicates it could not find the required data (normalized.life_participant.role, normalized.rider_participant.role) in the semantic layer, and no SQL was executed. Since there is no executed SQL in the context, the agent degraded rather than running ungrounded SQL, upholding the grounding invariant."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer provides a detailed, data-driven response identifying insured participants for each rider via coverage records, including specific rider IDs, policy numbers, participant IDs, roles, and demographic details. The agent's actual final answer instead states that the data needed to answer the question is unavailable, citing missing fields (role columns) in the semantic layer, and does not provide any of the substantive results. This directly contradicts the expected answer, which shows the data was in fact available and answerable through an alternative derivation (coverage type as role). The agent's response fails to reach a substantive answer matching the expected content, so it does not satisfy the criterion."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "For each rider, who are the insured participants and what are their roles?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record shows the agent responded with a degraded 'data not available' message, declining to answer due to missing normalized.life_participant.role and normalized.rider_participant.role fields. However, the assertion requires a substantive final answer detailing each rider, its insured participant, and role derived from coverage type (Base/Optional/Rider), with 10 specific results listed. The agent never provided this substantive answer; instead it gave up citing missing data, even though the expected approach explicitly notes that roles should be derived from the coverage type since rider_participant contains no data. This means the agent failed to find the correct workaround and did not deliver the expected result set. Since the final answer does not match the expected substantive answer and instead is a non-answer/degraded response, the assertion is violated."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer span states the agent could not build a query grounded in the ontology, providing no substantive answer at all. The expected answer requires listing four parties with specific market values in descending order. The agent's response fails to provide any of this information, so it does not match the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; the agent responded with a refusal message indicating it could not build a grounded query. Per the degraded-run rule, when there is no executed SQL, the grounding invariant is upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record for this turn shows the agent responded with \"I couldn't build a query fully grounded in the available ontology for your question.\" This is a degraded, non-substantive answer that fails to provide the expected result: the ranked list of 4 parties with their market values (Scott Neil Davis, Thomas Jill Davis, Blake Katelyn Myers, Jared Xavier Parker). There is no prior conversation context (no [conversation_so_far] content indicating earlier turns resolved this), and this is the only turn, meaning the final answer never reaches the required substantive result. Since the assertion requires the conversation's final answer to match the specific ranked party/market-value data, and the agent instead failed to produce any answer, the goal was not met."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent executed a COUNT query against the party table without asking for clarification, and returned the result '15' with the answer 'There are 15 parties.' This matches the expected final answer, no clarifying question was asked, and the response is a substantive numeric answer. All assertions are satisfied."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent answered 'There are 15 parties.' matching the expected answer 'There are 15 parties.' No clarification was requested, and the result aligns with the executed COUNT query result of 15."
+    },
+    {
+      "scenario_id": "mt-no-spurious-clarify",
+      "question": "How many parties are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context provides retrieved schema/ontology context including the normalized.party table with columns such as party_id, is_deleted, etc. There is no explicit executed SQL shown in the conversation - only a pre-computed result ([\"15\"]) is given with no SQL query text present in the context. Since there is no executed SQL surfaced (no reasoning.sqlQuery or executed_sql field, no SQL text shown), this appears to be a degraded run scenario where the SQL is not visible/verifiable. Per the instructions, if there is no executed SQL in the context, the grounding invariant is upheld and the score should be 1 (pass), noting 'no SQL executed (degraded)'. The agent's answer of 15 parties is consistent with a plausible COUNT(*) FROM party WHERE is_deleted = false query, which would map cleanly to the party table in the ontology context, but since no SQL text is actually present to verify, we default to the degraded-run pass condition."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer describes the semantic layer's coverage of policy loans, coverages, riders, reinsurance, holdings, invest products, party licenses, government IDs, distribution hierarchies, and type-code lookups, along with example questions. This matches the expected answer's description of a summary of answerable question types across parties, policies, holdings, coverage, riders, and related metrics, without returning specific data values. The content aligns well in substance and format."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response describes the categories of questions answerable from the semantic layer (policy loans, coverages, riders, reinsurance, holdings, invest products, party licenses, government IDs, distribution hierarchies, type-code lookups) and gives example questions without returning specific data values. This matches the assertion's requirement of a description of answerable question types and governed metrics, with no specific data values returned. The answer is consistent with the tool result and satisfies the expected outcome."
+    },
+    {
+      "scenario_id": "gt-row-14",
+      "question": "What can I ask about this semantic layer?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "This is a meta/capability question ('What can I ask about this semantic layer?') answered by a synthesized summary derived from the retrieved schema context's table/query_patterns lists, not from an executed SQL query against Athena. There is no executed SQL, SPARQL, or SQL query shown in the context - the single result row with an 'answer' column is a generated descriptive text, not a database query result requiring grounding validation. Since no SQL was executed, the grounding invariant is trivially upheld (no SQL to hallucinate schema in). The agent's summary also reasonably reflects table names and query patterns present in the retrieved schema context (policy_loan_summary, holding_projection, distribution_level, invest_product, rider, reinsurance_info, coverage, holding_dbg, party_license, etc.) and example questions drawn from query_patterns."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer reports 20 policies where insured equals policyholder, matching the expected answer's count of 20. It also cites specific examples (POL00000001\u2192PARTY000001) that align with the expected examples. The core conclusion, count, and entity matches are consistent with the ground truth, even though minor extra example details are added (which is not contradictory)."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query returned 20 rows covering all 20 policy holdings (POL00000001 through POL00000020), each showing a party that is both insured and policyholder, matching the expected result of 20 rows with examples like POL00000011\u2192PARTY000011 and POL00000014\u2192PARTY000014. The agent's final response summarizes this correctly, citing the count of 20 and specific examples (Steven Michele Allen on POL00000001, Melissa Louis Garrett on POL00000005/020). This is consistent with the expected answer's key facts: 20 rows, self-match condition satisfied for all 20 holdings, and matching example entities. No clarification was needed or given, and the answer is substantive and factually aligned with the assertion."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "question": "Show me policies where the insured party is also the policyholder.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "There is no executed SQL present in the context - only retrieved schema context and the agent's final answer summarizing query results. Since no SQL query text is shown in the conversation (no reasoning.sqlQuery or executed_sql field visible), this appears to be a degraded run where the SQL is not surfaced, or the agent did not expose it. Per the instructions, if there is NO executed SQL in the context, the grounding invariant is upheld by default (score 1, degraded). However, results were returned, suggesting SQL did run, but it's not shown in this context excerpt. Following the strict rule: absence of executed SQL in the given context means we score 1 (pass) with note 'no SQL executed (degraded)' since we cannot verify grounding without the SQL text."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; the agent explicitly refused to answer, citing missing schema elements (normalized.party, normalized.policy_product, normalized.holding_projection) rather than executing ungrounded SQL. Per the grounding invariant rule, when there is no executed SQL, the agent degraded rather than running unverified SQL, so the invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record shows the agent responded with a degraded explanation stating the data needed isn't available in the semantic layer, missing normalized.party, normalized.policy_product, normalized.holding_projection. This does not match the expected final answer, which required a substantive answer listing 5 policies with payout schedules (Scott Neil Davis, Thomas Jill Davis, Jared Xavier Parker, Blake Katelyn Myers) with specific payout amounts and frequencies. The agent failed to provide this factual content, instead giving a non-answer claiming missing data. Since the assertion requires the final answer to match specific entities and figures, and the agent's response contradicts/omits this entirely, the goal was not met."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer provides a detailed, specific result: 5 policies with payout schedules, including policyholder names, policy numbers, payout frequencies, and projected payout amounts. The agent's actual final answer instead states that the data needed isn't available in the semantic layer, citing missing tables. This is a refusal/degraded response that does not provide any of the specific entities or figures in the expected answer. It contradicts the expected outcome by claiming the answer cannot be produced, when in fact a substantive answer with concrete data was expected. Therefore the final answer fails to match the expected result."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer requires a general description of computable metrics (counts, totals, trends) without citing specific numeric results. The agent's final answer does describe metric categories (activity count, total/average transaction amount, net amount, fees, commissions), which partially aligns. However, it also explicitly reports specific numeric figures from the executed query (e.g., '~$173,291 across 6 activities', '~$15,620 across 2 activities'), which directly violates the assertion's requirement that the answer 'must describe what is computable, not return any specific numeric result.' This makes the final answer inconsistent with the expected answer's constraints."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The assertion requires the final answer to describe computable metrics (counts, totals, trends over policies/parties/holdings/coverage) without returning specific numeric results. The agent's response, however, explicitly reports numeric results from the executed query ('Loan having the highest total transaction amount (~$173,291 across 6 activities)' and 'Premium the lowest (~$15,620 across 2 activities)'), which directly violates the requirement to not report specific numeric results. While the response does mention some general metric categories (count, total/average amount, fees, commissions), it frames them around the concrete query output rather than as a general description of governed metrics available across the broader data model (policies, parties, holdings, coverage). This does not match the expected answer's scope or constraint."
+    },
+    {
+      "scenario_id": "gt-row-13",
+      "question": "What are some common metrics that could be calculated with this data?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No explicit SQL text is shown in this turn, but the result columns (activity_type, transaction_amount-derived aggregates, net_amount, fee_amount, commission_amount) all correspond directly to columns present in the retrieved ontology context under normalized.financial_activity (activity_type, transaction_amount, net_amount, fee_amount, commission_amount). There is no indication of any hallucinated table or column outside this schema. Since the aggregation appears grounded entirely in the financial_activity table fields already present in the ontology slice, the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer reports three months of financial activity in 2024: March $70,895.29, May $20,242.90, and October $13,991.93. This exactly matches the expected answer's three months and totals. No contradicting or invented figures are present."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "There is no executed SQL, SPARQL, or Phase 5 output present in the provided context. Only the retrieved schema context and the final result rows/answer are shown, with no visible SQL query used to produce them. Per the instructions, when no executed SQL is present in the context, the agent is considered to have degraded rather than run ungrounded SQL, so the grounding invariant is upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-08",
+      "question": "What was the total financial-activity amount per month in 2024?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response reports the three months (March, May, October 2024) with totals $70,895.29, $20,242.90, and $13,991.93, matching the expected answer exactly. The optional annual total and transaction counts were not required and are correctly omitted. This satisfies the assertion."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result columns (coverage_id, coverage_type, coverage_status, product_code, holding_id, party_id, face_amount, cash_value, surrender_value) all correspond to documented columns of the normalized.coverage table in the retrieved schema context. No other tables or joins appear in the executed query based on the result set - it's a simple select from coverage. All referenced columns are present in the coverage table's documented column list, so the executed SQL is fully grounded in the retrieved schema context."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The expected answer requires a natural-language explanation of the coverage table grounded in metadata, with no row counts or specific values. The agent's final answer does provide a good conceptual explanation of the coverage table (bridge between holding and party, coverage types, financial fields), which matches the expected content. However, it then adds 'The 20 sample rows show a mix of coverage types...' explicitly citing a row count (20) and specific data values from the query result, which violates the assertion's explicit requirement that no row counts or specific values be included. This deviation makes the final answer inconsistent with the expected answer's constraints."
+    },
+    {
+      "scenario_id": "gt-row-15",
+      "question": "Explain what the coverage table represents.",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The agent's final answer does explain the coverage table conceptually (bridge between holding and party, coverage_type, financial fields, etc.), which aligns with the metadata-grounded explanation requirement. However, the assertion explicitly requires 'No row counts or specific values are returned.' The response states 'The 20 sample rows show a mix of coverage types (Base, Rider, Optional) across various statuses... and products (VUL, UL, TERM10/20/30, WHOLE, IUL)', which references the row count (20) and specific values from the query result rather than staying purely conceptual. This violates the assertion's explicit constraint, so the goal was not fully met."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "There is no executed SQL, SPARQL, or ontology context present in this session\u2014only retrieved schema context (tables/columns) and the final result. No reasoning.sqlQuery or Phase 5 SQL is surfaced. Per the instructions, if there is no executed SQL in the context, the agent degraded rather than running ungrounded SQL, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The agent's final answer reports 4 parties (Melissa Louis Garrett, Scott Neil Davis, Rebecca Thomas Wright, Jared Xavier Parker) with market values ranging from ~$175,659 to ~$635,805, seemingly not filtered correctly by active holding status. The expected answer states only 2 parties (Thomas Jill Davis and Jared Xavier Parker) with active holdings, totaling $317,902.53 and $90,066.59 respectively, combined $407,969.12. The agent's answer includes different parties, different figures, and a different count, contradicting the expected ground truth entirely."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What is the total market value of all active holdings, grouped by party?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer record's output states 4 parties (Melissa Louis Garrett $175,659.20, Scott Neil Davis $180,133.18, Rebecca Thomas Wright $510,402.82, Jared Xavier Parker $635,805.06) as having active holdings by market value. The expected answer specifies only 2 parties (Thomas Jill Davis with $317,902.53 and Jared Xavier Parker with $90,066.59), totaling $407,969.12. The agent's answer includes different parties, different counts, and different dollar amounts (even for the overlapping party Jared Xavier Parker, the value differs: $635,805.06 vs expected $90,066.59). This is a substantive mismatch in entities, counts, and figures, not a minor discrepancy. The assertion requiring the final answer to match the expected result is clearly violated."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result columns (product_name, coverage_category) and rows match the coverage_product table described in the retrieved schema context, which includes both columns with valid mappings. No executed SQL text is shown explicitly, but the query results are consistent with a simple SELECT product_name, coverage_category FROM coverage_product ORDER BY product_name LIMIT 10 (or similar), which uses only columns present in the ontology context. The agent's response correctly reports the 5 rows returned, accurately noting there are fewer than 10 products. No hallucinated tables or columns are evident; all fields align with the coverage_product table definition provided in the schema context."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final-answer record states there are only 5 coverage products (fewer than the requested 10) and names all five: Accidental Death, Base Life, Spouse Rider, Term Rider, and Child Rider, matching the expected set exactly. Though the order differs slightly from the expected alphabetical listing, all five correct product names and the count of 5 are present and factually consistent with the expected answer. No clarification was needed, and none was given inappropriately. The assertion about matching the expected final answer is satisfied."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "List the top 10 coverage products by name.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer correctly states there are only 5 coverage products total (not 10 as requested) and lists all five: Accidental Death, Base Life, Spouse Rider, Term Rider, and Child Rider. This matches the expected answer's set of 5 products and count, even though the order/grouping (by category) differs slightly from the expected alphabetical listing. The key facts\u20145 total products, same names\u2014are consistent, so the answer satisfies the assertion."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states 'There are 15 parties in total,' which matches the numeric value (15) in the expected answer 'There are 15 active parties in the system (excluding soft-deleted records).' Although the agent did not explicitly mention the 'active' qualifier or exclusion of soft-deleted records, the key number (15) and the conclusion (total party count) align with the expected answer. The core factual content matches."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context does not present an explicit 'executed SQL' string, nor a separate ontology slice document distinct from the retrieved schema context. Only the retrieved schema context (table/column list) is provided along with the final query result. There is no visible SPARQL-to-SQL translation or reasoning.sqlQuery/executed_sql field shown in this trace. Since no executed SQL is surfaced in the context, per the instructions this counts as a degraded run (no SQL executed/visible), so the grounding invariant is considered upheld by default."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many parties are there?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The visible final-answer output is 'There are 15 parties in total.' The expected answer is '15 active parties (excluding soft-deleted records)'. The key number (15) matches exactly, and the underlying query result was already 15, consistent with the expected count of active (non-deleted) parties. While the agent's phrasing omits the explicit 'active/excluding soft-deleted' qualifier, the core factual content (the count of 15) is consistent with the expected answer, and there is no contradiction. No clarification was needed, and the answer was substantive, not fabricated. This satisfies the assertion's requirement of matching key numbers and conclusion."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result columns (party_type, party_count) correspond directly to normalized.party.party_type, aggregated via COUNT/GROUP BY, which is a legitimate, documented pattern in the retrieved ontology context (party table, party_type column, and query pattern 'How many active individual parties are there, by risk class?' shows analogous grouping). No type_codes join was performed, and no description column was returned, consistent with the ontology's guidance to prefer denormalized labels over joining type_codes. There is no evidence of any hallucinated table or column in the underlying query\u2014only party.party_type and an aggregate count are used, both grounded in the schema context. Therefore the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final agent response reports the party type counts as Organization=7, Trust=5, Individual=3, matching the expected result's key numbers and order (Organization most common, followed by Trust, then Individual). The sum of these counts (15) is consistent with the expected 'total 15 active parties' even though not explicitly stated. The agent does not fabricate a separate description column, which aligns with the expected note that party_type is itself the human-readable label (no type_codes match exists). While the agent's phrasing ('no separate description column was returned') is slightly less explicit than the expected explanation, it does not contradict the expected answer's core facts. No clarification was needed and none was inappropriately given. Overall the answer is factually consistent with the expected result."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "List the top 5 most common party types and their human-readable descriptions.",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final answer reports Organization (7), Trust (5), Individual (3) as the party type counts, matching the expected key numbers and ranking exactly. It does not explicitly state that party_type itself serves as the human-readable description (instead noting no separate description column was returned), which is a minor omission rather than a factual contradiction, and it also omits the total of 15 parties, but the core numeric result and conclusion align with the expected answer."
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final turn's agent_response is the last substantive answer, which states there are 15 parties total, matching the expected answer of 'There are 15 parties.' The agent correctly asked clarifying questions on ambiguous turns, avoided fabricating answers on 'not sure', and once the user clarified with 'party', it executed the count and reported 15 parties correctly, consistent with the expected final answer."
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result columns (party_id, full_name, party_type, party_status) all correspond directly to columns explicitly listed under normalized.party in the retrieved schema context. No other tables, joins, or columns appear to have been used. The agent's final answer only restates these grounded fields and counts, without introducing any table/column not present in the retrieved ontology/schema context. Thus the executed SQL (implied by the result set) is fully grounded in the retrieved schema."
+    },
+    {
+      "scenario_id": "mt-stable-options",
+      "question": "How many are there?",
+      "evaluator": "GoalSuccess",
+      "score": 0.0,
+      "label": "fail",
+      "explanation": "The final-answer records for turns 1 and 2 do not contain a clarification question at all; they read 'I found relevant tables but couldn't assemble a complete enough schema slice to answer your question reliably.' This is a degraded failure message, not a clarifying question, so the assertion that the agent 'asked a clarifying question on turn 1... rather than guessing' is not satisfied (it neither asked a question nor produced a guess, but failed to seek clarification as required). The same pattern repeats for the 'not sure' turn, so the agent never asked for clarification, only reported it could not answer. Only on turn 3, after the user unprompted supplied 'party', did the agent correctly compute and report the count of 15 parties, matching the expected final answer. While the final substantive answer (15 parties) is correct and consistent with the expected result, the earlier assertions requiring genuine clarifying questions in turns 1 and 2 are violated because the agent's responses were degraded non-answers rather than clarification prompts. Since all assertions must hold for a pass, and the clarification-seeking assertions are not met, the overall goal is not achieved."
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result columns (party_id, full_name, party_type, party_status) all map directly to columns present in the normalized.party table as listed in the retrieved schema context. No table or column outside the provided ontology/schema slice is referenced. The data returned (15 rows of party records) is consistent with a simple SELECT from normalized.party, which is fully grounded in the retrieved context. No hallucinated schema elements are evident."
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The expected final answer is 'There are 15 parties.' The first turn's response was a degraded/no-answer explanation, but this appears to be an earlier state before the user clarified with 'party'. The second turn shows the agent executing a query against the party table, retrieving 15 rows, and reporting 'There are 15 parties in total, spanning a mix of Individual, Organization, and Trust types...' This final natural-language answer correctly states the count of 15, matching the expected answer's key figure and conclusion. The additional descriptive details do not contradict the expected answer; they merely add context. Therefore the final answer aligns with the expected result."
+    },
+    {
+      "scenario_id": "mt-parties-clarify",
+      "question": "How many are there?",
+      "evaluator": "GoalSuccess",
+      "score": null,
+      "label": null,
+      "explanation": ""
+    }
+  ],
+  "agent_runs": [
+    {
+      "scenario_session": "gt-row-01-b9db778c-68a0-4e8e-b2e6-684236a822d9",
+      "turn_idx": 0,
+      "message": "For each rider, who are the insured participants and what are their roles?",
+      "answer": "I found relevant tables but the data needed to answer this question isn't available in this semantic layer. Missing: normalized.life_participant.role, normalized.rider_participant.role.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 17.89,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-02-6c4e212d-4fef-4cd4-8ab6-3ec7ac35036b",
+      "turn_idx": 0,
+      "message": "List the top 5 most common party types and their human-readable descriptions.",
+      "answer": "There are only 3 distinct party types in the data (no separate description column was returned): Organization (7 parties), Trust (5 parties), and Individual (3 parties).",
+      "agent_sql": "SELECT party_type, COUNT(party_id) AS party_count\nFROM normalized.party\nGROUP BY party_type\nORDER BY party_count DESC\nLIMIT 5",
+      "executed_sql": "SELECT party_type, COUNT(party_id) AS party_count\nFROM normalized.party\nGROUP BY party_type\nORDER BY party_count DESC\nLIMIT 5",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "party_type": "Organization",
+          "party_count": "7"
+        },
+        {
+          "party_type": "Trust",
+          "party_count": "5"
+        },
+        {
+          "party_type": "Individual",
+          "party_count": "3"
+        }
+      ],
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "party_type": "Organization",
+          "party_count": "7"
+        },
+        {
+          "party_type": "Trust",
+          "party_count": "5"
+        },
+        {
+          "party_type": "Individual",
+          "party_count": "3"
+        }
+      ],
+      "usage": {
+        "inputTokens": 39518,
+        "outputTokens": 124,
+        "totalTokens": 39642
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 25.88,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-00-8350524c-e711-4813-acb2-306514052ba4",
+      "turn_idx": 0,
+      "message": "Show me policies where the insured party is also the policyholder.",
+      "answer": "Found 20 policies where the insured is also the policyholder, covering all policies POL00000001 through POL00000020. For example, Steven Michele Allen is both insured and policyholder on POL00000001 and POL00000016, and Melissa Louis Garrett holds both roles on POL00000005 and POL00000020.",
+      "agent_sql": "SELECT\n    h.holding_id,\n    p.party_id,\n    p.full_name\nFROM normalized.life_participant lp1\nJOIN normalized.life_participant lp2\n    ON lp1.holding_id = lp2.holding_id\n    AND lp1.party_id = lp2.party_id\n    AND lp1.participant_sk <> lp2.participant_sk\nJOIN normalized.holding h\n    ON lp1.holding_id = h.holding_id\nJOIN normalized.party p\n    ON CONCAT('PARTY#', lp1.party_id) = p.party_id\nWHERE lp1.is_deleted = false\n    AND lp2.is_deleted = false\nGROUP BY h.holding_id, p.party_id, p.full_name\nHAVING COUNT(DISTINCT lp1.participant_sk) > 1",
+      "executed_sql": "SELECT\n    h.holding_id,\n    p.party_id,\n    p.full_name\nFROM normalized.life_participant lp1\nJOIN normalized.life_participant lp2\n    ON lp1.holding_id = lp2.holding_id\n    AND lp1.party_id = lp2.party_id\n    AND lp1.participant_sk <> lp2.participant_sk\nJOIN normalized.holding h\n    ON lp1.holding_id = h.holding_id\nJOIN normalized.party p\n    ON CONCAT('PARTY#', lp1.party_id) = p.party_id\nWHERE lp1.is_deleted = false\n    AND lp2.is_deleted = false\nGROUP BY h.holding_id, p.party_id, p.full_name\nHAVING COUNT(DISTINCT lp1.participant_sk) > 1",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "holding_id": "POLICY#POL00000001",
+          "party_id": "PARTY#PARTY000001",
+          "full_name": "Steven Michele Allen"
+        },
+        {
+          "holding_id": "POLICY#POL00000005",
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett"
+        },
+        {
+          "holding_id": "POLICY#POL00000019",
+          "party_id": "PARTY#PARTY000004",
+          "full_name": "Victoria Carrie Brooks"
+        },
+        {
+          "holding_id": "POLICY#POL00000015",
+          "party_id": "PARTY#PARTY000015",
+          "full_name": "Pam Theresa Holt"
+        },
+        {
+          "holding_id": "POLICY#POL00000006",
+          "party_id": "PARTY#PARTY000006",
+          "full_name": "Lauren David Kane"
+        },
+        {
+          "holding_id": "POLICY#POL00000002",
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright"
+        },
+        {
+          "holding_id": "POLICY#POL00000013",
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker"
+        },
+        {
+          "holding_id": "POLICY#POL00000016",
+          "party_id": "PARTY#PARTY000001",
+          "full_name": "Steven Michele Allen"
+        },
+        {
+          "holding_id": "POLICY#POL00000017",
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright"
+        },
+        {
+          "holding_id": "POLICY#POL00000011",
+          "party_id": "PARTY#PARTY000011",
+          "full_name": "Laura Sarah Murray"
+        },
+        {
+          "holding_id": "POLICY#POL00000020",
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett"
+        },
+        {
+          "holding_id": "POLICY#POL00000012",
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis"
+        },
+        {
+          "holding_id": "POLICY#POL00000003",
+          "party_id": "PARTY#PARTY000003",
+          "full_name": "Christopher Stacey Austin"
+        },
+        {
+          "holding_id": "POLICY#POL00000009",
+          "party_id": "PARTY#PARTY000009",
+          "full_name": "Regina Zachary Jones"
+        },
+        {
+          "holding_id": "POLICY#POL00000004",
+          "party_id": "PARTY#PARTY000004",
+          "full_name": "Victoria Carrie Brooks"
+        },
+        {
+          "holding_id": "POLICY#POL00000018",
+          "party_id": "PARTY#PARTY000003",
+          "full_name": "Christopher Stacey Austin"
+        },
+        {
+          "holding_id": "POLICY#POL00000007",
+          "party_id": "PARTY#PARTY000007",
+          "full_name": "Blake Katelyn Myers"
+        },
+        {
+          "holding_id": "POLICY#POL00000008",
+          "party_id": "PARTY#PARTY000008",
+          "full_name": "Matthew Stanley Escobar"
+        },
+        {
+          "holding_id": "POLICY#POL00000010",
+          "party_id": "PARTY#PARTY000010",
+          "full_name": "Crystal Maria Barron"
+        },
+        {
+          "holding_id": "POLICY#POL00000014",
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis"
+        }
+      ],
+      "result_row_count": 20,
+      "result_sample": [
+        {
+          "holding_id": "POLICY#POL00000001",
+          "party_id": "PARTY#PARTY000001",
+          "full_name": "Steven Michele Allen"
+        },
+        {
+          "holding_id": "POLICY#POL00000005",
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett"
+        },
+        {
+          "holding_id": "POLICY#POL00000019",
+          "party_id": "PARTY#PARTY000004",
+          "full_name": "Victoria Carrie Brooks"
+        }
+      ],
+      "usage": {
+        "inputTokens": 39423,
+        "outputTokens": 393,
+        "totalTokens": 39816
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 31.85,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-04-104c41bf-e625-4aea-a2cf-e7e5f69355cb",
+      "turn_idx": 0,
+      "message": "For policies that have a payout schedule, show the policyholder's name, the payout frequency, and the projected next-payout amount.",
+      "answer": "I found relevant tables but the data needed to answer this question isn't available in this semantic layer. Missing: normalized.party, normalized.policy_product, normalized.holding_projection.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 16.84,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-03-f542b6b6-25c2-44b6-884e-a603231bc2e1",
+      "turn_idx": 0,
+      "message": "What is the total market value of all active holdings, grouped by party?",
+      "answer": "Across the 4 parties with active holdings, total market value ranges from about $175,659.20 (Melissa Louis Garrett) to $635,805.06 (Jared Xavier Parker); the other two are Scott Neil Davis ($180,133.18) and Rebecca Thomas Wright ($510,402.82).",
+      "agent_sql": "SELECT p.party_id,\n       p.full_name,\n       SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.life_participant lp ON lp.holding_id = h.holding_id\nJOIN normalized.party p ON lp.party_id = p.party_key\nWHERE h.holding_status = 'Active'\n  AND h.is_deleted = false\nGROUP BY p.party_id, p.full_name",
+      "executed_sql": "SELECT p.party_id,\n       p.full_name,\n       SUM(h.market_value) AS total_market_value\nFROM normalized.holding h\nJOIN normalized.life_participant lp ON lp.holding_id = h.holding_id\nJOIN normalized.party p ON lp.party_id = p.party_key\nWHERE h.holding_status = 'Active'\n  AND h.is_deleted = false\nGROUP BY p.party_id, p.full_name",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett",
+          "total_market_value": "175659.2"
+        },
+        {
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis",
+          "total_market_value": "180133.18"
+        },
+        {
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright",
+          "total_market_value": "510402.81999999995"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker",
+          "total_market_value": "635805.06"
+        }
+      ],
+      "result_row_count": 4,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett",
+          "total_market_value": "175659.2"
+        },
+        {
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis",
+          "total_market_value": "180133.18"
+        },
+        {
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright",
+          "total_market_value": "510402.81999999995"
+        }
+      ],
+      "usage": {
+        "inputTokens": 39957,
+        "outputTokens": 654,
+        "totalTokens": 40611
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 27.36,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-05-f824dee2-90b3-4e48-87eb-a487d78e25f9",
+      "turn_idx": 0,
+      "message": "How many parties are there?",
+      "answer": "There are 15 parties in total.",
+      "agent_sql": "SELECT COUNT(party_id) FROM normalized.party WHERE is_deleted = false;",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party WHERE is_deleted = false;",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 38031,
+        "outputTokens": 47,
+        "totalTokens": 38078
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 19.65,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-06-45203a54-f964-4662-85b0-c16f99fc4dc4",
+      "turn_idx": 0,
+      "message": "List the top 10 coverage products by name.",
+      "answer": "There are only 5 coverage products in total (fewer than 10 requested): Accidental Death, Base Life, Spouse Rider, and Term Rider (all Death Benefit), plus Child Rider (Living Benefit).",
+      "agent_sql": "SELECT product_name, coverage_category\nFROM normalized.coverage_product\nWHERE status = 'Active' AND is_deleted = false\nORDER BY product_name\nLIMIT 10;",
+      "executed_sql": "SELECT product_name, coverage_category\nFROM normalized.coverage_product\nWHERE status = 'Active' AND is_deleted = false\nORDER BY product_name\nLIMIT 10;",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "product_name": "Accidental Death",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Base Life",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Child Rider",
+          "coverage_category": "Living Benefit"
+        },
+        {
+          "product_name": "Spouse Rider",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Term Rider",
+          "coverage_category": "Death Benefit"
+        }
+      ],
+      "result_row_count": 5,
+      "result_sample": [
+        {
+          "product_name": "Accidental Death",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Base Life",
+          "coverage_category": "Death Benefit"
+        },
+        {
+          "product_name": "Child Rider",
+          "coverage_category": "Living Benefit"
+        }
+      ],
+      "usage": {
+        "inputTokens": 40309,
+        "outputTokens": 143,
+        "totalTokens": 40452
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 21.03,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-08-288faaa8-c15a-41aa-b601-f9e9fccb8a15",
+      "turn_idx": 0,
+      "message": "What was the total financial-activity amount per month in 2024?",
+      "answer": "Financial-activity totals were recorded for only three months in 2024: March ($70,895.29), May ($20,242.90), and October ($13,991.93).",
+      "agent_sql": "SELECT DATE_TRUNC('month', CAST(transaction_date AS DATE)) AS activity_month,\n       SUM(CAST(transaction_amount AS DOUBLE)) AS total_amount\nFROM normalized.financial_activity\nWHERE is_deleted = false\n  AND transaction_date >= '2024-01-01'\n  AND transaction_date < '2025-01-01'\nGROUP BY DATE_TRUNC('month', CAST(transaction_date AS DATE))\nORDER BY activity_month",
+      "executed_sql": "SELECT DATE_TRUNC('month', CAST(transaction_date AS DATE)) AS activity_month,\n       SUM(CAST(transaction_amount AS DOUBLE)) AS total_amount\nFROM normalized.financial_activity\nWHERE is_deleted = false\n  AND transaction_date >= '2024-01-01'\n  AND transaction_date < '2025-01-01'\nGROUP BY DATE_TRUNC('month', CAST(transaction_date AS DATE))\nORDER BY activity_month",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "activity_month": "2024-03-01",
+          "total_amount": "70895.29000000001"
+        },
+        {
+          "activity_month": "2024-05-01",
+          "total_amount": "20242.9"
+        },
+        {
+          "activity_month": "2024-10-01",
+          "total_amount": "13991.93"
+        }
+      ],
+      "result_row_count": 3,
+      "result_sample": [
+        {
+          "activity_month": "2024-03-01",
+          "total_amount": "70895.29000000001"
+        },
+        {
+          "activity_month": "2024-05-01",
+          "total_amount": "20242.9"
+        },
+        {
+          "activity_month": "2024-10-01",
+          "total_amount": "13991.93"
+        }
+      ],
+      "usage": {
+        "inputTokens": 40487,
+        "outputTokens": 231,
+        "totalTokens": 40718
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 22.43,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-parties-clarify-b98d7b4d-3564-46ea-b14d-326a4db636dc",
+      "turn_idx": 0,
+      "message": "How many are there?",
+      "answer": "I found relevant tables but couldn't assemble a complete enough schema slice to answer your question reliably.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 17.48,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-no-spurious-clarify-ff10e634-3ed3-44b4-b475-00508519e958",
+      "turn_idx": 0,
+      "message": "How many parties are there?",
+      "answer": "There are 15 parties.",
+      "agent_sql": "SELECT COUNT(party_id) FROM normalized.party WHERE is_deleted = false;",
+      "executed_sql": "SELECT COUNT(party_id) FROM normalized.party WHERE is_deleted = false;",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "_col0": "15"
+        }
+      ],
+      "usage": {
+        "inputTokens": 38031,
+        "outputTokens": 45,
+        "totalTokens": 38076
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 19.78,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-parties-clarify-b98d7b4d-3564-46ea-b14d-326a4db636dc",
+      "turn_idx": 1,
+      "message": "party",
+      "answer": "There are 15 parties in total, spanning a mix of Individual, Organization, and Trust types with statuses of Active, Inactive, or Deceased. Examples include Lauren David Kane (Organization, Deceased), Rebecca Thomas Wright (Trust, Active), and Christopher Stacey Austin (Individual, Active).",
+      "agent_sql": "SELECT p.party_id, p.full_name, p.party_type, p.party_status\nFROM normalized.party p\nWHERE p.is_deleted = false",
+      "executed_sql": "SELECT p.party_id, p.full_name, p.party_type, p.party_status\nFROM normalized.party p\nWHERE p.is_deleted = false",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "party_id": "PARTY#PARTY000006",
+          "full_name": "Lauren David Kane",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000010",
+          "full_name": "Crystal Maria Barron",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright",
+          "party_type": "Trust",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000009",
+          "full_name": "Regina Zachary Jones",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000008",
+          "full_name": "Matthew Stanley Escobar",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000003",
+          "full_name": "Christopher Stacey Austin",
+          "party_type": "Individual",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000011",
+          "full_name": "Laura Sarah Murray",
+          "party_type": "Individual",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000007",
+          "full_name": "Blake Katelyn Myers",
+          "party_type": "Organization",
+          "party_status": "Inactive"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000001",
+          "full_name": "Steven Michele Allen",
+          "party_type": "Individual",
+          "party_status": "Inactive"
+        },
+        {
+          "party_id": "PARTY#PARTY000015",
+          "full_name": "Pam Theresa Holt",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000004",
+          "full_name": "Victoria Carrie Brooks",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        }
+      ],
+      "result_row_count": 15,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000006",
+          "full_name": "Lauren David Kane",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000010",
+          "full_name": "Crystal Maria Barron",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright",
+          "party_type": "Trust",
+          "party_status": "Active"
+        }
+      ],
+      "usage": {
+        "inputTokens": 38681,
+        "outputTokens": 166,
+        "totalTokens": 38847
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 13.86,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-40c46068-f33e-4ded-84f5-13d23d05a1fc",
+      "turn_idx": 0,
+      "message": "How many are there?",
+      "answer": "I found relevant tables but couldn't assemble a complete enough schema slice to answer your question reliably.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 16.77,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-40c46068-f33e-4ded-84f5-13d23d05a1fc",
+      "turn_idx": 1,
+      "message": "not sure",
+      "answer": "I found relevant tables but couldn't assemble a complete enough schema slice to answer your question reliably.",
+      "agent_sql": "",
+      "executed_sql": "",
+      "degraded": "phase3_max_rounds",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "totalTokens": 0
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 6.07,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-13-a8601ccb-c73c-4a0b-9ce7-4d512cbe4ed2",
+      "turn_idx": 0,
+      "message": "What are some common metrics that could be calculated with this data?",
+      "answer": "The result breaks financial activity into 5 types\u2014Loan, Withdrawal, Claim, Dividend, and Premium\u2014each summarized by activity count, total/average transaction amount, total net amount, total fees, and total commissions. This shows metrics like Loan having the highest total transaction amount (~$173,291 across 6 activities) and Premium the lowest (~$15,620 across 2 activities), illustrating how such aggregations can reveal volume, average size, and fee/commission impact per activity type.",
+      "agent_sql": "SELECT\n  fa.activity_type,\n  COUNT(fa.fin_activity_sk) AS activity_count,\n  SUM(fa.transaction_amount) AS total_transaction_amount,\n  AVG(fa.transaction_amount) AS avg_transaction_amount,\n  SUM(fa.net_amount) AS total_net_amount,\n  SUM(fa.fee_amount) AS total_fee_amount,\n  SUM(fa.commission_amount) AS total_commission_amount\nFROM normalized.financial_activity fa\nWHERE fa.is_deleted = false\nGROUP BY fa.activity_type\nORDER BY total_transaction_amount DESC",
+      "executed_sql": "SELECT\n  fa.activity_type,\n  COUNT(fa.fin_activity_sk) AS activity_count,\n  SUM(fa.transaction_amount) AS total_transaction_amount,\n  AVG(fa.transaction_amount) AS avg_transaction_amount,\n  SUM(fa.net_amount) AS total_net_amount,\n  SUM(fa.fee_amount) AS total_fee_amount,\n  SUM(fa.commission_amount) AS total_commission_amount\nFROM normalized.financial_activity fa\nWHERE fa.is_deleted = false\nGROUP BY fa.activity_type\nORDER BY total_transaction_amount DESC",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "activity_type": "Loan",
+          "activity_count": "6",
+          "total_transaction_amount": "173290.61",
+          "avg_transaction_amount": "28881.76833333333",
+          "total_net_amount": "113007.58000000002",
+          "total_fee_amount": "1978.25",
+          "total_commission_amount": "5995.********99995"
+        },
+        {
+          "activity_type": "Withdrawal",
+          "activity_count": "6",
+          "total_transaction_amount": "158565.63",
+          "avg_transaction_amount": "26427.605",
+          "total_net_amount": "111149.31999999998",
+          "total_fee_amount": "1686.31",
+          "total_commission_amount": "5721.63"
+        },
+        {
+          "activity_type": "Claim",
+          "activity_count": "3",
+          "total_transaction_amount": "104671.14000000001",
+          "avg_transaction_amount": "34890.********0005",
+          "total_net_amount": "51677.********0005",
+          "total_fee_amount": "698.01",
+          "total_commission_amount": "2967.********00003"
+        },
+        {
+          "activity_type": "Dividend",
+          "activity_count": "3",
+          "total_transaction_amount": "104171.26000000001",
+          "avg_transaction_amount": "34723.********3334",
+          "total_net_amount": "64255.47",
+          "total_fee_amount": "694.********00001",
+          "total_commission_amount": "2168.51"
+        },
+        {
+          "activity_type": "Premium",
+          "activity_count": "2",
+          "total_transaction_amount": "15619.********0002",
+          "avg_transaction_amount": "7809.********0001",
+          "total_net_amount": "29294.23",
+          "total_fee_amount": "551.********99999",
+          "total_commission_amount": "976.87"
+        }
+      ],
+      "result_row_count": 5,
+      "result_sample": [
+        {
+          "activity_type": "Loan",
+          "activity_count": "6",
+          "total_transaction_amount": "173290.61",
+          "avg_transaction_amount": "28881.76833333333",
+          "total_net_amount": "113007.58000000002",
+          "total_fee_amount": "1978.25",
+          "total_commission_amount": "5995.********99995"
+        },
+        {
+          "activity_type": "Withdrawal",
+          "activity_count": "6",
+          "total_transaction_amount": "158565.63",
+          "avg_transaction_amount": "26427.605",
+          "total_net_amount": "111149.31999999998",
+          "total_fee_amount": "1686.31",
+          "total_commission_amount": "5721.63"
+        },
+        {
+          "activity_type": "Claim",
+          "activity_count": "3",
+          "total_transaction_amount": "104671.14000000001",
+          "avg_transaction_amount": "34890.********0005",
+          "total_net_amount": "51677.********0005",
+          "total_fee_amount": "698.01",
+          "total_commission_amount": "2967.********00003"
+        }
+      ],
+      "usage": {
+        "inputTokens": 41064,
+        "outputTokens": 701,
+        "totalTokens": 41765
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 29.03,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "mt-stable-options-40c46068-f33e-4ded-84f5-13d23d05a1fc",
+      "turn_idx": 2,
+      "message": "party",
+      "answer": "There are 15 parties in total, spanning Individual, Organization, and Trust types with statuses of Active, Inactive, or Deceased. Examples include Lauren David Kane (Organization, Deceased), Rebecca Thomas Wright (Trust, Active), and Christopher Stacey Austin (Individual, Active).",
+      "agent_sql": "SELECT p.party_id, p.full_name, p.party_type, p.party_status FROM normalized.party p WHERE p.is_deleted = false",
+      "executed_sql": "SELECT p.party_id, p.full_name, p.party_type, p.party_status FROM normalized.party p WHERE p.is_deleted = false",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "party_id": "PARTY#PARTY000006",
+          "full_name": "Lauren David Kane",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000010",
+          "full_name": "Crystal Maria Barron",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright",
+          "party_type": "Trust",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000009",
+          "full_name": "Regina Zachary Jones",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000012",
+          "full_name": "Thomas Jill Davis",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000008",
+          "full_name": "Matthew Stanley Escobar",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000003",
+          "full_name": "Christopher Stacey Austin",
+          "party_type": "Individual",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000005",
+          "full_name": "Melissa Louis Garrett",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000011",
+          "full_name": "Laura Sarah Murray",
+          "party_type": "Individual",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000014",
+          "full_name": "Scott Neil Davis",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000007",
+          "full_name": "Blake Katelyn Myers",
+          "party_type": "Organization",
+          "party_status": "Inactive"
+        },
+        {
+          "party_id": "PARTY#PARTY000013",
+          "full_name": "Jared Xavier Parker",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000001",
+          "full_name": "Steven Michele Allen",
+          "party_type": "Individual",
+          "party_status": "Inactive"
+        },
+        {
+          "party_id": "PARTY#PARTY000015",
+          "full_name": "Pam Theresa Holt",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000004",
+          "full_name": "Victoria Carrie Brooks",
+          "party_type": "Trust",
+          "party_status": "Deceased"
+        }
+      ],
+      "result_row_count": 15,
+      "result_sample": [
+        {
+          "party_id": "PARTY#PARTY000006",
+          "full_name": "Lauren David Kane",
+          "party_type": "Organization",
+          "party_status": "Deceased"
+        },
+        {
+          "party_id": "PARTY#PARTY000010",
+          "full_name": "Crystal Maria Barron",
+          "party_type": "Organization",
+          "party_status": "Active"
+        },
+        {
+          "party_id": "PARTY#PARTY000002",
+          "full_name": "Rebecca Thomas Wright",
+          "party_type": "Trust",
+          "party_status": "Active"
+        }
+      ],
+      "usage": {
+        "inputTokens": 38681,
+        "outputTokens": 160,
+        "totalTokens": 38841
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 13.32,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-07-e03d6edd-8862-4cca-afbf-8985e747c7e6",
+      "turn_idx": 0,
+      "message": "Show the top 10 parties by total holding market value, including the investment product names they hold.",
+      "answer": "I couldn't build a query fully grounded in the available ontology for your question.",
+      "agent_sql": "SELECT\n  p.party_id,\n  p.full_name,\n  SUM(h.market_value) AS total_market_value,\n  ARRAY_JOIN(ARRAY_AGG(DISTINCT ip.product_name), ', ') AS product_names\nFROM normalized.party p\nJOIN normalized.coverage c ON CONCAT('PARTY#', c.party_id) = p.party_id\nJOIN normalized.holding h ON c.holding_id = h.holding_id\nLEFT JOIN normalized.holding_subaccount hs ON hs.holding_id = h.holding_id\nLEFT JOIN normalized.invest_product ip ON hs.fundcode = ip.fundcode\nWHERE p.is_deleted = false\n  AND h.is_deleted = false\nGROUP BY p.party_id, p.full_name\nORDER BY total_market_value DESC\nLIMIT 10",
+      "executed_sql": "",
+      "degraded": "grounding_unresolved",
+      "clarified": false,
+      "rows": [],
+      "result_row_count": 0,
+      "result_sample": [],
+      "usage": {
+        "inputTokens": 64281,
+        "outputTokens": 8770,
+        "totalTokens": 73051
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 92.61,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-14-f263d65a-d26c-4818-921c-750f914c477f",
+      "turn_idx": 0,
+      "message": "What can I ask about this semantic layer?",
+      "answer": "This semantic layer covers insurance policy/holding data\u2014including policy loans, coverages, riders, reinsurance, holdings, invest products, party licenses, government IDs, distribution hierarchies, and type-code lookups. Example questions include: \"Which policies have an active loan-summary record?\", \"What is the interest rate on a policy loan?\", \"Which holdings have reinsurance information?\", \"What is the total market value of active holdings by policy?\", and \"Count customers per advisor.\"",
+      "agent_sql": "SELECT 'This semantic layer supports questions about policy loan summaries, holding projections, distribution levels/hierarchies, invest products, riders, reinsurance info, government IDs, life details, holding restrictions, arrangement sources, coverages, holding debug/lineage records, coverage products, holdings, policy products, party licenses, substandard ratings, type code lookups, holding loans, and producer agreements. Example questions: Which policies have an active loan-summary record? What is the interest rate on a policy loan? Which parties have an active license on file? Which holdings have reinsurance information? What is the total market value of active holdings by policy? List all active coverages and their insured party. Which holdings have soft-deleted debug records? Count customers per advisor.' AS answer",
+      "executed_sql": "SELECT 'This semantic layer supports questions about policy loan summaries, holding projections, distribution levels/hierarchies, invest products, riders, reinsurance info, government IDs, life details, holding restrictions, arrangement sources, coverages, holding debug/lineage records, coverage products, holdings, policy products, party licenses, substandard ratings, type code lookups, holding loans, and producer agreements. Example questions: Which policies have an active loan-summary record? What is the interest rate on a policy loan? Which parties have an active license on file? Which holdings have reinsurance information? What is the total market value of active holdings by policy? List all active coverages and their insured party. Which holdings have soft-deleted debug records? Count customers per advisor.' AS answer",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "answer": "This semantic layer supports questions about policy loan summaries, holding projections, distribution levels/hierarchies, invest products, riders, reinsurance info, government IDs, life details, holding restrictions, arrangement sources, coverages, holding debug/lineage records, coverage products, holdings, policy products, party licenses, substandard ratings, type code lookups, holding loans, and producer agreements. Example questions: Which policies have an active loan-summary record? What is the interest rate on a policy loan? Which parties have an active license on file? Which holdings have reinsurance information? What is the total market value of active holdings by policy? List all active coverages and their insured party. Which holdings have soft-deleted debug records? Count customers per advisor."
+        }
+      ],
+      "result_row_count": 1,
+      "result_sample": [
+        {
+          "answer": "This semantic layer supports questions about policy loan summaries, holding projections, distribution levels/hierarchies, invest products, riders, reinsurance info, government IDs, life details, holding restrictions, arrangement sources, coverages, holding debug/lineage records, coverage products, holdings, policy products, party licenses, substandard ratings, type code lookups, holding loans, and producer agreements. Example questions: Which policies have an active loan-summary record? What is the interest rate on a policy loan? Which parties have an active license on file? Which holdings have reinsurance information? What is the total market value of active holdings by policy? List all active coverages and their insured party. Which holdings have soft-deleted debug records? Count customers per advisor."
+        }
+      ],
+      "usage": {
+        "inputTokens": 38990,
+        "outputTokens": 406,
+        "totalTokens": 39396
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 24.73,
+      "invoke_error": null
+    },
+    {
+      "scenario_session": "gt-row-15-36918766-9fe2-4ba4-b9f7-9e348385e263",
+      "turn_idx": 0,
+      "message": "Explain what the coverage table represents.",
+      "answer": "The `coverage` table stores one row per benefit attached to a policy \u2014 Base, Rider, or Optional coverage \u2014 linking a specific holding (policy) to the insured party and its product, along with financial details like face amount, cash value, and surrender value. The 20 sample rows show a mix of coverage types (Base, Rider, Optional) across various statuses (Active, Inactive, Paid-Up, Lapsed) and products (VUL, UL, TERM10/20/30, WHOLE, IUL).",
+      "agent_sql": "SELECT c.coverage_id, c.coverage_type, c.coverage_status, c.product_code, c.holding_id, c.party_id, c.face_amount, c.cash_value, c.surrender_value FROM normalized.coverage c WHERE c.is_deleted = false LIMIT 100;",
+      "executed_sql": "SELECT c.coverage_id, c.coverage_type, c.coverage_status, c.product_code, c.holding_id, c.party_id, c.face_amount, c.cash_value, c.surrender_value FROM normalized.coverage c WHERE c.is_deleted = false LIMIT 100;",
+      "degraded": null,
+      "clarified": false,
+      "rows": [
+        {
+          "coverage_id": "COV56549880",
+          "coverage_type": "Rider",
+          "coverage_status": "Inactive",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000011",
+          "party_id": "PARTY000014",
+          "face_amount": "230977.24",
+          "cash_value": "65019.31",
+          "surrender_value": "49859.81"
+        },
+        {
+          "coverage_id": "COV87621425",
+          "coverage_type": "Base",
+          "coverage_status": "Active",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000008",
+          "party_id": "PARTY000060",
+          "face_amount": "420293.31",
+          "cash_value": "94827.37",
+          "surrender_value": "85954.65"
+        },
+        {
+          "coverage_id": "COV15179641",
+          "coverage_type": "Base",
+          "coverage_status": "Inactive",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000014",
+          "party_id": "PARTY000013",
+          "face_amount": "305416.47",
+          "cash_value": "48936.18",
+          "surrender_value": "53091.59"
+        },
+        {
+          "coverage_id": "COV76096882",
+          "coverage_type": "Optional",
+          "coverage_status": "Active",
+          "product_code": "UL",
+          "holding_id": "POLICY#POL00000018",
+          "party_id": "PARTY000014",
+          "face_amount": "368051.33",
+          "cash_value": "57547.89",
+          "surrender_value": "4350.91"
+        },
+        {
+          "coverage_id": "COV67543335",
+          "coverage_type": "Base",
+          "coverage_status": "Active",
+          "product_code": "TERM30",
+          "holding_id": "POLICY#POL00000020",
+          "party_id": "PARTY000071",
+          "face_amount": "168847.74",
+          "cash_value": "45641.49",
+          "surrender_value": "88056.62"
+        },
+        {
+          "coverage_id": "COV08111612",
+          "coverage_type": "Optional",
+          "coverage_status": "Inactive",
+          "product_code": "TERM10",
+          "holding_id": "POLICY#POL00000003",
+          "party_id": "PARTY000044",
+          "face_amount": "362015.26",
+          "cash_value": "10112.6",
+          "surrender_value": "44846.19"
+        },
+        {
+          "coverage_id": "COV63656182",
+          "coverage_type": "Rider",
+          "coverage_status": "Inactive",
+          "product_code": "TERM20",
+          "holding_id": "POLICY#POL00000013",
+          "party_id": "PARTY000012",
+          "face_amount": "349756.94",
+          "cash_value": "66503.74",
+          "surrender_value": "14042.3"
+        },
+        {
+          "coverage_id": "COV81504609",
+          "coverage_type": "Rider",
+          "coverage_status": "Inactive",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000001",
+          "party_id": "PARTY000042",
+          "face_amount": "202889.26",
+          "cash_value": "5426.94",
+          "surrender_value": "58765.64"
+        },
+        {
+          "coverage_id": "COV31106652",
+          "coverage_type": "Base",
+          "coverage_status": "Paid-Up",
+          "product_code": "TERM20",
+          "holding_id": "POLICY#POL00000019",
+          "party_id": "PARTY000007",
+          "face_amount": "470783.68",
+          "cash_value": "50563.35",
+          "surrender_value": "13834.06"
+        },
+        {
+          "coverage_id": "COV31396200",
+          "coverage_type": "Base",
+          "coverage_status": "Active",
+          "product_code": "WHOLE",
+          "holding_id": "POLICY#POL00000004",
+          "party_id": "PARTY000021",
+          "face_amount": "337158.97",
+          "cash_value": "12441.27",
+          "surrender_value": "60379.57"
+        },
+        {
+          "coverage_id": "COV93748495",
+          "coverage_type": "Optional",
+          "coverage_status": "Inactive",
+          "product_code": "WHOLE",
+          "holding_id": "POLICY#POL00000002",
+          "party_id": "PARTY000061",
+          "face_amount": "335813.19",
+          "cash_value": "76108.3",
+          "surrender_value": "8772.57"
+        },
+        {
+          "coverage_id": "COV11021832",
+          "coverage_type": "Base",
+          "coverage_status": "Paid-Up",
+          "product_code": "IUL",
+          "holding_id": "POLICY#POL00000015",
+          "party_id": "PARTY000019",
+          "face_amount": "56419.46",
+          "cash_value": "76609.56",
+          "surrender_value": "85553.93"
+        },
+        {
+          "coverage_id": "COV57788255",
+          "coverage_type": "Base",
+          "coverage_status": "Inactive",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000016",
+          "party_id": "PARTY000016",
+          "face_amount": "418388.24",
+          "cash_value": "94274.06",
+          "surrender_value": "17420.0"
+        },
+        {
+          "coverage_id": "COV97656116",
+          "coverage_type": "Rider",
+          "coverage_status": "Paid-Up",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000005",
+          "party_id": "PARTY000080",
+          "face_amount": "292616.15",
+          "cash_value": "63214.38",
+          "surrender_value": "11972.0"
+        },
+        {
+          "coverage_id": "COV81807695",
+          "coverage_type": "Base",
+          "coverage_status": "Inactive",
+          "product_code": "IUL",
+          "holding_id": "POLICY#POL00000010",
+          "party_id": "PARTY000064",
+          "face_amount": "265993.86",
+          "cash_value": "96816.15",
+          "surrender_value": "41116.42"
+        },
+        {
+          "coverage_id": "COV76383052",
+          "coverage_type": "Optional",
+          "coverage_status": "Inactive",
+          "product_code": "WHOLE",
+          "holding_id": "POLICY#POL00000012",
+          "party_id": "PARTY000091",
+          "face_amount": "127293.97",
+          "cash_value": "13011.39",
+          "surrender_value": "24123.35"
+        },
+        {
+          "coverage_id": "COV74938037",
+          "coverage_type": "Rider",
+          "coverage_status": "Lapsed",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000017",
+          "party_id": "PARTY000019",
+          "face_amount": "391605.59",
+          "cash_value": "70336.84",
+          "surrender_value": "24021.94"
+        },
+        {
+          "coverage_id": "COV18812698",
+          "coverage_type": "Rider",
+          "coverage_status": "Inactive",
+          "product_code": "WHOLE",
+          "holding_id": "POLICY#POL00000006",
+          "party_id": "PARTY000057",
+          "face_amount": "85037.49",
+          "cash_value": "41126.15",
+          "surrender_value": "34828.68"
+        },
+        {
+          "coverage_id": "COV18946414",
+          "coverage_type": "Rider",
+          "coverage_status": "Lapsed",
+          "product_code": "IUL",
+          "holding_id": "POLICY#POL00000009",
+          "party_id": "PARTY000072",
+          "face_amount": "225285.35",
+          "cash_value": "3022.16",
+          "surrender_value": "47679.33"
+        },
+        {
+          "coverage_id": "COV61516321",
+          "coverage_type": "Rider",
+          "coverage_status": "Paid-Up",
+          "product_code": "UL",
+          "holding_id": "POLICY#POL00000007",
+          "party_id": "PARTY000100",
+          "face_amount": "170230.33",
+          "cash_value": "21763.27",
+          "surrender_value": "19942.75"
+        }
+      ],
+      "result_row_count": 20,
+      "result_sample": [
+        {
+          "coverage_id": "COV56549880",
+          "coverage_type": "Rider",
+          "coverage_status": "Inactive",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000011",
+          "party_id": "PARTY000014",
+          "face_amount": "230977.24",
+          "cash_value": "65019.31",
+          "surrender_value": "49859.81"
+        },
+        {
+          "coverage_id": "COV87621425",
+          "coverage_type": "Base",
+          "coverage_status": "Active",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000008",
+          "party_id": "PARTY000060",
+          "face_amount": "420293.31",
+          "cash_value": "94827.37",
+          "surrender_value": "85954.65"
+        },
+        {
+          "coverage_id": "COV15179641",
+          "coverage_type": "Base",
+          "coverage_status": "Inactive",
+          "product_code": "VUL",
+          "holding_id": "POLICY#POL00000014",
+          "party_id": "PARTY000013",
+          "face_amount": "305416.47",
+          "cash_value": "48936.18",
+          "surrender_value": "53091.59"
+        }
+      ],
+      "usage": {
+        "inputTokens": 44229,
+        "outputTokens": 266,
+        "totalTokens": 44495
+      },
+      "runtime_ms": null,
+      "wall_clock_s": 21.78,
+      "invoke_error": null
+    }
+  ],
+  "agent_performance": {
+    "turns": 18,
+    "sessions": 15,
+    "avg_wall_clock_s": 24.35,
+    "input_tokens": 541682,
+    "output_tokens": 12106,
+    "total_tokens": 553788
+  }
+}

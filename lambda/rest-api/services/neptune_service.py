@@ -8,34 +8,96 @@ import os
 import logging
 import json
 import uuid
-from typing import Dict, Any
-from strands.tools.mcp import MCPClient
-from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client
+from typing import Callable, Dict, Any, List, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover — imports only for the type checker
+    from agents.shared.rule_models import Rule
+    from strands.tools.mcp import MCPClient
 
 logger = logging.getLogger(__name__)
+
+# The gateway namespaces every tool as `<targetName>___<toolName>`. The SPARQL
+# passthrough target is declared in
+# cdk/lib/stacks/backend/agentcore/neptune-gateway-construct.ts as
+# `execute-sparql-query` holding the tool `execute_sparql_query`.
+_SPARQL_TOOL = 'execute-sparql-query___execute_sparql_query'
 
 
 class NeptuneService:
     """Service for Neptune graph queries via AgentCore Gateway"""
 
+    # Declared on the class, not only in __init__, so the `gateway_client`
+    # property still works on instances built with `NeptuneService.__new__` —
+    # tests do that to inject a stub without touching the environment.
+    _gateway_client: Optional['MCPClient'] = None
+
     def __init__(self):
         """Initialize Neptune service with Gateway configuration"""
         self.neptune_gateway_url = os.environ.get('NEPTUNE_GATEWAY_URL')
         self.region = os.environ.get('AWS_REGION', 'us-east-1')
+        # Built on first `gateway_client` access rather than here. `neptune_api`
+        # constructs this service at module scope, so anything done in __init__ is
+        # paid during Lambda's 10s init phase — and building the client means
+        # importing `strands.tools.mcp` + `mcp_proxy_for_aws`, 37% of the REST
+        # API's whole cold start, for a code path most requests never reach.
+        self._gateway_client: Optional['MCPClient'] = None
 
         if not self.neptune_gateway_url:
             logger.warning("NEPTUNE_GATEWAY_URL environment variable not set")
-            self.gateway_client = None
         else:
-            # Initialize MCP client with IAM authentication
-            self.gateway_client = MCPClient(
-                lambda: aws_iam_streamablehttp_client(
-                    endpoint=self.neptune_gateway_url,
-                    aws_region=self.region,
-                    aws_service="bedrock-agentcore"
-                )
+            logger.info(f"NeptuneService configured with Gateway: {self.neptune_gateway_url}")
+
+    @property
+    def gateway_client(self) -> Optional['MCPClient']:
+        """The MCP gateway client, built on first access and cached thereafter.
+
+        Returns:
+            An ``MCPClient`` authenticated with IAM against the Neptune AgentCore
+            Gateway, or ``None`` when ``NEPTUNE_GATEWAY_URL`` is unset — callers
+            already treat a falsy client as "gateway not configured" and raise.
+
+        Caching matters beyond speed: callers do ``with self.gateway_client:`` and
+        then call methods on ``self.gateway_client`` inside that block, so a fresh
+        client per access would use a session that was never entered.
+        """
+        # An explicitly-assigned client wins over the environment, so injecting a
+        # stub works even when NEPTUNE_GATEWAY_URL is unset.
+        if self._gateway_client is not None:
+            return self._gateway_client
+
+        if not self.neptune_gateway_url:
+            return None
+
+        # Imported here, not at module scope — see the note in __init__.
+        from strands.tools.mcp import MCPClient
+        from mcp_proxy_for_aws.client import aws_iam_streamablehttp_client
+
+        self._gateway_client = MCPClient(
+            lambda: aws_iam_streamablehttp_client(
+                endpoint=self.neptune_gateway_url,
+                aws_region=self.region,
+                aws_service="bedrock-agentcore"
             )
-            logger.info(f"NeptuneService initialized with Gateway: {self.neptune_gateway_url}")
+        )
+        logger.info(f"Neptune Gateway MCP client built: {self.neptune_gateway_url}")
+
+        return self._gateway_client
+
+    @gateway_client.setter
+    def gateway_client(self, client: Optional['MCPClient']) -> None:
+        """Assign the gateway client, overriding the lazily-built one.
+
+        Args:
+            client: A client to use, or None to reset so the next read rebuilds.
+
+        Returns:
+            None.
+
+        Present so ``gateway_client`` stays an ordinary read/write attribute from
+        every caller's point of view — making it a bare read-only property would
+        break existing callers that inject a stub.
+        """
+        self._gateway_client = client
 
     def list_available_tools(self):
         """
@@ -353,3 +415,257 @@ class NeptuneService:
                 'properties': [],
                 'error': str(e)
             }
+
+    # ================================================================
+    # Governed rules (enableGovernedRules) — the <ontologyId>/rules graph
+    # ================================================================
+    # Every SPARQL string below is built by agents/shared/rule_graph.py, so the
+    # REST Lambda and the agent runtime read and write rules through ONE
+    # implementation of the vocabulary. These methods are transport only.
+    #
+    # Transport is the existing execute_sparql_query gateway tool — no new
+    # gateway target and no new IAM. Rules live in a SIBLING named graph
+    # (<ontology-graph>/rules), which _resolve_graph_uri in
+    # lambda/neptune-tools/index.py explicitly excludes so rule triples can
+    # never leak into an ontology slice.
+
+    def write_rule(self, *, rule: "Rule") -> None:
+        """Upsert one rule into its namespace's rules graph.
+
+        Emits DELETE-then-INSERT in a single update so an edited rule replaces
+        its previous triples. Without the DELETE the blank-node condition and
+        threshold children would accumulate, and the rule would read back with
+        its conditions duplicated.
+
+        Args:
+            rule: The rule to persist.
+
+        Returns:
+            None.
+        """
+        from agents.shared.rule_graph import rule_to_upsert_update
+
+        self._call_gateway_tool(_SPARQL_TOOL, {
+            'sparql_query': rule_to_upsert_update(rule=rule),
+            'query_type': 'UPDATE',
+        })
+
+    def read_rules(self, *, namespace: str) -> List["Rule"]:
+        """Read every rule in a namespace's rules graph.
+
+        Args:
+            namespace: Ontology id owning the rules graph.
+
+        Returns:
+            List[Rule]: The parsed rules; empty when the graph does not exist.
+        """
+        from agents.shared.rule_graph import read_rules as _read_rules
+
+        return _read_rules(
+            namespace=namespace,
+            execute_sparql=self._rule_sparql_executor(),
+        )
+
+    def read_rules_partitioned(
+        self, *, namespace: str,
+    ) -> Tuple[List["Rule"], List[Dict[str, str]]]:
+        """Read a namespace's rules, isolating any that cannot be deserialized.
+
+        Same query as read_rules; only the reassembly differs. Used by the list
+        endpoint so one corrupt rule cannot 500 the whole namespace.
+
+        Args:
+            namespace: Ontology id owning the rules graph.
+
+        Returns:
+            Tuple[List[Rule], List[Dict[str, str]]]: The readable rules, and one
+                {"rule_id", "error"} map per unreadable rule.
+        """
+        from agents.shared.rule_graph import read_rules_partitioned
+
+        return read_rules_partitioned(
+            namespace=namespace,
+            execute_sparql=self._rule_sparql_executor(),
+        )
+
+    def _rule_sparql_executor(self) -> Callable[..., Dict[str, Any]]:
+        """Build the injected SPARQL executor the rule readers expect.
+
+        Returns:
+            Callable: Takes `query` and `query_type` keywords and returns parsed
+                SPARQL-results JSON from the gateway tool.
+        """
+        return lambda *, query, query_type: self._call_gateway_tool(
+            _SPARQL_TOOL,
+            {'sparql_query': query, 'query_type': query_type},
+        )
+
+    def delete_rule(self, *, namespace: str, rule_id: str) -> None:
+        """Delete one rule and its child nodes from the rules graph.
+
+        Args:
+            namespace: Ontology id owning the rules graph.
+            rule_id: Identifier of the rule to remove.
+
+        Returns:
+            None.
+        """
+        from agents.shared.rule_graph import delete_rule_update
+
+        self._call_gateway_tool(_SPARQL_TOOL, {
+            'sparql_query': delete_rule_update(
+                namespace=namespace, rule_id=rule_id,
+            ),
+            'query_type': 'UPDATE',
+        })
+
+    def ask(self, *, query: str, graph_uri: str) -> bool:
+        """Run a SPARQL ASK scoped to one named graph.
+
+        Used by rule validation level 2 (does the rule's subject class actually
+        declare this property as its ``rdfs:domain``?). The caller writes a
+        graph-agnostic pattern and this method wraps it, so no validator has to
+        know how graphs are named.
+
+        FAIL-CLOSED: a response without a ``boolean`` key reads as False. A
+        malformed answer must never let an unchecked rule through the gate.
+
+        Args:
+            query: An ASK query; its pattern is re-wrapped in a GRAPH clause.
+            graph_uri: The named graph to evaluate against.
+
+        Returns:
+            bool: The ASK result, or False if it cannot be determined.
+        """
+        pattern = query.strip()
+        # Rewrite `ASK { <pattern> }` as `ASK { GRAPH <g> { <pattern> } }`.
+        # Slicing on the first `{` and last `}` keeps nested braces (OPTIONAL,
+        # FILTER blocks) intact.
+        inner = pattern[pattern.index('{') + 1:pattern.rindex('}')]
+        scoped = f'ASK {{ GRAPH <{graph_uri}> {{{inner}}} }}'
+        result = self._call_gateway_tool(_SPARQL_TOOL, {
+            'sparql_query': scoped,
+            'query_type': 'SELECT',
+        })
+        if isinstance(result, dict):
+            return bool(result.get('boolean', False))
+        return False
+
+    def select_in_graph(self, *, query: str, graph_uri: str) -> List[Dict[str, str]]:
+        """Run a SPARQL SELECT scoped to one named graph, flattened to dicts.
+
+        Used by rule validation level 3, which walks ``vkg:mapsToColumn`` to
+        decide whether every binding a rule needs is actually mapped to a
+        column.
+
+        Args:
+            query: A SELECT query; its WHERE block is re-wrapped in a GRAPH
+                clause.
+            graph_uri: The named graph to query.
+
+        Returns:
+            List[Dict[str, str]]: One dict per row, ``{varName: value}``. Empty
+                on an unparseable response — level 3 reads "no rows" as
+                "unmapped", which is the fail-closed direction.
+        """
+        where_start = query.index('{')
+        head = query[:where_start]
+        inner = query[where_start + 1:query.rindex('}')]
+        scoped = f'{head}{{ GRAPH <{graph_uri}> {{{inner}}} }}'
+        result = self._call_gateway_tool(_SPARQL_TOOL, {
+            'sparql_query': scoped,
+            'query_type': 'SELECT',
+        })
+        bindings = (result or {}).get('results', {}).get('bindings', [])
+        return [
+            {name: cell.get('value', '') for name, cell in row.items()}
+            for row in bindings
+        ]
+
+    def resolve_ontology_graph_uri(self, *, id: str) -> str:
+        """Resolve the NEWEST ontology named-graph URI for a layer id.
+
+        The rule validators must query the graph the ontology actually lives in,
+        and that URI cannot be constructed from a prefix: the creation agent
+        writes triples under ``http://<slug-of-layer-name>/ontology/<id>``, where
+        the slug carries a build timestamp. So it is discovered, exactly as
+        lambda/neptune-tools/index.py `_resolve_graph_uris` does:
+
+        - Filter by the id, because the slug is not knowable here.
+        - Exclude ``/rules``, or ontology validation would read rule triples.
+        - Sort DESCENDING and take the first. A rebuild MINTS A NEW GRAPH and
+          the superseded one survives, so without an explicit order an arbitrary
+          stale build answers — that is what made a rebuilt layer look unchanged.
+
+        Args:
+            id: Ontology/layer identifier (UUID).
+
+        Returns:
+            str: The newest matching ontology graph URI.
+
+        Raises:
+            ValueError: If no ontology graph exists for this id. Validating
+                against a nonexistent graph would fail every level for the wrong
+                reason ("property not declared") instead of naming the real
+                cause ("the layer was never built").
+        """
+        result = self._call_gateway_tool(
+            'discover-named-graphs___discover_named_graphs', {},
+        )
+        graphs = (result or {}).get('named_graphs', [])
+        matching = sorted(
+            (g for g in graphs if id in g and not g.endswith('/rules')),
+            reverse=True,
+        )
+        if not matching:
+            raise ValueError(
+                f"no ontology named graph exists in Neptune for id '{id}' — "
+                f"build the semantic layer before authoring rules against it"
+            )
+        if len(matching) > 1:
+            logger.warning(
+                "%d ontology graphs exist for '%s' (superseded rebuilds were "
+                "never dropped) — using the newest, %s",
+                len(matching), id, matching[0],
+            )
+        return matching[0]
+
+    def get_ontology(self, *, id: str) -> Dict[str, Any]:
+        """Fetch the ontology payload Ontop needs for reformulation.
+
+        Args:
+            id: Ontology identifier.
+
+        Returns:
+            Dict[str, Any]: ``{classes, properties, mappings, databases}``.
+        """
+        return self._call_gateway_tool(
+            'get-ontology-from-neptune___get_ontology_from_neptune',
+            {'ontology_id': id},
+        )
+
+    def translate_sparql_to_sql(
+        self, *, sparql: str, ontology_id: str, ontology_json: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Translate SPARQL to Athena SQL via the Ontop translate Lambda.
+
+        Used by the publish gate's smoke-execution step: a rule Ontop cannot
+        translate must never reach PUBLISHED.
+
+        Args:
+            sparql: The grounded SPARQL SELECT.
+            ontology_id: Reformulator cache key.
+            ontology_json: The ``get_ontology`` payload — the translate Lambda
+                has no Neptune access of its own, so the caller supplies it.
+
+        Returns:
+            Dict[str, Any]: ``{sql, database, catalog}``.
+        """
+        return self._call_gateway_tool(
+            'translate-sparql-to-sql___translate_sparql_to_sql',
+            {
+                'sparql': sparql,
+                'ontologyId': ontology_id,
+                'ontologyJson': ontology_json,
+            },
+        )

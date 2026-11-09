@@ -1,0 +1,110 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "pooling": "row-weighted mean over per-DB exec_metrics_by_db",
+  "db_ids_requested": [
+    "bird_debit_card_specializing",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_pooled": [
+    "bird_debit_card_specializing"
+  ],
+  "db_ids_missing_results": [
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "pooled_exec_metrics": {
+    "ExecutionAccuracy": 0.1852,
+    "RewardVES": 0.1574,
+    "SoftF1": 0.2203
+  },
+  "scored_rows_per_metric": {
+    "ExecutionAccuracy": 27,
+    "RewardVES": 27,
+    "SoftF1": 27
+  },
+  "invoked_rows": 30,
+  "unanswerable_gold_rows": 3,
+  "answerable_rows": 27,
+  "pooled_telemetry_coverage": {
+    "ExecutionAccuracy": 1.0,
+    "RewardVES": 1.0,
+    "SoftF1": 1.0
+  },
+  "low_coverage_dbs": [],
+  "per_db": {
+    "bird_debit_card_specializing": {
+      "results_file": "bird_vkg_benchmark_eval_bird_debit_card_specializing_20261014_132801.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_debit_card_speciali_e064cc20-7b5f99209d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "SoftF1": 0.2203,
+        "SoftF1_n": 27,
+        "ExecutionAccuracy": 0.1852,
+        "ExecutionAccuracy_n": 27,
+        "RewardVES": 0.1574,
+        "RewardVES_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.77,
+        "FinalAnswerFaithfulness": 0.76,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 30,
+        "n_answerable": 27,
+        "n_unanswerable_gold": 3,
+        "unanswerable_scenario_ids": [
+          "gt-row-06",
+          "gt-row-10",
+          "gt-row-27"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 27,
+          "RewardVES": 27,
+          "SoftF1": 27
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.9,
+          "RewardVES": 0.9,
+          "SoftF1": 0.9
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    }
+  },
+  "failed_runs": {
+    "bird_european_football_2": "CellExecutionError: \u001b[31mRuntimeError\u001b[39m: Telemetry coverage 0.7660 is below the floor 0.95: {'ExecutionAccuracy': 36, 'RewardVES': 36, 'SoftF1': 36} of 51 rows measurable. Exec metrics for this run are not a valid benchmark score. Results were still written to ../data/eval/results/bird_vkg_benchmark_eval_bird_europe",
+    "bird_financial": "CellExecutionError: \u001b[31mCredentialRetrievalError\u001b[39m: Error when retrieving credentials from custom-process: 2026/10/14 22:57:14 Failed to force refresh the credentials: unable to retrieve credentials: unable to assume credentials for account \"510844691429\" and role \"Admin\": Request to IDP URL https://midway-auth.ama",
+    "bird_formula_1": "CellExecutionError: \u001b[31mCredentialRetrievalError\u001b[39m: Error when retrieving credentials from custom-process: 2026/10/14 22:57:17 Failed to force refresh the credentials: unable to retrieve credentials: unable to assume credentials for account \"510844691429\" and role \"Admin\": Request to IDP URL https://midway-auth.ama",
+    "bird_student_club": "CellExecutionError: \u001b[31mCredentialRetrievalError\u001b[39m: Error when retrieving credentials from custom-process: 2026/10/14 23:09:07 Failed to force refresh the credentials: unable to retrieve credentials: unable to assume credentials for account \"510844691429\" and role \"Admin\": Request to IDP URL https://midway-auth.ama",
+    "bird_superhero": "CellExecutionError: \u001b[31mCredentialRetrievalError\u001b[39m: Error when retrieving credentials from custom-process: 2026/10/14 23:09:10 Failed to force refresh the credentials: unable to retrieve credentials: unable to assume credentials for account \"510844691429\" and role \"Admin\": Request to IDP URL https://midway-auth.ama",
+    "bird_thrombosis_prediction": "CellExecutionError: \u001b[31mCredentialRetrievalError\u001b[39m: Error when retrieving credentials from custom-process: 2026/10/14 23:09:18 Failed to force refresh the credentials: unable to retrieve credentials: unable to assume credentials for account \"510844691429\" and role \"Admin\": Request to IDP URL https://midway-auth.ama",
+    "bird_toxicology": "CellExecutionError: \u001b[31mCredentialRetrievalError\u001b[39m: Error when retrieving credentials from custom-process: 2026/10/14 23:09:23 Failed to force refresh the credentials: unable to retrieve credentials: unable to assume credentials for account \"510844691429\" and role \"Admin\": Request to IDP URL https://midway-auth.ama"
+  }
+}

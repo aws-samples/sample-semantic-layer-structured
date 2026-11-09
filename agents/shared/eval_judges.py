@@ -52,7 +52,7 @@ right granularity because answer quality is a per-conversation question and
 from __future__ import annotations
 
 import uuid
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 # The judge model every custom evaluator runs on. Sonnet 4.6 (matches the
 # deployed CDK eval stack's JUDGE_MODEL_ID).
@@ -511,6 +511,99 @@ def create_custom_judges(
         )
         for name in ("GoalSuccess", "FinalAnswerFaithfulness", "SqlGrounded")
     ]
+
+
+def find_evaluator_id_by_name(*, control_client, evaluator_name: str) -> Optional[str]:
+    """Return the evaluatorId of the newest ACTIVE custom evaluator with this exact name.
+
+    ``CreateEvaluator`` does NOT enforce name uniqueness, and AgentCore never
+    garbage-collects evaluators — every notebook re-run mints a fresh set, so this
+    account already carries hundreds. Callers that run the SAME notebook many
+    times (e.g. BIRD once per database) use this to look an evaluator up instead
+    of creating another copy.
+
+    ``evaluatorName`` is the name passed to ``CreateEvaluator``; the returned
+    ``evaluatorId`` is that name plus a service-assigned ``-<hash>`` suffix, so
+    matching must be on the name, not the id.
+
+    Args:
+        control_client: A boto3 ``bedrock-agentcore-control`` client.
+        evaluator_name: Exact ``evaluatorName`` to match (case-sensitive).
+
+    Returns:
+        The newest matching ACTIVE evaluator's ``evaluatorId``, or ``None`` if no
+        ACTIVE evaluator carries that name.
+    """
+    newest_id: Optional[str] = None
+    newest_created = None
+    for page in control_client.get_paginator("list_evaluators").paginate():
+        for ev in page.get("evaluators", []):
+            if ev.get("evaluatorName") != evaluator_name:
+                continue
+            if ev.get("status") != "ACTIVE":
+                continue
+            created = ev.get("createdAt")
+            # Prefer the most recent: an older same-named evaluator may carry a
+            # stale prompt or a stale Lambda ARN from a previous deployment.
+            if newest_created is None or (created is not None and created > newest_created):
+                newest_created, newest_id = created, ev["evaluatorId"]
+    return newest_id
+
+
+def get_or_create_custom_judges(
+    *,
+    control_client,
+    family: str,
+    name_suffix: str,
+) -> List[str]:
+    """Resolve the three custom SESSION judges by name, creating only what is missing.
+
+    Same contract and return order as :func:`create_custom_judges`
+    (``[GoalSuccess, FinalAnswerFaithfulness, SqlGrounded]``), but idempotent:
+    running it twice with the same ``name_suffix`` returns the SAME three ids
+    rather than minting a second identical set. Use this whenever one logical
+    experiment is executed as several notebook runs (e.g. BIRD split into one run
+    per database) so all runs are scored by literally the same evaluators and the
+    per-run scores are comparable and poolable.
+
+    Args:
+        control_client: A boto3 ``bedrock-agentcore-control`` client.
+        family: ``"rag"`` or ``"vkg"`` — selects the prompt set.
+        name_suffix: STABLE suffix identifying this experiment (e.g.
+            ``"bird_vkg_v1"``). Required and must be non-empty: a random suffix
+            would defeat the whole point, so blank fails loudly rather than
+            silently degrading to create-a-new-set behaviour.
+
+    Returns:
+        ``[goal_success_id, final_answer_faithfulness_id, sql_grounded_id]``.
+
+    Raises:
+        ValueError: if ``name_suffix`` is empty/whitespace, or ``family`` is unknown.
+    """
+    suffix = name_suffix.strip()
+    if not suffix:
+        raise ValueError(
+            "name_suffix is required and must be non-empty for reuse; "
+            "use create_custom_judges() if a fresh random set is intended"
+        )
+    prompts = _prompts_for_family(family=family)
+    resolved: List[str] = []
+    for name in ("GoalSuccess", "FinalAnswerFaithfulness", "SqlGrounded"):
+        full_name = f"{name}_{suffix}"
+        existing = find_evaluator_id_by_name(
+            control_client=control_client, evaluator_name=full_name,
+        )
+        resolved.append(
+            existing
+            if existing is not None
+            else _create_one_judge(
+                control_client=control_client,
+                name=name,
+                instructions=prompts[name],
+                name_suffix=suffix,
+            )
+        )
+    return resolved
 
 
 def _prompts_for_family(*, family: str) -> Dict[str, str]:

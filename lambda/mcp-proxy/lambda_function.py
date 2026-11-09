@@ -315,7 +315,7 @@ def handle_dcr(event: dict) -> dict:
             "redirect_uris": redirect_uris,
             "grant_types": ["authorization_code", "refresh_token"],
             "response_types": ["code"],
-            "token_endpoint_auth_method": "none",
+            "token_endpoint_auth_method": "none",  # nosec B105 — OAuth2 RFC 7591 public-client value, not a password
         },
     )
 

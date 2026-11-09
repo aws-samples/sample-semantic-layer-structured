@@ -47,6 +47,9 @@ export interface McpServerStackProps extends StackProps {
   readonly queryRuntimeArn?: string;
   readonly metadataQueryRuntimeArn?: string;
   readonly suggestionsRuntimeArn?: string;
+  /** Hybrid semantic-layer query runtime ARN — the chat gateway adds a
+   *  `semantic-layer-query` target pointing at it (chat path only). */
+  readonly semanticLayerQueryRuntimeArn?: string;
   /** Bedrock Guardrails (preserved across MCP calls per design). */
   readonly guardrailId?: string;
   readonly guardrailVersion?: string;
@@ -192,6 +195,42 @@ export class McpServerStack extends Stack {
       description: 'Service role assumed by the MCP Gateway',
     });
     this.toolsLambda.grantInvoke(gatewayRole);
+
+    // The MCP gateway targets (OntologyQuery / MetadataQuery / QuerySuggestions)
+    // resolve their runtime fields at CfnGatewayTarget CREATE time, which the
+    // gateway service does with GetAgentRuntime under this role — without it the
+    // target fails with "Access denied. Ensure your gateway role includes the
+    // bedrock-agentcore:GetAgentRuntime permission." → the ChatGateway/target
+    // custom resource fails → stack rollback. Grant Get + Invoke on the runtime
+    // ARNs (and their qualified children). Scope to the ARNs when supplied; fall
+    // back to account-scoped when a prop is absent (older callers).
+    const runtimeArns = [
+      props.metadataQueryRuntimeArn,
+      props.queryRuntimeArn,
+      props.suggestionsRuntimeArn,
+    ].filter((a): a is string => Boolean(a));
+    gatewayRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['bedrock-agentcore:InvokeAgentRuntime'],
+        resources:
+          runtimeArns.length > 0
+            ? runtimeArns.flatMap((a) => [a, `${a}/*`])
+            : [`arn:aws:bedrock-agentcore:${this.region}:${this.account}:runtime/*`],
+      })
+    );
+    // GetAgentRuntime on "*": the control-plane read the gateway uses to resolve
+    // target runtime fields is not reliably authorized by a runtime-ARN-scoped
+    // resource (resolves by runtime id, "${arn}/*" doesn't match), so scope it
+    // wide on this single read action to avoid the "lacks GetAgentRuntime" target
+    // failure → rollback.
+    gatewayRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['bedrock-agentcore:GetAgentRuntime'],
+        resources: ['*'],
+      })
+    );
 
     // Principal-based permission so the Gateway service can invoke the Lambda
     // even before the role-based grant propagates.
@@ -469,7 +508,26 @@ export class McpServerStack extends Stack {
             `${props.metadataQueryRuntimeArn}/*`,
             props.queryRuntimeArn,
             `${props.queryRuntimeArn}/*`,
+            // Hybrid semantic-layer query runtime (only when enableHybrid wired it
+            // through). Additive — omitted from the grant when the ARN is absent.
+            ...(props.semanticLayerQueryRuntimeArn
+              ? [props.semanticLayerQueryRuntimeArn, `${props.semanticLayerQueryRuntimeArn}/*`]
+              : []),
           ],
+        })
+      );
+      // GetAgentRuntime on "*" — the gateway resolves a target's runtime fields
+      // via GetAgentRuntime at target-CREATE time, but that control-plane read is
+      // not reliably authorized by a runtime-ARN-scoped resource (it resolves by
+      // runtime id, and the "${arn}/*" pattern doesn't match), so a scoped grant
+      // still yields "Access denied. Ensure your gateway role includes the
+      // bedrock-agentcore:GetAgentRuntime permission." → target fails → rollback.
+      // A wildcard resource on this single read action is the documented fix.
+      chatGatewayRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['bedrock-agentcore:GetAgentRuntime'],
+          resources: ['*'],
         })
       );
 
@@ -576,6 +634,14 @@ export class McpServerStack extends Stack {
           'bedrock-agentcore:DeleteGatewayTarget',
           'bedrock-agentcore:GetGateway',
           'bedrock-agentcore:GetGatewayTarget',
+          // GetAgentRuntime is required on the CALLER (this Lambda), not just the
+          // gateway role: create_gateway_target resolves the target's runtime
+          // fields synchronously under the caller's identity. Without it the
+          // target lands in FAILED with "Access denied. Ensure your gateway role
+          // includes the bedrock-agentcore:GetAgentRuntime permission." — a
+          // misleading message; CloudTrail shows the DENIED principal is this
+          // Lambda's execution role, so the grant must live here.
+          'bedrock-agentcore:GetAgentRuntime',
           // ListGateways lets onEvent reap FAILED orphan gateways (from prior
           // rolled-back deploys) sharing the base name before it creates a new
           // one. Best-effort in the handler, but without this it would always
@@ -664,6 +730,11 @@ export class McpServerStack extends Stack {
           AllowedClientId: props.userPoolClientId,
           MetadataQueryRuntimeArn: props.metadataQueryRuntimeArn,
           OntologyQueryRuntimeArn: props.queryRuntimeArn,
+          // Hybrid semantic-layer query runtime — the handler adds a
+          // `semantic-layer-query` target for it. Passed as '' when enableHybrid
+          // is off; the handler skips TARGET_SPECS whose ARN is empty so existing
+          // (VKG/SemanticRAG-only) deploys are unaffected.
+          SemanticLayerQueryRuntimeArn: props.semanticLayerQueryRuntimeArn ?? '',
           // Bumping this changes the custom-resource properties, forcing CFN to
           // re-run the provider (Update) so _ensure_targets migrates existing
           // targets to the new outbound credential mode. The handler reads
@@ -674,7 +745,9 @@ export class McpServerStack extends Stack {
           // v2: _ensure_targets now reads credential type via get_gateway_target
           // (list_gateway_targets returns it empty → infinite delete+recreate churn
           // → CFN timeout). See chat-gateway-handler/index.py.
-          HandlerVersion: 'v2-get-target-credtype',
+          // v3: TARGET_SPECS gains `semantic-layer-query` (Hybrid); handler skips
+          // specs whose ARN prop is empty so non-hybrid deploys keep 2 targets.
+          HandlerVersion: 'v3-hybrid-target',
         },
       });
       // Ensure the role (and its PassRole grant) exist before the resource

@@ -1,0 +1,8 @@
+[
+  {
+    "layer_id": "vkg-bird_california_schools",
+    "namespace": "bird_california_schools",
+    "status": "driver_error",
+    "error": "An error occurred (ResourceNotFoundException) when calling the PutItem operation: Requested resource not found"
+  }
+]

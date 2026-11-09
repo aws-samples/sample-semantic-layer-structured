@@ -128,3 +128,74 @@ def test_user_and_assistant_turns_persisted_fallback(agent_module):
              'message': 'q', 'messages': []}, None))
     roles = [c.kwargs['role'] for c in sessions.append_turn.call_args_list]
     assert roles == ['user', 'assistant']
+
+
+def _stream_totals(agent_module, legacy_result: dict) -> dict:
+    """Run the VKG streaming path over a legacy result and return run_finished totals.
+
+    Args:
+        agent_module: The imported ontology_query_agent.main module.
+        legacy_result: The dict ``_run_query`` should return.
+
+    Returns:
+        The ``totals`` dict from the terminal run_finished event.
+    """
+    allow = MagicMock()
+    allow.apply.return_value = {'blocked': False, 'message': '', 'action': 'NONE'}
+    with patch.object(agent_module, '_run_query', return_value=legacy_result), \
+         patch.object(agent_module, '_guardrails', allow), \
+         patch.object(agent_module, '_chat_sessions', MagicMock()):
+        events = list(agent_module.invoke({
+            'turnId': 't1', 'sessionId': 'sess', 'ontologyId': 'ont-1',
+            'message': 'q', 'messages': [], 'mode': 'vkg',
+        }))
+    return events[-1]['totals']
+
+
+def test_totals_carry_the_degraded_terminal_reason(agent_module):
+    """A translation degrade must reach ``totals['degraded']``, not vanish.
+
+    ``invoke`` records the reason only inside ``provenance`` (there is no
+    top-level key), so the streaming totals have to read it from there. Before
+    this, every VKG row reported degraded=None: the 2026-08-10 BIRD run had 103
+    rows with SPARQL, no executed SQL, no error and degraded=None, making a real
+    ``sparql_translation_failed`` terminal indistinguishable from success.
+    """
+    totals = _stream_totals(agent_module, {
+        'answer': "I couldn't translate the query to SQL.",
+        'sql_query': 'SELECT ?s WHERE { ?s a <http://x/C> }',
+        'results': [],
+        'n_quads': [],
+        # Phase 5 leaves reasoning.sqlQuery empty on a degrade — no SQL executed.
+        'reasoning': {'sqlQuery': '', 'dataSourceSelection': 'Neptune'},
+        'provenance': {'tier': 'vkg', 'grounded': True, 'sources': ['kb'],
+                       'degraded': 'sparql_translation_failed'},
+    })
+    assert totals['degraded'] == 'sparql_translation_failed'
+    # The pairing is what makes the row diagnosable: SPARQL present, no SQL run.
+    assert totals['sql']
+    assert totals['executedSql'] == ''
+
+
+def test_totals_report_no_degrade_on_a_successful_run(agent_module):
+    """A grounded answer must report ``degraded=None`` — never a false positive."""
+    totals = _stream_totals(agent_module, {
+        'answer': '2 rows.',
+        'sql_query': 'SELECT ?s WHERE { ?s a <http://x/C> }',
+        'results': [{'n': 2}],
+        'n_quads': [],
+        'reasoning': {'sqlQuery': 'SELECT count(*) FROM t', 'dataSourceSelection': 'x'},
+        'provenance': {'tier': 'vkg', 'grounded': True, 'sources': ['class:C'],
+                       'degraded': None},
+    })
+    assert totals['degraded'] is None
+    assert totals['executedSql'] == 'SELECT count(*) FROM t'
+
+
+def test_totals_degraded_is_none_when_provenance_is_absent(agent_module):
+    """A result with no provenance block must not raise — degrade to None."""
+    totals = _stream_totals(agent_module, {
+        'answer': 'ok', 'sql_query': '', 'results': [], 'n_quads': [],
+        'reasoning': {'sqlQuery': ''},
+    })
+    assert totals['degraded'] is None

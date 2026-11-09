@@ -1,0 +1,609 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-9p5fpw8oav",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_ontology-9p5fpw8oav",
+  "service_name": "semantic_layer_dev_ontology-9p5fpw8oav.DEFAULT",
+  "log_groups": [
+    "aws/spans",
+    "/aws/bedrock-agentcore/runtimes/semantic_layer_dev_ontology-9p5fpw8oav-DEFAULT"
+  ],
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_6178b6d8-lf097jB4b5"
+  ],
+  "sessions": [
+    {
+      "sessionId": "bird_california_schools-5f86ce7c-992c-46e1-9915-bec9b2508bb0",
+      "testScenarioId": "bird_california_schools",
+      "startTime": "2026-10-02T16:11:05.122012+00:00",
+      "endTime": "2026-10-02T16:37:19.737457+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_california_schools"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_card_games-dba4693c-f950-4c90-a973-1521e29b2fff",
+      "testScenarioId": "bird_card_games",
+      "startTime": "2026-10-02T16:37:19.738610+00:00",
+      "endTime": "2026-10-02T17:01:00.172523+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_card_games"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_codebase_community-a68b7917-3fb3-4417-8fbd-fcfa79fcbdf0",
+      "testScenarioId": "bird_codebase_community",
+      "startTime": "2026-10-02T17:01:00.172640+00:00",
+      "endTime": "2026-10-02T17:20:09.262720+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_codebase_community"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_debit_card_specializing-5e07cb06-28e5-42f6-8e70-c22258155950",
+      "testScenarioId": "bird_debit_card_specializing",
+      "startTime": "2026-10-02T17:20:09.262836+00:00",
+      "endTime": "2026-10-02T17:28:45.803510+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_debit_card_specializing"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_european_football_2-c011180d-3737-422b-8f46-995dc8ee4a6c",
+      "testScenarioId": "bird_european_football_2",
+      "startTime": "2026-10-02T17:28:45.804395+00:00",
+      "endTime": "2026-10-02T18:02:57.684528+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_european_football_2"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_financial-acc62d16-63de-457d-8add-7745656c96b5",
+      "testScenarioId": "bird_financial",
+      "startTime": "2026-10-02T18:02:57.684929+00:00",
+      "endTime": "2026-10-02T18:18:06.272498+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_financial"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_formula_1-dea49763-607b-422f-a601-31d3ad9f08fe",
+      "testScenarioId": "bird_formula_1",
+      "startTime": "2026-10-02T18:18:06.272789+00:00",
+      "endTime": "2026-10-02T18:43:47.377075+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_formula_1"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_student_club-c92aad8e-02f5-46e0-9e83-5a38c2f209b6",
+      "testScenarioId": "bird_student_club",
+      "startTime": "2026-10-02T18:43:47.377265+00:00",
+      "endTime": "2026-10-02T18:59:26.455534+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_student_club"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_superhero-18841a99-25e6-4374-ab00-ee910a0b9a63",
+      "testScenarioId": "bird_superhero",
+      "startTime": "2026-10-02T18:59:26.455829+00:00",
+      "endTime": "2026-10-02T19:27:09.244511+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_superhero"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_thrombosis_prediction-08ba1c18-5d78-4545-ad1c-1b074e397c77",
+      "testScenarioId": "bird_thrombosis_prediction",
+      "startTime": "2026-10-02T19:27:09.244670+00:00",
+      "endTime": "2026-10-02T19:42:49.795827+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_thrombosis_prediction"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "sessionId": "bird_toxicology-a707438a-a360-4cdf-b555-732aa539d86d",
+      "testScenarioId": "bird_toxicology",
+      "startTime": "2026-10-02T19:42:49.796031+00:00",
+      "endTime": "2026-10-02T19:49:03.430611+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent generated an OWL/RDF ontology (owl:Class + owl:DatatypeProperty with rdfs:comment) for every input table."
+          },
+          {
+            "text": "Foreign-key relationships were modeled as owl:ObjectProperty where applicable."
+          },
+          {
+            "text": "Per-table N-Quad fragments were persisted via save_intermediate_ontology."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "append_nquads",
+            "save_intermediate_ontology",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "bird_toxicology"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "scenario_runs": {
+    "bird_california_schools": {
+      "layer_id": "vkg-bird_california_schools",
+      "session_id": "bird_california_schools-5f86ce7c-992c-46e1-9915-bec9b2508bb0",
+      "status": "completed",
+      "num_tables": 3,
+      "tables": [
+        "frpm",
+        "satscores",
+        "schools"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 998.6
+    },
+    "bird_card_games": {
+      "layer_id": "vkg-bird_card_games",
+      "session_id": "bird_card_games-dba4693c-f950-4c90-a973-1521e29b2fff",
+      "status": "completed",
+      "num_tables": 6,
+      "tables": [
+        "cards",
+        "foreign_data",
+        "legalities",
+        "rulings",
+        "set_translations",
+        "sets"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 1401.8
+    },
+    "bird_codebase_community": {
+      "layer_id": "vkg-bird_codebase_community",
+      "session_id": "bird_codebase_community-a68b7917-3fb3-4417-8fbd-fcfa79fcbdf0",
+      "status": "completed",
+      "num_tables": 8,
+      "tables": [
+        "badges",
+        "comments",
+        "postHistory",
+        "postLinks",
+        "posts",
+        "tags",
+        "users",
+        "votes"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 1132.9
+    },
+    "bird_debit_card_specializing": {
+      "layer_id": "vkg-bird_debit_card_specializing",
+      "session_id": "bird_debit_card_specializing-5e07cb06-28e5-42f6-8e70-c22258155950",
+      "status": "completed",
+      "num_tables": 5,
+      "tables": [
+        "customers",
+        "gasstations",
+        "products",
+        "transactions_1k",
+        "yearmonth"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 481.6
+    },
+    "bird_european_football_2": {
+      "layer_id": "vkg-bird_european_football_2",
+      "session_id": "bird_european_football_2-c011180d-3737-422b-8f46-995dc8ee4a6c",
+      "status": "completed",
+      "num_tables": 7,
+      "tables": [
+        "Country",
+        "League",
+        "Match",
+        "Player",
+        "Player_Attributes",
+        "Team",
+        "Team_Attributes"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 2046.1
+    },
+    "bird_financial": {
+      "layer_id": "vkg-bird_financial",
+      "session_id": "bird_financial-acc62d16-63de-457d-8add-7745656c96b5",
+      "status": "completed",
+      "num_tables": 8,
+      "tables": [
+        "account",
+        "card",
+        "client",
+        "disp",
+        "district",
+        "loan",
+        "order",
+        "trans"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 886.1
+    },
+    "bird_formula_1": {
+      "layer_id": "vkg-bird_formula_1",
+      "session_id": "bird_formula_1-dea49763-607b-422f-a601-31d3ad9f08fe",
+      "status": "completed",
+      "num_tables": 13,
+      "tables": [
+        "circuits",
+        "constructorResults",
+        "constructorStandings",
+        "constructors",
+        "driverStandings",
+        "drivers",
+        "lapTimes",
+        "pitStops",
+        "qualifying",
+        "races",
+        "results",
+        "seasons",
+        "status"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 1534.3
+    },
+    "bird_student_club": {
+      "layer_id": "vkg-bird_student_club",
+      "session_id": "bird_student_club-c92aad8e-02f5-46e0-9e83-5a38c2f209b6",
+      "status": "completed",
+      "num_tables": 8,
+      "tables": [
+        "attendance",
+        "budget",
+        "event",
+        "expense",
+        "income",
+        "major",
+        "member",
+        "zip_code"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 910.3
+    },
+    "bird_superhero": {
+      "layer_id": "vkg-bird_superhero",
+      "session_id": "bird_superhero-18841a99-25e6-4374-ab00-ee910a0b9a63",
+      "status": "completed",
+      "num_tables": 10,
+      "tables": [
+        "alignment",
+        "attribute",
+        "colour",
+        "gender",
+        "hero_attribute",
+        "hero_power",
+        "publisher",
+        "race",
+        "superhero",
+        "superpower"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 799.8
+    },
+    "bird_thrombosis_prediction": {
+      "layer_id": "vkg-bird_thrombosis_prediction",
+      "session_id": "bird_thrombosis_prediction-08ba1c18-5d78-4545-ad1c-1b074e397c77",
+      "status": "completed",
+      "num_tables": 3,
+      "tables": [
+        "Examination",
+        "Laboratory",
+        "Patient"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 785.5
+    },
+    "bird_toxicology": {
+      "layer_id": "vkg-bird_toxicology",
+      "session_id": "bird_toxicology-a707438a-a360-4cdf-b555-732aa539d86d",
+      "status": "completed",
+      "num_tables": 4,
+      "tables": [
+        "atom",
+        "bond",
+        "connected",
+        "molecule"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 353.3
+    }
+  }
+}

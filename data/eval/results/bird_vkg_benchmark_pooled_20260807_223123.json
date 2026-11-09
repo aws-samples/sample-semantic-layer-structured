@@ -1,0 +1,288 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "pooling": "row-weighted mean over per-DB exec_metrics_by_db",
+  "db_ids_requested": [
+    "bird_california_schools",
+    "bird_card_games",
+    "bird_codebase_community",
+    "bird_debit_card_specializing",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_pooled": [
+    "bird_california_schools",
+    "bird_card_games",
+    "bird_codebase_community",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_missing_results": [
+    "bird_debit_card_specializing"
+  ],
+  "pooled_exec_metrics": {
+    "ExecutionAccuracy": 0.0477,
+    "RewardVES": 0.0442,
+    "SoftF1": 0.0514
+  },
+  "scored_rows_per_metric": {
+    "ExecutionAccuracy": 419,
+    "RewardVES": 419,
+    "SoftF1": 419
+  },
+  "per_db": {
+    "bird_california_schools": {
+      "results_file": "bird_vkg_benchmark_eval_bird_california_schools_20260807_175027.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_california_schools_895b6b6d-1f66484c00",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0833,
+        "ExecutionAccuracy_n": 24,
+        "RewardVES": 0.0729,
+        "RewardVES_n": 24,
+        "SoftF1": 0.0833,
+        "SoftF1_n": 24
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.32,
+        "FinalAnswerFaithfulness": 0.32,
+        "SqlGrounded": 1.0
+      }
+    },
+    "bird_card_games": {
+      "results_file": "bird_vkg_benchmark_eval_bird_card_games_20260807_182611.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 52,
+      "batch_evaluation_id": "bird_vkg_bench_bird_card_games_6c53ce74-dd1132a25e",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 51,
+        "SoftF1": 0.0,
+        "SoftF1_n": 51,
+        "RewardVES": 0.0,
+        "RewardVES_n": 51
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.0,
+        "FinalAnswerFaithfulness": 0.0,
+        "SqlGrounded": 1.0
+      }
+    },
+    "bird_codebase_community": {
+      "results_file": "bird_vkg_benchmark_eval_bird_codebase_community_20260807_185245.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 49,
+      "batch_evaluation_id": "bird_vkg_bench_bird_codebase_community_9816dc7b-6cda157673",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "RewardVES": 0.0,
+        "RewardVES_n": 46,
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 46,
+        "SoftF1": 0.0,
+        "SoftF1_n": 46
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.42,
+        "FinalAnswerFaithfulness": 0.4,
+        "SqlGrounded": 0.98
+      }
+    },
+    "bird_european_football_2": {
+      "results_file": "bird_vkg_benchmark_eval_bird_european_football_2_20260807_193957.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 51,
+      "batch_evaluation_id": "bird_vkg_bench_bird_european_football_2_445f60bf-3750e87f88",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "RewardVES": 0.0319,
+        "RewardVES_n": 47,
+        "ExecutionAccuracy": 0.0426,
+        "ExecutionAccuracy_n": 47,
+        "SoftF1": 0.0426,
+        "SoftF1_n": 47
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.26,
+        "FinalAnswerFaithfulness": 0.26,
+        "SqlGrounded": 0.96
+      }
+    },
+    "bird_financial": {
+      "results_file": "bird_vkg_benchmark_eval_bird_financial_20260807_195549.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 32,
+      "batch_evaluation_id": "bird_vkg_bench_bird_financial_d3f8562a-e1dc9b956d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0741,
+        "ExecutionAccuracy_n": 27,
+        "SoftF1": 0.0741,
+        "SoftF1_n": 27,
+        "RewardVES": 0.0741,
+        "RewardVES_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.47,
+        "FinalAnswerFaithfulness": 0.5,
+        "SqlGrounded": 0.72
+      }
+    },
+    "bird_formula_1": {
+      "results_file": "bird_vkg_benchmark_eval_bird_formula_1_20260807_205753.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 66,
+      "batch_evaluation_id": "bird_vkg_bench_bird_formula_1_a8daa648-5d24bc2363",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 55,
+        "SoftF1": 0.0005,
+        "SoftF1_n": 55,
+        "RewardVES": 0.0,
+        "RewardVES_n": 55
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.27,
+        "FinalAnswerFaithfulness": 0.23,
+        "SqlGrounded": 1.0
+      }
+    },
+    "bird_student_club": {
+      "results_file": "bird_vkg_benchmark_eval_bird_student_club_20260807_211557.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 48,
+      "batch_evaluation_id": "bird_vkg_bench_bird_student_club_1596dc96-6074794a67",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0476,
+        "ExecutionAccuracy_n": 42,
+        "SoftF1": 0.0476,
+        "SoftF1_n": 42,
+        "RewardVES": 0.0417,
+        "RewardVES_n": 42
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.33,
+        "FinalAnswerFaithfulness": 0.33,
+        "SqlGrounded": 0.92
+      }
+    },
+    "bird_superhero": {
+      "results_file": "bird_vkg_benchmark_eval_bird_superhero_20260807_214050.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 52,
+      "batch_evaluation_id": "bird_vkg_bench_bird_superhero_c8faf5c3-e828e570ac",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "RewardVES": 0.035,
+        "RewardVES_n": 50,
+        "ExecutionAccuracy": 0.04,
+        "ExecutionAccuracy_n": 50,
+        "SoftF1": 0.04,
+        "SoftF1_n": 50
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.52,
+        "FinalAnswerFaithfulness": 0.52,
+        "SqlGrounded": 0.98
+      }
+    },
+    "bird_thrombosis_prediction": {
+      "results_file": "bird_vkg_benchmark_eval_bird_thrombosis_prediction_20260807_221804.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 50,
+      "batch_evaluation_id": "bird_vkg_bench_bird_thrombosis_predicti_3edcfff1-bd9c85d92d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0541,
+        "ExecutionAccuracy_n": 37,
+        "SoftF1": 0.075,
+        "SoftF1_n": 37,
+        "RewardVES": 0.0676,
+        "RewardVES_n": 37
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.43,
+        "FinalAnswerFaithfulness": 0.45,
+        "SqlGrounded": 1.0
+      }
+    },
+    "bird_toxicology": {
+      "results_file": "bird_vkg_benchmark_eval_bird_toxicology_20260807_223122.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 40,
+      "batch_evaluation_id": "bird_vkg_bench_bird_toxicology_a43f9289-18ef55b0d8",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "SoftF1": 0.2188,
+        "SoftF1_n": 40,
+        "ExecutionAccuracy": 0.2,
+        "ExecutionAccuracy_n": 40,
+        "RewardVES": 0.1812,
+        "RewardVES_n": 40
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.82,
+        "FinalAnswerFaithfulness": 0.87,
+        "SqlGrounded": 1.0
+      }
+    }
+  },
+  "failed_runs": {
+    "bird_debit_card_specializing": "CellExecutionError: An error occurred while executing the following cell:\n------------------\nfrom bedrock_agentcore.evaluation.runner.batch.batch_evaluation_runner import (\n    BatchEvaluationRunner,\n)\nfrom bedrock_agentcore.evaluation.runner.batch.batch_evaluation_models import (\n    BatchEvaluationRunConfig, BatchEvaluatorConfig, CloudWatchDataSourceConfig,\n)\n\nSERVICE_NAME = f\"{agent_id}.DEFAULT\"\nRUNTIME_LOG_GROUP = f\"/aws/bedrock-agentcore/runtimes/{agent_id}-DEFAULT\"\nSPANS_LOG_GROUP = \"aws/spans\"\nprint(f\"SERVICE_NAME : {SERVICE_NAME}\")\nprint(f\"LOG GROUPS   : {SPANS_LOG_GROUP}, {RUNTIME_LOG_GROUP}\")\nprint(f\"Evaluators   : {ALL_EVALUATOR_IDS}\")\nprint(f\"Scenarios    : {len(dataset.scenarios)}\")\n\nbatch_data_source = CloudWatchDataSourceConfig(\n    service_names=[SERVICE_NAME],\n    log_group_names=[SPANS_LOG_GROUP, RUNTIME_LOG_GROUP],\n    ingestion_delay_seconds=420,   # give spans (incl. the SQL-exec span) time to land\n)\n\nbatch_runner = BatchEvaluationRunner(region=region)\n\n# \u2500\u2500 Concurrency (BIRD_CONCURRENCY) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n# Raised 3 \u2192 8. The agent is synchronous and a worst-case row now runs to the\n# Tier 3 worker budget (3 rounds x 240s + ~75s \u2248 795s, just inside the invoker's\n# 900s urlopen timeout), so serialized wall-clock is what killed the 500-row\n# single-batch run. Concurrency is bounded by the agent runtime's own scaling and\n# by Bedrock model TPM, not by this notebook \u2014 8 keeps the largest per-DB run (66\n# rows) to roughly 66/8 x 795s \u2248 1.8h worst case, comfortably inside the runner's\n# CELL_TIMEOUT with the batch-polling stage still ahead of it.\nBIRD_CONCURRENCY = int(os.environ.get('BIRD_CONCURRENCY', '8'))\n_batch_name = f\"bird_vkg_bench_{(BIRD_DB or 'all').replace(',', '-')[:40]}_{uuid.uuid4().hex[:8]}\"\n\ncfg = BatchEvaluationRunConfig(\n    batch_evaluation_name=_batch_name,\n    description=\"BIRD VKG query-agent eval: LLM judges (SESSION) + codeBased \"\n                \"exec metrics EX/R-VES/Soft-F1 (TRACE).\",\n    evaluator_config=BatchEvaluatorConfig(evaluator_ids=ALL_EVALUATOR_IDS),\n    data_source=batch_data_source,\n    max_concurrent_scenarios=BIRD_CONCURRENCY,  # synchronous agent, up to 900s/row\n    polling_timeout_seconds=5400,  # VKG rows are multi-phase + the codeBased Lambda runs 2 Athena queries/row\n    polling_interval_seconds=30,\n)\nprint(f\"Concurrency  : {BIRD_CONCURRENCY}\")\n\nprint(f\"\\n=== {cfg.batch_evaluation_name} ===\")\nprint(\"Invoking the agent per row, then evaluating server-side...\")\nbatch_result = batch_runner.run_dataset_evaluation(\n    config=cfg, dataset=dataset, agent_invoker=agent_invoker)\nprint(f\"\\n\u2713 Batch status: {batch_result.status}\")\nif getattr(batch_result, 'agent_invocation_failures', None):\n    print(f\"\u26a0 Agent invocation failures: {len(batch_result.agent_invocation_failures)}\")\nif batch_result.error_details:\n    print(f\"\u26a0 Error details: {batch_result.error_details}\")\n\n------------------\n\n----- stdout -----\nSERVICE_NAME : semantic_layer_dev_ontology_query-1zqUpC6ywe.DEFAULT\nLOG GROUPS   : aws/spans, /aws/bedrock-agentcore/runtimes/semantic_layer_dev_ontology_query-1zqUpC6ywe-DEFAULT\nEvaluators   : ['GoalSuccess_bird_vkg_v1-20o5fP78jb', 'FinalAnswerFaithfulness_bird_vkg_v1-e7fJnt5vEj', 'SqlGrounded_bird_vkg_v1-9Wp51CGhfr', 'bird_ExecutionAccuracy_bird_vkg_v1-b5oCqp41Uw', 'bird_RewardVES_bird_vkg_v1-AQzlzN7GGn', 'bird_SoftF1_bird_vkg_v1-sTjo5BHQEZ']\nScenarios    : 30\n----- stdout -----\nConcurrency  : 8\n\n=== bird_vkg_bench_bird_debit_card_specializing_0aff0c93 ===\nInvoking the agent per row, then evaluating server-side...\n----- stdout -----\n  OK [gt-row-04 vkg-bird_debit_card_specializing] 8.09s . clarify\n----- stdout -----\n  OK [gt-row-08 vkg-bird_debit_card_specializing] 18.81s . answer\n----- stdout -----\n  OK [gt-row-03 vkg-bird_debit_card_specializing] 31.17s . answer\n----- stdout -----\n  OK [gt-row-01 vkg-bird_debit_card_specializing] 34.48s . answer\n----- stdout -----\n  OK [gt-row-06 vkg-bird_debit_card_specializing] 43.58s . answer\n----- stdout -----\n  OK [gt-row-09 vkg-bird_debit_card_specializing] 30.55s . answer\n----- stdout -----\n  OK [gt-row-10 vkg-bird_debit_card_specializing] 27.21s . answer\n----- stdout -----\n  OK [gt-row-00 vkg-bird_debit_card_specializing] 70.66s . answer\n----- stdout -----\n  OK [gt-row-13 vkg-bird_debit_card_specializing] 21.03s . answer\n----- stdout -----\n  OK [gt-row-12 vkg-bird_debit_card_specializing] 35.75s . answer\n----- stdout -----\n  OK [gt-row-14 vkg-bird_debit_card_specializing] 23.54s . answer\n----- stdout -----\n  OK [gt-row-15 vkg-bird_debit_card_specializing] 21.55s . answer\n----- stdout -----\n  OK [gt-row-16 vkg-bird_debit_card_specializing] 23.36s . answer\n----- stdout -----\n  OK [gt-row-17 vkg-bird_debit_card_specializing] 23.66s . answer\n----- stdout -----\n  OK [gt-row-18 vkg-bird_debit_card_specializing] 32.63s . answer\n----- stdout -----\n  OK [gt-row-19 vkg-bird_debit_card_specializing] 25.82s . answer\n----- stdout -----\n  OK [gt-row-20 vkg-bird_debit_card_specializing] 21.97s . answer\n----- stdout -----\n  OK [gt-row-22 vkg-bird_debit_card_specializing] 25.98s . answer\n----- stdout -----\n  OK [gt-row-23 vkg-bird_debit_card_specializing] 34.04s . answer\n----- stdout -----\n  OK [gt-row-24 vkg-bird_debit_card_specializing] 97.85s . answer\n----- stdout -----\n  OK [gt-row-27 vkg-bird_debit_card_specializing] 24.57s . answer\n----- stdout -----\n  OK [gt-row-21 vkg-bird_debit_card_specializing] 153.17s . answer\n----- stdout -----\n  OK [gt-row-07 vkg-bird_debit_card_specializing] 278.21s . answer\n----- stdout -----\n  OK [gt-row-11 vkg-bird_debit_card_specializing] 303.55s . answer\n----- stdout -----\n  OK [gt-row-25 vkg-bird_debit_card_specializing] 254.3s . answer\n----- stdout -----\n  OK [gt-row-26 vkg-bird_debit_card_specializing] 277.02s . answer\n----- stdout -----\n  OK [gt-row-28 vkg-bird_debit_card_specializing] 298.78s . answer\n----- stdout -----\n  OK [gt-row-29 vkg-bird_debit_card_specializing] 343.81s . answer\n----- stdout -----\n  \u26a0 [gt-row-02-6342e34f-b22f-4315-8640-7f02eb53063e t0] The read operation timed out\n  XX [gt-row-02 vkg-bird_debit_card_specializing] 920.01s . none\n----- stdout -----\n  \u26a0 [gt-row-05-6940b462-3e1c-438f-a6b9-38b16e85d290 t0] The read operation timed out\n  XX [gt-row-05 vkg-bird_debit_card_specializing] 923.8s . none\n----- stderr -----\nStartBatchEvaluation failed (name=bird_vkg_bench_bird_debit_card_specializing_0aff0c93, error_code=ValidationException): An error occurred (ValidationException) when calling the StartBatchEvaluation operation: 1 validation error detected: Value at 'batchEvaluationName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z][a-zA-Z0-9_]{0,47}\nTraceback (most recent call last):\n  File \"/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/bedrock_agentcore/evaluation/runner/batch/batch_evaluation_runner.py\", line 401, in run_dataset_evaluation\n    start_response = self.data_plane_client.start_batch_evaluation(**start_kwargs)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/botocore/client.py\", line 606, in _api_call\n    return self._make_api_call(operation_name, kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/botocore/context.py\", line 123, in wrapper\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/botocore/client.py\", line 1094, in _make_api_call\n    raise error_class(parsed_response, operation_name)\nbotocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the StartBatchEvaluation operation: 1 validation error detected: Value at 'batchEvaluationName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z][a-zA-Z0-9_]{0,47}\n------------------\n\n\u001b[31m---------------------------------------------------------------------------\u001b[39m\n\u001b[31mValidationException\u001b[39m                       Traceback (most recent call last)\n\u001b[36mFile \u001b[39m\u001b[32m/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/bedrock_agentcore/evaluation/runner/batch/batch_evaluation_runner.py:401\u001b[39m, in \u001b[36mBatchEvaluationRunner.run_dataset_evaluation\u001b[39m\u001b[34m(self, config, dataset, agent_invoker)\u001b[39m\n\u001b[32m    400\u001b[39m         start_kwargs[\u001b[33m\"\u001b[39m\u001b[33mdescription\u001b[39m\u001b[33m\"\u001b[39m] = config.description\n\u001b[32m--> \u001b[39m\u001b[32m401\u001b[39m     start_response = \u001b[30;43mself\u001b[39;49m\u001b[30;43m.\u001b[39;49m\u001b[30;43mdata_plane_client\u001b[39;49m\u001b[30;43m.\u001b[39;49m\u001b[30;43mstart_batch_evaluation\u001b[39;49m\u001b[30;43m(\u001b[39;49m\u001b[30;43m*\u001b[39;49m\u001b[30;43m*\u001b[39;49m\u001b[30;43mstart_kwargs\u001b[39;49m\u001b[30;43m)\u001b[39;49m\n\u001b[32m    402\u001b[39m \u001b[38;5;28;01mexcept\u001b[39;00m \u001b[38;5;167;01mException\u001b[39;00m \u001b[38;5;28;01mas\u001b[39;00m e:\n\n\u001b[36mFile \u001b[39m\u001b[32m/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/botocore/client.py:606\u001b[39m, in \u001b[36mClientCreator._create_api_method.<locals>._api_call\u001b[39m\u001b[34m(self, *args, **kwargs)\u001b[39m\n\u001b[32m    605\u001b[39m \u001b[38;5;66;03m# The \"self\" in this scope is referring to the BaseClient.\u001b[39;00m\n\u001b[32m--> \u001b[39m\u001b[32m606\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[30;43mself\u001b[39;49m\u001b[30;43m.\u001b[39;49m\u001b[30;43m_make_api_call\u001b[39;49m\u001b[30;43m(\u001b[39;49m\u001b[30;43moperation_name\u001b[39;49m\u001b[30;43m,\u001b[39;49m\u001b[30;43m \u001b[39;49m\u001b[30;43mkwargs\u001b[39;49m\u001b[30;43m)\u001b[39;49m\n\n\u001b[36mFile \u001b[39m\u001b[32m/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/botocore/context.py:123\u001b[39m, in \u001b[36mwith_current_context.<locals>.decorator.<locals>.wrapper\u001b[39m\u001b[34m(*args, **kwargs)\u001b[39m\n\u001b[32m    122\u001b[39m     hook()\n\u001b[32m--> \u001b[39m\u001b[32m123\u001b[39m \u001b[38;5;28;01mreturn\u001b[39;00m \u001b[30;43mfunc\u001b[39;49m\u001b[30;43m(\u001b[39;49m\u001b[30;43m*\u001b[39;49m\u001b[30;43margs\u001b[39;49m\u001b[30;43m,\u001b[39;49m\u001b[30;43m \u001b[39;49m\u001b[30;43m*\u001b[39;49m\u001b[30;43m*\u001b[39;49m\u001b[30;43mkwargs\u001b[39;49m\u001b[30;43m)\u001b[39;49m\n\n\u001b[36mFile \u001b[39m\u001b[32m/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/botocore/client.py:1094\u001b[39m, in \u001b[36mBaseClient._make_api_call\u001b[39m\u001b[34m(self, operation_name, api_params)\u001b[39m\n\u001b[32m   1093\u001b[39m     error_class = \u001b[38;5;28mself\u001b[39m.exceptions.from_code(error_code)\n\u001b[32m-> \u001b[39m\u001b[32m1094\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m error_class(parsed_response, operation_name)\n\u001b[32m   1095\u001b[39m \u001b[38;5;28;01melse\u001b[39;00m:\n\n\u001b[31mValidationException\u001b[39m: An error occurred (ValidationException) when calling the StartBatchEvaluation operation: 1 validation error detected: Value at 'batchEvaluationName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z][a-zA-Z0-9_]{0,47}\n\nThe above exception was the direct cause of the following exception:\n\n\u001b[31mRuntimeError\u001b[39m                              Traceback (most recent call last)\n\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[9]\u001b[39m\u001b[32m, line 49\u001b[39m\n\u001b[32m     45\u001b[39m print(f\"Concurrency  : {BIRD_CONCURRENCY}\")\n\u001b[32m     46\u001b[39m \n\u001b[32m     47\u001b[39m print(f\"\\n=== {cfg.batch_evaluation_name} ===\")\n\u001b[32m     48\u001b[39m print(\u001b[33m\"Invoking the agent per row, then evaluating server-side...\"\u001b[39m)\n\u001b[32m---> \u001b[39m\u001b[32m49\u001b[39m batch_result = batch_runner.run_dataset_evaluation(\n\u001b[32m     50\u001b[39m     config=cfg, dataset=dataset, agent_invoker=agent_invoker)\n\u001b[32m     51\u001b[39m print(f\"\\n\u2713 Batch status: {batch_result.status}\")\n\u001b[32m     52\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m getattr(batch_result, \u001b[33m'agent_invocation_failures'\u001b[39m, \u001b[38;5;28;01mNone\u001b[39;00m):\n\n\u001b[36mFile \u001b[39m\u001b[32m/local/home/huthmac/.local/share/mise/installs/python/3.12.13/lib/python3.12/site-packages/bedrock_agentcore/evaluation/runner/batch/batch_evaluation_runner.py:410\u001b[39m, in \u001b[36mBatchEvaluationRunner.run_dataset_evaluation\u001b[39m\u001b[34m(self, config, dataset, agent_invoker)\u001b[39m\n\u001b[32m    403\u001b[39m     error_code = \u001b[38;5;28mself\u001b[39m._get_boto3_error_code(e)\n\u001b[32m    404\u001b[39m     logger.exception(\n\u001b[32m    405\u001b[39m         \u001b[33m\"\u001b[39m\u001b[33mStartBatchEvaluation failed (name=\u001b[39m\u001b[38;5;132;01m%s\u001b[39;00m\u001b[33m, error_code=\u001b[39m\u001b[38;5;132;01m%s\u001b[39;00m\u001b[33m): \u001b[39m\u001b[38;5;132;01m%s\u001b[39;00m\u001b[33m\"\u001b[39m,\n\u001b[32m    406\u001b[39m         config.batch_evaluation_name,\n\u001b[32m    407\u001b[39m         error_code,\n\u001b[32m    408\u001b[39m         e,\n\u001b[32m    409\u001b[39m     )\n\u001b[32m--> \u001b[39m\u001b[32m410\u001b[39m     \u001b[38;5;28;01mraise\u001b[39;00m \u001b[38;5;167;01mRuntimeError\u001b[39;00m(\u001b[33mf\u001b[39m\u001b[33m\"\u001b[39m\u001b[33mStartBatchEvaluation failed: \u001b[39m\u001b[38;5;132;01m{\u001b[39;00me\u001b[38;5;132;01m}\u001b[39;00m\u001b[33m (error_code=\u001b[39m\u001b[38;5;132;01m{\u001b[39;00merror_code\u001b[38;5;132;01m}\u001b[39;00m\u001b[33m)\u001b[39m\u001b[33m\"\u001b[39m) \u001b[38;5;28;01mfrom\u001b[39;00m\u001b[38;5;250m \u001b[39m\u001b[34;01me\u001b[39;00m\n\u001b[32m    412\u001b[39m batch_evaluation_id: \u001b[38;5;28mstr\u001b[39m = start_response[\u001b[33m\"\u001b[39m\u001b[33mbatchEvaluationId\u001b[39m\u001b[33m\"\u001b[39m]\n\u001b[32m    413\u001b[39m batch_evaluation_arn: \u001b[38;5;28mstr\u001b[39m = start_response[\u001b[33m\"\u001b[39m\u001b[33mbatchEvaluationArn\u001b[39m\u001b[33m\"\u001b[39m]\n\n\u001b[31mRuntimeError\u001b[39m: StartBatchEvaluation failed: An error occurred (ValidationException) when calling the StartBatchEvaluation operation: 1 validation error detected: Value at 'batchEvaluationName' failed to satisfy constraint: Member must satisfy regular expression pattern: [a-zA-Z][a-zA-Z0-9_]{0,47} (error_code=ValidationException)\n"
+  }
+}

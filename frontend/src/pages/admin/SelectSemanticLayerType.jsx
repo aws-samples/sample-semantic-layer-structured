@@ -14,6 +14,7 @@ import CancelDraftButton from "../../components/CancelDraftButton";
 export default function SelectSemanticLayerType({
   enableOntologyAgents = true,
   enableSemanticRag = false,
+  enableHybrid = false,
 }) {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -67,6 +68,20 @@ export default function SelectSemanticLayerType({
         "Generates metadata stored in Amazon Bedrock Knowledge Base.",
       enabled: enableSemanticRag,
     },
+    {
+      id: "Hybrid",
+      name: "Hybrid",
+      description:
+        "Combines a Virtual Knowledge Graph with Semantic RAG metadata.",
+      // Hybrid draws on both underlying modes, AND needs its own runtimes
+      // (semantic-layer-creation / semantic-layer-query), which are deployed
+      // only under the separate `enableHybrid` CDK flag (true in cdk.json; a
+      // deploy that overrides it to false tears those runtimes down). All three
+      // must hold: offering the card without enableHybrid produced a layer that
+      // could neither be built nor queried, because the gateway target does not
+      // exist.
+      enabled: enableOntologyAgents && enableSemanticRag && enableHybrid,
+    },
   ];
   const types = allTypes.filter((t) => t.enabled);
 
@@ -85,7 +100,14 @@ export default function SelectSemanticLayerType({
         );
         return;
       }
-      if (selectedType === "VKG") {
+      // VKG and Hybrid both go to /admin/build-graph, which posts to
+      // POST /ontology/build/{id} -> OntologyService.dispatch_build. That is the
+      // only build entrypoint that READS the stored `type` and routes Hybrid to
+      // start_build_hybrid_async. /admin/build-semantic-metadata posts to
+      // /metadata/enrich, which unconditionally invokes the SemanticRAG metadata
+      // agent — so sending Hybrid there built it as plain SemanticRAG and left
+      // start_build_hybrid_async unreachable from the UI.
+      if (selectedType === "VKG" || selectedType === "Hybrid") {
         navigate(`/admin/build-graph?id=${id}`);
       } else {
         navigate(`/admin/build-semantic-metadata/${id}`);

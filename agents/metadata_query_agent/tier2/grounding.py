@@ -67,6 +67,14 @@ def extract_sql_identifiers(sql: str, *, dialect: str) -> Dict[str, Any]:
     """
     tree = sqlglot.parse_one(sql, read=dialect)
     alias_map = _alias_to_table(tree)
+    # CTE names (``WITH x AS (...)``) parse as ``exp.Table`` when referenced in the
+    # outer query, but they are query-local aliases, NOT slice tables — flagging
+    # them as ungrounded degraded otherwise-valid SQL (grounding_unresolved). The
+    # CTE body's own tables/columns ARE walked below and still checked against the
+    # slice, so excluding the CTE name here doesn't weaken grounding.
+    cte_names: Set[str] = {
+        node.alias.lower() for node in tree.find_all(exp.CTE) if node.alias
+    }
     # Output aliases declared anywhere in the query (``<expr> AS name``). A bare
     # column re-reference matching one of these is the alias, not a real column,
     # so it must not be grounding-checked against the slice.
@@ -98,7 +106,8 @@ def extract_sql_identifiers(sql: str, *, dialect: str) -> Dict[str, Any]:
                 qualified.append((real, col))
             else:
                 qualified.append((None, col))
-    return {"tables": tables, "columns": columns, "qualified": qualified}
+    return {"tables": tables, "columns": columns, "qualified": qualified,
+            "cte_names": cte_names}
 
 
 def _parse_slice(slice_text: str) -> Tuple[Set[str], Set[str], Dict[str, Set[str]]]:
@@ -183,8 +192,12 @@ def check_grounding(*, sql: str, slice_text: str, dialect: str) -> List[str]:
 
     slice_tables, all_columns, by_table = _parse_slice(slice_text)
     missing: List[str] = []
+    cte_names = ids.get("cte_names", set())
 
     for table in sorted(ids["tables"]):
+        # A CTE name is a query-local alias, not a slice table — never flag it.
+        if table in cte_names:
+            continue
         if table in slice_tables:
             continue
         if any(st == table or st.endswith(f".{table}") for st in slice_tables):

@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ViewKnowledgeGraph from "../pages/admin/ViewKnowledgeGraph";
-import { neptuneAPI, metricsAPI } from "../services/api";
+import { neptuneAPI, metricsAPI, rulesAPI } from "../services/api";
 
 jest.mock("../services/api");
 jest.mock("../components/OntologyEditor", () => () => (
@@ -15,6 +15,10 @@ jest.mock("../components/LessonsLearnedTab", () => () => (
   <div>LessonsLearnedTab</div>
 ));
 jest.mock("../components/FeedbackTab", () => () => <div>FeedbackTab</div>);
+// MonitoringTab is a heavy admin tab (recharts + Cloudscape KeyValuePairs, which
+// the partial Cloudscape mock below does not stub). Mock it like the other tab
+// children so it doesn't render un-mocked and resolve to undefined.
+jest.mock("../components/MonitoringTab", () => () => <div>MonitoringTab</div>);
 // GroundTruthDataset + Evaluations are admin tabs added after this test was
 // written; stub them like the other tab components so the partial Cloudscape
 // mock below doesn't need every component each tab imports (e.g. FileUpload).
@@ -125,6 +129,9 @@ beforeEach(() => {
   // GovernedMetricsTab calls metricsAPI.list(ontologyId) on mount and reads
   // res.success; without this stub the auto-mock returns undefined and throws.
   metricsAPI.list = jest.fn().mockResolvedValue({ success: true, data: [] });
+  // Same for GovernedRulesTab — the Tabs mock renders every tab's content,
+  // so both governance tabs mount on every test in this file.
+  rulesAPI.list = jest.fn().mockResolvedValue({ success: true, data: [] });
 });
 
 afterEach(() => {
@@ -153,6 +160,7 @@ describe("ViewKnowledgeGraph", () => {
     expect(screen.getByText(/properties \(\d+\)/i)).toBeInTheDocument();
     expect(screen.getByText("Metadata")).toBeInTheDocument();
     expect(screen.getByText(/lessons learned/i)).toBeInTheDocument();
+    expect(screen.getByText("Governed Rules")).toBeInTheDocument();
     // "Feedback" appears as both the tab label and the FeedbackTab placeholder
     expect(screen.getAllByText(/feedback/i).length).toBeGreaterThan(0);
   });

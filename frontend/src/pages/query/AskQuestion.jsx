@@ -19,7 +19,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import LandingPage from "./LandingPage";
 import ChatView from "./ChatView";
 
-export default function AskQuestion({ enableSemanticRag = false }) {
+export default function AskQuestion({
+  enableSemanticRag = false,
+  enableHybrid = false,
+}) {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session") || "";
 
@@ -28,5 +31,10 @@ export default function AskQuestion({ enableSemanticRag = false }) {
     // re-reading the route param. Avoids a second hook call inside ChatView.
     return <ChatView sessionIdOverride={sessionId} />;
   }
-  return <LandingPage enableSemanticRag={enableSemanticRag} />;
+  return (
+    <LandingPage
+      enableSemanticRag={enableSemanticRag}
+      enableHybrid={enableHybrid}
+    />
+  );
 }

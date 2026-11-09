@@ -28,6 +28,8 @@ class MetadataEnrichRequest(BaseModel):
     id: str  # ontology config ID — backend reads dataSources from DynamoDB
     targetTables: Optional[List[str]] = None   # e.g. ["database.table"] — if set, only re-enrich these
     annotations: Optional[List[Dict[str, str]]] = None  # [{target, instruction}]
+    scope: Optional[str] = "full"          # "full" | "delta"
+    removedTables: Optional[List[str]] = None  # tables whose artifacts to clean up before a delta rebuild
 
 
 class ReviseMetadataRequest(BaseModel):
@@ -64,6 +66,12 @@ async def enrich_metadata(request: MetadataEnrichRequest):
     try:
         logger.info(f"Starting async metadata enrichment for ontology: {request.id}")
 
+        # For a delta rebuild, remove artifacts for deleted tables BEFORE building.
+        # Single cleanup call site for the RAG path.
+        if request.scope == "delta" and request.removedTables:
+            metadata_service.cleanup_removed_for_plan(
+                request.id, {"removed": request.removedTables})
+
         result = metadata_service.start_metadata_enrichment(
             id=request.id,
             target_tables=request.targetTables,
@@ -78,6 +86,18 @@ async def enrich_metadata(request: MetadataEnrichRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error starting metadata enrichment: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/delta/{id}")
+async def compute_delta(id: str):
+    """Compute (do not run) the delta plan for a Semantic-RAG layer."""
+    try:
+        return JSONResponse(content=metadata_service.compute_delta_plan(id))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.warning(f"delta compute failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

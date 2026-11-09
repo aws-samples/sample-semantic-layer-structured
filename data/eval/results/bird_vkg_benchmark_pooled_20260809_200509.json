@@ -1,0 +1,49 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "pooling": "row-weighted mean over per-DB exec_metrics_by_db",
+  "db_ids_requested": [
+    "bird_debit_card_specializing"
+  ],
+  "db_ids_pooled": [
+    "bird_debit_card_specializing"
+  ],
+  "db_ids_missing_results": [],
+  "pooled_exec_metrics": {
+    "ExecutionAccuracy": 0.0,
+    "RewardVES": 0.0,
+    "SoftF1": 0.0089
+  },
+  "scored_rows_per_metric": {
+    "ExecutionAccuracy": 27,
+    "RewardVES": 27,
+    "SoftF1": 27
+  },
+  "per_db": {
+    "bird_debit_card_specializing": {
+      "results_file": "bird_vkg_benchmark_eval_bird_debit_card_specializing_20260809_200508.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_debit_card_speciali_a29be8fe-86ff962474",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 27,
+        "SoftF1": 0.0089,
+        "SoftF1_n": 27,
+        "RewardVES": 0.0,
+        "RewardVES_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.63,
+        "FinalAnswerFaithfulness": 0.55,
+        "SqlGrounded": 1.0
+      }
+    }
+  },
+  "failed_runs": {}
+}

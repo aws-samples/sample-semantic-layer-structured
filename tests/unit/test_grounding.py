@@ -221,3 +221,25 @@ def test_feedback_falls_back_on_unparseable_slice():
         missing=["column:foo.bar", "table:baz"], slice_text="not json",
     )
     assert "bar" in fb and "baz" in fb
+
+
+def test_cte_not_flagged_as_ungrounded_table():
+    """A CTE name (WITH x AS (...) ... FROM x) is a query-local alias, not a
+    slice table — it must not be reported as an ungrounded table. Regression for
+    valid grounded SQL being degraded to grounding_unresolved."""
+    slice_text = _slice(["db.customers"], [("db.customers", "id"),
+                                           ("db.customers", "region")])
+    sql = ("WITH regional AS (SELECT id, region FROM customers) "
+           "SELECT id FROM regional")
+    missing = check_grounding(sql=sql, slice_text=slice_text, dialect="athena")
+    assert missing == [], f"expected fully grounded, got {missing}"
+
+
+def test_cte_body_still_grounding_checked():
+    """Excluding the CTE NAME must not stop the CTE BODY's tables/columns from
+    being checked — an invented column inside the CTE is still flagged."""
+    slice_text = _slice(["db.customers"], [("db.customers", "id")])
+    sql = ("WITH regional AS (SELECT id, ssn FROM customers) "
+           "SELECT id FROM regional")
+    missing = check_grounding(sql=sql, slice_text=slice_text, dialect="athena")
+    assert "column:ssn" in missing

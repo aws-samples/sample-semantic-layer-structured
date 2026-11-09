@@ -20,8 +20,27 @@ import boto3
 from botocore.exceptions import ClientError
 from services.agentcore_service import AgentCoreService
 from services.neptune_service import NeptuneService
+from services.delta_planner_service import DeltaPlannerService
+from services.glue_service import GlueService
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_NAMESPACE_ID_ENV = 'DEFAULT_NAMESPACE_ID'
+
+
+def default_namespace_id() -> str:
+    """Return the namespace an ontology binds to when the caller names none.
+
+    Set by the authz bootstrap to the seeded default namespace's id, so existing
+    single-tenant deployments keep working. Read per call rather than at import
+    so a configuration update takes effect without a new container.
+
+    Returns:
+        The default namespace id, or ``''`` when namespaces are not provisioned —
+        in which case ontology configs carry no binding and namespace-scoped
+        authorization for those routes denies rather than guessing.
+    """
+    return os.environ.get(DEFAULT_NAMESPACE_ID_ENV, '')
 
 
 def convert_decimals(obj):
@@ -217,6 +236,21 @@ class OntologyService:
             elif existing_config and existing_config.get('createdBy'):
                 config['createdBy'] = existing_config['createdBy']
 
+            # Namespace binding. Every ontology belongs to exactly one namespace,
+            # and that binding is what lets the authorization middleware turn
+            # "/ontology/config/{id}" into a namespace-scoped decision — a route
+            # whose ontology carries no namespaceId is denied outright rather
+            # than evaluated against the platform. Preserved on update: an
+            # ontology cannot be moved between namespaces by re-saving its
+            # config, which would silently transfer it out from under the grants
+            # that govern it.
+            if existing_config and existing_config.get('namespaceId'):
+                config['namespaceId'] = existing_config['namespaceId']
+            elif metadata_data.get('namespaceId'):
+                config['namespaceId'] = metadata_data['namespaceId']
+            elif default_namespace_id():
+                config['namespaceId'] = default_namespace_id()
+
             # Store configuration in DynamoDB
             self.table.put_item(Item=config)
 
@@ -306,15 +340,35 @@ class OntologyService:
             logger.warning(f"Error listing ontologies from DynamoDB: {e}", exc_info=True)
             raise
 
-    def start_build_metadata_async(self, id: str) -> Dict[str, Any]:
+    def compute_delta_plan(self, id: str) -> Dict[str, Any]:
+        """Compute (do not run) the delta plan for a VKG layer.
+
+        Args:
+            id: The layer/ontology id.
+
+        Returns:
+            The DeltaPlan dict (see DeltaPlannerService.compute_plan).
+        """
+        return DeltaPlannerService(
+            metadata_table=self.table, glue_service=GlueService(),
+            artifacts_bucket=os.environ.get("ARTIFACTS_BUCKET", ""),
+            region=os.environ.get("AWS_REGION", "us-east-1"),
+        ).compute_plan(id, layer_type="VKG")
+
+    def start_build_metadata_async(
+        self, id: str, target_tables: Optional[List[str]] = None,
+        removed_tables: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
         """
         Start building an metadata asynchronously using AgentCore Runtime
 
         This method:
         1. Validates the metadata configuration
-        2. Updates status to 'pending' in DynamoDB
-        3. Invokes AgentCore agent with id only
-        4. Returns immediately with status 'pending'
+        2. Scopes the build (deltaTargetTables) and, for delta builds with
+           removed tables, runs VKG cleanup BEFORE invoking the agent
+        3. Updates status to 'pending' in DynamoDB
+        4. Invokes AgentCore agent with id only
+        5. Returns immediately with status 'pending'
 
         The AgentCore agent handles everything:
         - Reads config from DynamoDB
@@ -325,6 +379,13 @@ class OntologyService:
 
         Args:
             id: Unique identifier for the metadata
+            target_tables: Optional list of "db.table" strings to scope a delta
+                build. When set, written to config['deltaTargetTables'] so the
+                agent's loop honors it. When None/empty, a full build is run and
+                any stale scope is cleared.
+            removed_tables: Optional list of "db.table" strings removed since the
+                last build. When set (delta build), VKG cleanup deletes their
+                Neptune triples + S3 fragments before the agent is invoked.
 
         Returns:
             Dictionary with immediate status response (pending)
@@ -340,7 +401,38 @@ class OntologyService:
             if not data_sources:
                 raise ValueError(f"No data sources selected for metadata: {id}")
 
-            # Update status to 'pending' (queued for processing)
+            # Scope the build: a delta build records deltaTargetTables so the
+            # agent's Task 15 filter processes only those tables; a full build
+            # clears any stale scope so the agent processes everything.
+            if target_tables:
+                config['deltaTargetTables'] = list(target_tables)
+            else:
+                config.pop('deltaTargetTables', None)   # full build clears scope
+
+            # For a delta build with removed tables, run VKG cleanup (Neptune
+            # per-table delete + S3 fragment delete) BEFORE invoking the agent.
+            if removed_tables:
+                stored = config.get("tableFingerprints") or {}
+                removed = []
+                for dt in removed_tables:
+                    db, tbl = dt.split(".", 1)
+                    fp = stored.get(dt) or {}
+                    cat = fp.get("catalogId", "AWSDataCatalog")
+                    if not fp:
+                        logger.warning(
+                            "cleanup: removed table %s has no stored fingerprint; "
+                            "defaulting catalog (Neptune delete still scoped by db.table)", dt)
+                    removed.append((db, tbl, cat))
+                DeltaPlannerService(
+                    metadata_table=self.table, glue_service=GlueService(),
+                    artifacts_bucket=os.environ.get("ARTIFACTS_BUCKET", ""),
+                    region=os.environ.get("AWS_REGION", "us-east-1"),
+                ).cleanup_removed(id, version=config['version'], layer_type="VKG",
+                                  removed=removed)
+
+            # Update status to 'pending' (queued for processing). Clear the previous
+            # run's error/progress first — see _clear_previous_build_results.
+            self._clear_previous_build_results(config)
             config['status'] = 'pending'
             config['updatedAt'] = datetime.now(timezone.utc).isoformat()
             config['buildStartedAt'] = datetime.now(timezone.utc).isoformat()
@@ -378,6 +470,202 @@ class OntologyService:
             logger.warning(f"Error starting async metadata build: {e}", exc_info=True)
             raise
 
+    def dispatch_build(
+        self, id: str, target_tables: Optional[List[str]] = None,
+        removed_tables: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Route a build request to the correct per-type build entrypoint.
+
+        Reads the ``type`` field from the ontology config in DynamoDB and
+        dispatches:
+
+        - ``'VKG'`` / ``'SemanticRAG'`` -> existing ``start_build_metadata_async``
+          (the AgentCore agent reads the type from DynamoDB and branches
+          internally, so both non-hybrid modes share this entrypoint — unchanged
+          behaviour). Delta-scope params (``target_tables`` / ``removed_tables``)
+          are forwarded so a delta build scopes ``deltaTargetTables`` and runs VKG
+          cleanup for removed tables.
+        - ``'Hybrid'`` -> new ``start_build_hybrid_async`` (full build only; the
+          delta params do not apply and are ignored).
+
+        ``type`` defaults to ``'VKG'`` when absent, matching the existing
+        behaviour of the per-type build methods (which default the stored
+        ``type`` to ``'VKG'``).
+
+        :param id: Unique identifier for the ontology/metadata config.
+        :param target_tables: Optional "db.table" list scoping a delta build
+            (VKG/SemanticRAG only). ``None``/empty -> full build.
+        :param removed_tables: Optional "db.table" list removed since the last
+            build (VKG/SemanticRAG delta only) -> VKG cleanup before the agent runs.
+        :returns: The immediate status dict returned by the selected builder.
+        :raises ValueError: If the config is not found or ``type`` is unknown.
+        """
+        config = self.get_metadata_config(id)
+        if not config:
+            raise ValueError(f"Configuration not found: {id}")
+
+        # Default to 'VKG' to match existing behaviour when type is absent.
+        build_type = config.get('type') or 'VKG'
+        if build_type not in ('Hybrid', 'VKG', 'SemanticRAG'):
+            raise ValueError(f"Unknown build type '{build_type}' for config: {id}")
+
+        # Ingest uploaded documents BEFORE the per-type dispatch, so all three
+        # layer types get the identical document path. Placing it here rather
+        # than in the three build entrypoints is the point: a document uploaded
+        # to a VKG layer and the same document uploaded to a SemanticRAG layer
+        # must be chunked, linked and indexed the same way.
+        self._start_document_ingestion(ontology_id=id)
+
+        if build_type == 'Hybrid':
+            logger.info(f"Dispatching build for {id} to Hybrid path")
+            return self.start_build_hybrid_async(id)
+        if build_type in ('VKG', 'SemanticRAG'):
+            logger.info(f"Dispatching build for {id} to {build_type} path")
+            return self.start_build_metadata_async(
+                id, target_tables=target_tables, removed_tables=removed_tables,
+            )
+
+        # Unreachable: build_type was validated above. Kept so a future type
+        # added to the guard but not to the dispatch fails loudly.
+        raise ValueError(f"Unhandled build type '{build_type}' for config: {id}")
+
+    def _get_document_service(self):
+        """Return the DocumentService used for build-time document ingestion.
+
+        Built lazily and cached on the instance so importing this module does not
+        pull in the document stack, and so tests can inject a stand-in by
+        assigning ``self._document_service`` before the first call.
+
+        :returns: A ``DocumentService`` instance.
+        """
+        existing = getattr(self, '_document_service', None)
+        if existing is None:
+            # Local import: keeps the document stack out of this module's import
+            # graph, which several unit tests load without the doc env vars.
+            from services.document_service import DocumentService
+            existing = DocumentService()
+            self._document_service = existing
+        return existing
+
+    def _start_document_ingestion(self, *, ontology_id: str) -> Dict[str, Any]:
+        """Re-run the doc pipeline for every document uploaded to this layer.
+
+        Called from ``dispatch_build`` for all three layer types. Every document
+        is re-ingested rather than only the un-indexed ones: the Link stage links
+        document entities to the layer's ontology classes, and a build is exactly
+        when those classes change, so a document indexed against the previous
+        build is stale.
+
+        Failures never block the build — a layer whose structured half builds
+        fine must not be held hostage by one unparseable upload. Each failure is
+        logged and counted; the per-document status row keeps its stage flags, so
+        the steward can see which documents did not progress.
+
+        :param ontology_id: The semantic layer whose documents to ingest.
+        :returns: Counts dict with ``documents``, ``started`` and ``failed``.
+        """
+        summary: Dict[str, Any] = {'documents': 0, 'started': 0, 'failed': 0}
+        try:
+            docs = self._get_document_service().list_documents(ontology_id=ontology_id)
+        except Exception as exc:  # noqa: BLE001 — never block the build
+            logger.warning(
+                "document fan-out: could not list documents for %s: %s",
+                ontology_id, exc, exc_info=True,
+            )
+            return summary
+
+        summary['documents'] = len(docs)
+        if not docs:
+            return summary
+
+        service = self._get_document_service()
+        for doc in docs:
+            doc_id = doc.get('docId') or ''
+            try:
+                # Unique execution name per build: Step Functions rejects a
+                # duplicate name for 90 days, which would silently no-op every
+                # rebuild's re-ingestion.
+                service.start_pipeline(
+                    ontology_id=ontology_id,
+                    doc_id=doc_id,
+                    s3_bucket=doc.get('s3Bucket') or '',
+                    s3_key=doc.get('s3Key') or '',
+                    filename=doc.get('filename') or '',
+                    execution_name=f"build-{doc_id}-{uuid.uuid4().hex[:8]}",
+                )
+                summary['started'] += 1
+            except Exception as exc:  # noqa: BLE001 — never block the build
+                summary['failed'] += 1
+                logger.warning(
+                    "document fan-out: pipeline start failed for doc %s (layer %s): %s",
+                    doc_id, ontology_id, exc, exc_info=True,
+                )
+
+        logger.info(
+            "document fan-out for %s: %d document(s), %d started, %d failed",
+            ontology_id, summary['documents'], summary['started'], summary['failed'],
+        )
+        return summary
+
+    def start_build_hybrid_async(self, id: str) -> Dict[str, Any]:
+        """Start a Hybrid build asynchronously via the creation AgentCore Runtime.
+
+        Mirrors ``start_build_metadata_async``: validates the config, marks it
+        ``pending`` in DynamoDB, then invokes the Hybrid creation agent (which
+        reads its config from DynamoDB and processes in the background). The
+        agent is reached through ``invoke_hybrid_creation_agent`` — the build
+        (creation) path only; query dispatch happens via the chat gateway.
+
+        :param id: Unique identifier for the Hybrid ontology config
+            (used as the AgentCore session_id).
+        :returns: Immediate status dict with ``status`` ``'pending'``.
+        :raises ValueError: If the config is missing, has no data sources, or the
+            agent invocation fails.
+        """
+        try:
+            config = self.get_metadata_config(id)
+            if not config:
+                raise ValueError(f"Hybrid configuration not found: {id}")
+
+            data_sources = config.get('dataSources', [])
+            if not data_sources:
+                raise ValueError(f"No data sources selected for Hybrid config: {id}")
+
+            # Mark queued for processing before invoking the agent. Clear the
+            # previous run's error/progress first — see
+            # _clear_previous_build_results.
+            self._clear_previous_build_results(config)
+            config['status'] = 'pending'
+            config['updatedAt'] = datetime.now(timezone.utc).isoformat()
+            config['buildStartedAt'] = datetime.now(timezone.utc).isoformat()
+            self.table.put_item(Item=config)
+
+            logger.info(
+                f"Starting async Hybrid build for {id} with {len(data_sources)} data sources"
+            )
+
+            try:
+                self.agentcore_service.invoke_hybrid_creation_agent(id=id)
+                logger.info(f"Hybrid creation agent started for: {id}")
+            except Exception as agent_error:
+                logger.error(f"Failed to invoke Hybrid creation agent: {agent_error}")  # nosemgrep: logging-error-without-handling — exception converted to ValueError with status update
+                config['status'] = 'failed'
+                config['error'] = f"Failed to start agent: {str(agent_error)}"
+                config['updatedAt'] = datetime.now(timezone.utc).isoformat()
+                self.table.put_item(Item=config)
+                raise ValueError(f"Failed to start agent: {str(agent_error)}")
+
+            return {
+                'id': id,
+                'status': 'pending',
+                'message': 'Hybrid build started. Poll /build-status/{id} for status.',
+                'dataSourceCount': len(data_sources),
+            }
+
+        except Exception as e:
+            logger.warning(f"Error starting async Hybrid build: {e}", exc_info=True)
+            raise
+
     def get_metadata_versions(self, id: str) -> List[Dict[str, Any]]:
         """
         Get all versions of an metadata, sorted by version number descending
@@ -399,6 +687,38 @@ class OntologyService:
              'metadataPath': i.get('metadataPath', ''), 'updatedAt': i.get('updatedAt', '')}
             for i in items
         ]
+
+    # Attributes written by a build RUN, as opposed to its configuration. They
+    # describe the outcome of one attempt, so they must not survive into the next
+    # one: ``get_build_status`` returns ``error`` unconditionally and the progress
+    # fields whenever they are present, which meant a freshly-started build polled
+    # as "in progress, and by the way here is the previous run's failure". Observed
+    # on 2026-08-15: a rebuild that was 3 minutes into its KB phase still reported
+    # the prior run's VKG error verbatim.
+    _BUILD_RESULT_ATTRIBUTES = (
+        'error',
+        'tablesProcessed',
+        'totalTables',
+        'currentTable',
+        'progressPercent',
+    )
+
+    def _clear_previous_build_results(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Drop the previous run's outcome attributes from a config, in place.
+
+        Called when a build is marked ``pending`` so that polling reflects only the
+        run now in flight.
+
+        Args:
+            config: The DynamoDB metadata item about to be written back.
+
+        Returns:
+            The same dict, with every attribute in ``_BUILD_RESULT_ATTRIBUTES``
+            removed.
+        """
+        for attribute in self._BUILD_RESULT_ATTRIBUTES:
+            config.pop(attribute, None)
+        return config
 
     def get_build_status(self, id: str) -> Dict[str, Any]:
         """

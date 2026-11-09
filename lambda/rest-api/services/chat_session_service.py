@@ -10,7 +10,10 @@ write via the ``ttl`` attribute (configured on the table itself).
 Schema:
     sessionId (PK, S)
     ontologyId (S)
-    mode (S)              -- "vkg" | "semantic-rag"
+    mode (S)              -- "vkg" | "semantic-rag" | "hybrid"
+                             (one per semantic layer type: VKG / SemanticRAG /
+                             Hybrid — a layer is queried by the same kind of
+                             engine that built it)
     userId (S)
     messages (L of M)     -- [{role, text, turnId, reasoningSteps[]}]
     createdAt (S)         -- ISO-8601 UTC

@@ -2,8 +2,8 @@
  * LandingPage — empty-state home for the chat-first redesign (2026-05-24).
  *
  * Centered "ask anything" composer; picks an ontology via a single dropdown,
- * mode (VKG vs SemanticRAG) is derived from the ontology's type, not selected
- * separately. Mints a new sessionId on first submit and routes to
+ * mode (VKG vs SemanticRAG vs Hybrid) is derived from the ontology's type, not
+ * selected separately. Mints a new sessionId on first submit and routes to
  * ``/query/ask?session=<id>`` so streaming continues in ChatView. The chat
  * list lives in the global SideNavigation as of 2026-05-27.
  *
@@ -25,32 +25,50 @@ import {
   StatusIndicator,
 } from "@cloudscape-design/components";
 import { ontologyAPI, queryAPI } from "../../services/api";
+import { uuid } from "../../utils/uuid";
 import Composer from "./Composer";
 
-function uuid() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
 // The chat mode is determined by the picked layer's type — not user-selectable.
-// VKG layers route to the ontology-query agent; SemanticRAG layers route to the
-// metadata-query agent. Surfacing it as a separate dropdown lets users pick a
-// nonsensical (layer, mode) pair and crashes the agent invocation.
+// A layer is queried by the SAME kind of engine that built it: VKG layers route
+// to the ontology-query agent, SemanticRAG layers to the metadata-query agent,
+// and Hybrid layers to the semantic-layer-query agent. Surfacing it as a separate
+// dropdown lets users pick a nonsensical (layer, mode) pair and crashes the agent
+// invocation.
+//
+// Keep the keys in step with the `type` values written by
+// SelectSemanticLayerType.jsx, and the values in step with CHAT_TARGETS in
+// services/api.js. This was a two-way branch until Hybrid was added: "Hybrid" is
+// not "SemanticRAG", so it fell through to "vkg" and a Hybrid layer was silently
+// answered by the VKG agent while being labelled "Knowledge Graph (VKG)".
+const MODE_BY_ONTOLOGY_TYPE = {
+  VKG: "vkg",
+  SemanticRAG: "semantic-rag",
+  Hybrid: "hybrid",
+};
+
+const MODE_LABELS = {
+  vkg: "Knowledge Graph (VKG)",
+  "semantic-rag": "Semantic RAG",
+  hybrid: "Hybrid",
+};
+
+// Returns null for an unmapped type rather than guessing. Callers must handle
+// null: routing an unknown type to a default is exactly how the Hybrid
+// mis-routing stayed invisible. Not a throw, because this is also called during
+// render and an exception there would blank the whole page instead of reporting
+// a bad layer.
 function modeForOntologyType(type) {
-  return type === "SemanticRAG" ? "semantic-rag" : "vkg";
+  return MODE_BY_ONTOLOGY_TYPE[type] || null;
 }
 
 function modeLabel(mode) {
-  return mode === "semantic-rag" ? "Semantic RAG" : "Knowledge Graph (VKG)";
+  return MODE_LABELS[mode] || "Unsupported";
 }
 
-export default function LandingPage({ enableSemanticRag = false }) {
+export default function LandingPage({
+  enableSemanticRag = false,
+  enableHybrid = false,
+}) {
   const navigate = useNavigate();
 
   const [ontologies, setOntologies] = useState([]);
@@ -92,9 +110,14 @@ export default function LandingPage({ enableSemanticRag = false }) {
           });
         }
       }
-      const filtered = enableSemanticRag
-        ? opts
-        : opts.filter((o) => o.type !== "SemanticRAG");
+      // Hide layers whose query engine is not deployed, so the picker cannot
+      // offer a layer that would fail on the first question. Hybrid needs its
+      // own runtime (enableHybrid, default false), not just the two it composes.
+      const filtered = opts.filter((o) => {
+        if (o.type === "SemanticRAG") return enableSemanticRag;
+        if (o.type === "Hybrid") return enableHybrid;
+        return true;
+      });
       setOntologies(filtered);
       if (filtered.length > 0) {
         setSelectedOntology(filtered[0]);
@@ -104,7 +127,7 @@ export default function LandingPage({ enableSemanticRag = false }) {
     return () => {
       cancelled = true;
     };
-  }, [enableSemanticRag]);
+  }, [enableSemanticRag, enableHybrid]);
 
   // Refresh suggestions whenever the picked ontology changes.
   useEffect(() => {
@@ -136,8 +159,19 @@ export default function LandingPage({ enableSemanticRag = false }) {
   const startChat = useCallback(
     (text) => {
       if (!selectedOntology?.value || !text) return;
-      const sessionId = uuid();
       const mode = modeForOntologyType(selectedOntology.type);
+      if (!mode) {
+        // Refuse to start rather than sending the question to an arbitrary
+        // agent. An unmapped type means this layer's build engine has no
+        // matching query engine, so any answer would come from the wrong one.
+        setError(
+          `Semantic layer "${selectedOntology.label}" has type ` +
+            `"${selectedOntology.type}", which has no query agent. ` +
+            `Supported types: ${Object.keys(MODE_BY_ONTOLOGY_TYPE).join(", ")}.`,
+        );
+        return;
+      }
+      const sessionId = uuid();
       // ChatView reads the seed message from navigation state and dispatches
       // it on mount. Persisted via the rail thereafter.
       navigate(`/query/ask?session=${sessionId}`, {

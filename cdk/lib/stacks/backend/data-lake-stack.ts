@@ -9,6 +9,7 @@ import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 import { GlueCatalogStack } from './glue-catalog-stack';
 import { ArmBuildConstruct } from '../../common/constructs/arm-build-construct';
+import { LfAdminRegistration } from '../../common/constructs/lf-admin-registration';
 
 export interface DataLakeStackProps extends cdk.StackProps {
   projectName: string;
@@ -336,24 +337,18 @@ export class DataLakeStack extends cdk.Stack {
     const singletonRole = s3TablesLFRegistration.grantPrincipal as iam.IRole;
     this.lfGrantSingletonRoleArn = singletonRole.roleArn;
 
-    // This CfnDataLakeSettings supersedes the one in glue-catalog-stack (same CDK bootstrap
-    // roles + the singleton Lambda role). data-lake-stack deploys after glue-catalog-stack
-    // so this becomes the authoritative LF admin list.
-    const dataLakeAdminSettings = new lakeformation.CfnDataLakeSettings(
-      this,
-      'DataLakeAdminSettings',
-      {
-        admins: [
-          {
-            dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
-          },
-          {
-            dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
-          },
-          { dataLakePrincipalIdentifier: singletonRole.roleArn },
-        ],
-      }
-    );
+    // Additively register this stack's LF admins (CDK bootstrap roles + the
+    // singleton Lambda role that runs glue:CreateCatalog under LF auth). Uses a
+    // read-modify-write custom resource instead of CfnDataLakeSettings, which is
+    // a per-account singleton (physical id = account id) and would collide with
+    // glue-catalog-stack's on a fresh deploy. See LfAdminRegistration.
+    const dataLakeAdminSettings = new LfAdminRegistration(this, 'DataLakeAdminSettings', {
+      adminArns: [
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
+        singletonRole.roleArn,
+      ],
+    });
     dataLakeAdminSettings.node.addDependency(s3TablesLFRegistration);
 
     const s3TablesCatalog = new cr.AwsCustomResource(this, 'S3TablesFederatedCatalog', {

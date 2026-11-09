@@ -1,2 +1,8 @@
 boto3==1.42.63
 botocore==1.42.63
+# PDF text extraction. pypdf is a py3-none-any (pure-Python) wheel, so the
+# CDK asset's local pip bundling on an x86_64 workstation produces a bundle
+# that runs unchanged on the ARM64 Lambda. Do NOT add python-docx here: it
+# pulls in lxml, whose wheel is architecture-specific — DOCX is parsed with
+# the stdlib (zipfile + ElementTree) in handler.py for exactly that reason.
+pypdf==6.0.0

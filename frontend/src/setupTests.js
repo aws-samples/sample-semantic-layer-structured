@@ -17,8 +17,14 @@ if (typeof global.ReadableStream === "undefined") {
 
 // Mock Cloudscape Design components
 jest.mock("@cloudscape-design/components", () => ({
-  Alert: ({ type, children }) => (
-    <div data-testid={`alert-${type}`}>{children}</div>
+  // `header` is rendered, as the real component does. Dropping it made an
+  // alert's headline — often the whole point of the alert — unassertable, so a
+  // component could lose its heading with every test still green.
+  Alert: ({ type, header, children }) => (
+    <div data-testid={`alert-${type}`}>
+      {header && <div>{header}</div>}
+      {children}
+    </div>
   ),
   Box: ({ children, variant, ...props }) => (
     <div data-testid="box" data-variant={variant} {...props}>
@@ -41,10 +47,21 @@ jest.mock("@cloudscape-design/components", () => ({
       {children}
     </button>
   ),
-  Select: ({ selectedOption, options, onChange, disabled, ...props }) => (
+  // `ariaLabel` is mapped to `aria-label` exactly as the real component does,
+  // so a form with several selects can be driven by `getByLabelText` instead of
+  // by positional index — an index silently retargets when a field is added.
+  Select: ({
+    selectedOption,
+    options,
+    onChange,
+    disabled,
+    ariaLabel,
+    ...props
+  }) => (
     <select
       role="combobox"
       data-testid="select"
+      aria-label={ariaLabel}
       value={selectedOption?.value || ""}
       onChange={(e) => {
         const selected = options.find((o) => o.value === e.target.value);
@@ -78,6 +95,29 @@ jest.mock("@cloudscape-design/components", () => ({
       {children}
     </label>
   ),
+  // Cloudscape's Checkbox emits `{detail: {checked}}`, not a DOM event — a stub
+  // that forwarded the raw event would let a handler reading `detail.checked`
+  // pass here and silently read `undefined` in the browser.
+  Checkbox: ({ children, checked, onChange, ...props }) => (
+    <label data-testid="checkbox">
+      <input
+        type="checkbox"
+        checked={!!checked}
+        onChange={(e) => onChange?.({ detail: { checked: e.target.checked } })}
+        {...props}
+      />
+      {children}
+    </label>
+  ),
+  // A layout wrapper only — the real component adds the submit/actions row and
+  // an error slot, neither of which any assertion depends on.
+  Form: ({ children, actions, errorText }) => (
+    <div data-testid="form">
+      {children}
+      {actions}
+      {errorText && <div>{errorText}</div>}
+    </div>
+  ),
   Badge: ({ children }) => <span data-testid="badge">{children}</span>,
   ColumnLayout: ({ children }) => (
     <div data-testid="column-layout">{children}</div>
@@ -91,6 +131,19 @@ jest.mock("@cloudscape-design/components", () => ({
         {footer && <div>{footer}</div>}
       </div>
     ),
+  // Same `{detail: {value}}` onChange contract as the real component and as the
+  // Textarea mock below — a mock that emitted a bare event would let a handler
+  // reading `detail.value` pass here and break in the browser.
+  Input: ({ value, onChange, placeholder, type, ...props }) => (
+    <input
+      data-testid="input"
+      value={value ?? ""}
+      type={type || "text"}
+      placeholder={placeholder}
+      onChange={(e) => onChange?.({ detail: { value: e.target.value } })}
+      {...props}
+    />
+  ),
   Textarea: ({ value, onChange, placeholder, rows, ...props }) => (
     <textarea
       data-testid="textarea"

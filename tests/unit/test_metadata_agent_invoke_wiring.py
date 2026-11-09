@@ -41,6 +41,12 @@ def _run_invoke_sync(monkeypatch, config: dict) -> dict:
     monkeypatch.setattr(agent_module, "_update_dynamodb_status", MagicMock())
     monkeypatch.setattr(agent_module, "_write_versioned_completion", MagicMock())
     monkeypatch.setattr(agent_module, "_trigger_kb_ingestion", MagicMock())
+    # These wiring tests assert prompt/inventory wiring, not fingerprinting. The
+    # per-table success path calls _record_table_fingerprint → get_single_table_schema,
+    # which against a mock Athena client would poll ~60s per table before fail-soft.
+    # Stub it so the wiring assertions run fast and in isolation.
+    monkeypatch.setattr(agent_module, "_record_table_fingerprint", MagicMock())
+    monkeypatch.setattr(agent_module, "_trigger_eval", MagicMock())
     monkeypatch.setattr(agent_module.app, "add_async_task",
                         MagicMock(return_value="task-1"))
     monkeypatch.setattr(agent_module.app, "complete_async_task", MagicMock())
@@ -102,6 +108,28 @@ def test_invoke_defaults_when_fields_absent(monkeypatch):
     assert captured.get("use_cases_description", "") == ""
     assert captured.get("data_sources_description", "") == ""
     assert captured.get("uploaded_docs", []) == []
+
+
+def test_delta_build_layer_tables_is_full_inventory_not_filtered_subset(monkeypatch):
+    """I4: on a delta build (deltaTargetTables scopes the loop to one table), the
+    layer_tables inventory threaded into the prompt — and into the doc validator —
+    must be the FULL selected set, so a rebuilt table's valid references to
+    unchanged siblings are NOT stripped as out-of-layer."""
+    config = {
+        "id": "test-job-1", "version": "v1",
+        "dataSources": [
+            {"databaseName": "db", "tableName": "orders", "catalogId": "AWSDataCatalog"},
+            {"databaseName": "db", "tableName": "customers", "catalogId": "AWSDataCatalog"},
+            {"databaseName": "db", "tableName": "items", "catalogId": "AWSDataCatalog"},
+        ],
+        # Delta scope: rebuild only `orders` this run.
+        "deltaTargetTables": ["db.orders"],
+    }
+    captured = _run_invoke_sync(monkeypatch, config)
+    # Only `orders` is (re)built...
+    assert captured.get("table_name") == "orders"
+    # ...but the inventory is the FULL set, including the unchanged siblings.
+    assert set(captured.get("layer_tables") or []) == {"orders", "customers", "items"}
 
 
 def test_invoke_passes_enrichment_annotations_from_dynamo(monkeypatch):

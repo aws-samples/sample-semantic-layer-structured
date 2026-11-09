@@ -103,7 +103,7 @@ if cloudfront_secret_name:
         cloudfront_domain = response.get("SecretString", "").strip()
         if cloudfront_domain:
             allowed_origins.append(f"https://{cloudfront_domain}")
-            logger.info(f"Added CloudFront domain to CORS: https://{cloudfront_domain}")
+            logger.info("Added CloudFront domain from Secrets Manager to CORS allowed origins")
         else:
             logger.warning("CloudFront domain secret is empty")
     except Exception as e:

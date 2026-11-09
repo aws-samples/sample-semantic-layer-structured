@@ -86,7 +86,7 @@ async def enrich_metadata(request: MetadataEnrichRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error starting metadata enrichment: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/delta/{id}")
@@ -98,7 +98,7 @@ async def compute_delta(id: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.warning(f"delta compute failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/enrich/status/{job_id}")
@@ -124,7 +124,7 @@ async def get_enrichment_status(job_id: str):
         raise
     except Exception as e:
         logger.warning(f"Error getting enrichment status: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/revise/{id}/{version_id}", status_code=202)
@@ -148,7 +148,7 @@ async def revise_metadata(id: str, version_id: str, body: ReviseMetadataRequest)
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error starting metadata revision: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================================================
@@ -189,7 +189,7 @@ async def get_table_kb_metadata(
         raise
     except Exception as e:
         logger.warning(f"Error getting KB table metadata for {database_name}.{table_name}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================================================

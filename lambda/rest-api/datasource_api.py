@@ -61,7 +61,7 @@ async def list_glue_databases():
 
     except Exception as e:
         logger.warning(f"Error listing Glue databases: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/glue/tables/{database_name}")
@@ -90,7 +90,7 @@ async def list_glue_tables(
 
     except Exception as e:
         logger.warning(f"Error listing Glue tables: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/glue/metadata/{database_name}/{table_name}")
@@ -116,7 +116,7 @@ async def get_table_metadata(
 
     except Exception as e:
         logger.warning(f"Error getting table metadata: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/extract-metadata")
@@ -142,7 +142,7 @@ async def extract_metadata(request: ExtractMetadataRequest):
 
     except Exception as e:
         logger.warning(f"Error extracting metadata: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # Health check

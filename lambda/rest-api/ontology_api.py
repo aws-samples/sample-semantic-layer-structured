@@ -78,7 +78,7 @@ async def create_ontology_config(config: OntologyConfig):
 
     except Exception as e:
         logger.warning(f"Error creating ontology config: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/config/{ontology_id}")
@@ -104,7 +104,7 @@ async def get_ontology_config(ontology_id: str):
         raise
     except Exception as e:
         logger.warning(f"Error retrieving ontology config: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/list")
@@ -121,7 +121,7 @@ async def list_ontologies():
 
     except Exception as e:
         logger.warning(f"Error listing ontologies: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.delete("/config/{ontology_id}")
@@ -141,7 +141,7 @@ async def delete_ontology(ontology_id: str):
 
     except Exception as e:
         logger.warning(f"Error deleting ontology: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================================================
@@ -201,7 +201,7 @@ async def build_ontology(ontology_id: str, body: BuildOntologyRequest = BuildOnt
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error starting ontology build: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/delta/{ontology_id}")
@@ -223,7 +223,7 @@ async def compute_ontology_delta(ontology_id: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.warning(f"ontology delta compute failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/build-status/{ontology_id}")
@@ -243,7 +243,7 @@ async def get_build_status(ontology_id: str):
 
     except Exception as e:
         logger.warning(f"Error getting build status: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/versions/{ontology_id}")
@@ -263,7 +263,7 @@ async def list_ontology_versions(ontology_id: str):
 
     except Exception as e:
         logger.warning(f"Error listing versions: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/content/{ontology_id}/{version_id}")
@@ -285,7 +285,7 @@ async def get_ontology_content(ontology_id: str, version_id: str):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.warning(f"Error fetching ontology content: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.post("/revise/{ontology_id}/{version_id}")
@@ -327,7 +327,7 @@ async def revise_ontology(ontology_id: str, version_id: str, body: ReviseOntolog
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error starting revision: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # ============================================================================
@@ -375,7 +375,7 @@ async def upload_ontology_file(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.warning(f"Error uploading ontology file: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # Health check

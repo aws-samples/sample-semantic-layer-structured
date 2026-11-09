@@ -913,7 +913,7 @@ class OntologyService:
                     )
             except Exception as neptune_err:
                 logger.warning(f"Neptune graph cleanup failed for metadata {id} (continuing): {neptune_err}")
-                neptune_result = {'success': False, 'error': str(neptune_err)}
+                neptune_result = {'success': False, 'error': 'Neptune graph cleanup failed; see server logs for details'}
 
             return {
                 'id': id,

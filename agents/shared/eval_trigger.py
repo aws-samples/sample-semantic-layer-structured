@@ -17,6 +17,14 @@ The query agent to use is chosen by layer type, expressed here as ``query_kind``
 so the runner doesn't have to re-derive it:
     SemanticRAG -> "metadata_query"
     VKG         -> "ontology_query"
+    Hybrid      -> "hybrid_query"
+
+The ``Hybrid`` entry points the eval-runner at the Hybrid query agent
+(``agents/semantic_layer_query_agent``) so a completed Hybrid layer is evaluated
+against its ground-truth dataset alongside SemanticRAG and VKG. This mapping is
+the ONLY place the layer type is bound to the Hybrid query kind; it lives in the
+shared eval path (which is allowed to know about Hybrid) and does NOT import from
+the isolated Hybrid agent packages.
 """
 
 from __future__ import annotations
@@ -33,6 +41,7 @@ logger = logging.getLogger(__name__)
 _QUERY_KIND_BY_TYPE = {
     "SemanticRAG": "metadata_query",
     "VKG": "ontology_query",
+    "Hybrid": "hybrid_query",
 }
 
 
@@ -48,7 +57,8 @@ def emit_evaluation_requested(
     Args:
         ontology_id: The semantic-layer / config id that just completed.
         version: The version that completed (e.g. ``v1``, ``v2``).
-        layer_type: ``SemanticRAG`` or ``VKG`` — selects the query agent.
+        layer_type: ``SemanticRAG``, ``VKG``, or ``Hybrid`` — selects the query
+            agent.
         boto_session: Optional pre-built session (the agents inject their
             credential-scoped session; falls back to a default session).
 

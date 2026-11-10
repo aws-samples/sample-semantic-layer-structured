@@ -1,0 +1,653 @@
+{
+  "benchmark": "bird",
+  "agent": "ontology_query_agent",
+  "pooling": "row-weighted mean over per-DB exec_metrics_by_db",
+  "db_ids_requested": [
+    "bird_california_schools",
+    "bird_card_games",
+    "bird_codebase_community",
+    "bird_debit_card_specializing",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_pooled": [
+    "bird_california_schools",
+    "bird_card_games",
+    "bird_codebase_community",
+    "bird_debit_card_specializing",
+    "bird_european_football_2",
+    "bird_financial",
+    "bird_formula_1",
+    "bird_student_club",
+    "bird_superhero",
+    "bird_thrombosis_prediction",
+    "bird_toxicology"
+  ],
+  "db_ids_missing_results": [],
+  "pooled_exec_metrics": {
+    "ExecutionAccuracy": 0.1233,
+    "RewardVES": 0.1056,
+    "SoftF1": 0.1295
+  },
+  "scored_rows_per_metric": {
+    "ExecutionAccuracy": 446,
+    "RewardVES": 445,
+    "SoftF1": 446
+  },
+  "invoked_rows": 500,
+  "unanswerable_gold_rows": 51,
+  "answerable_rows": 449,
+  "pooled_telemetry_coverage": {
+    "ExecutionAccuracy": 0.9933,
+    "RewardVES": 0.9911,
+    "SoftF1": 0.9933
+  },
+  "low_coverage_dbs": [],
+  "per_db": {
+    "bird_california_schools": {
+      "results_file": "bird_vkg_benchmark_eval_bird_california_schools_20261105_115319.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_california_schools_d492f20b-1b70b1c52d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.1304,
+        "ExecutionAccuracy_n": 23,
+        "RewardVES": 0.0978,
+        "RewardVES_n": 23,
+        "SoftF1": 0.1304,
+        "SoftF1_n": 23
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.73,
+        "FinalAnswerFaithfulness": 0.75,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 30,
+        "n_answerable": 24,
+        "n_unanswerable_gold": 6,
+        "unanswerable_scenario_ids": [
+          "gt-row-11",
+          "gt-row-18",
+          "gt-row-19",
+          "gt-row-20",
+          "gt-row-23",
+          "gt-row-29"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 23,
+          "RewardVES": 23,
+          "SoftF1": 23
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 0.9583,
+          "RewardVES": 0.9583,
+          "SoftF1": 0.9583
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.7667,
+          "RewardVES": 0.7667,
+          "SoftF1": 0.7667
+        },
+        "min_coverage": 0.9583,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_card_games": {
+      "results_file": "bird_vkg_benchmark_eval_bird_card_games_20261105_120905.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 52,
+      "batch_evaluation_id": "bird_vkg_bench_bird_card_games_75479a4e-40718a15f6",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.1569,
+        "ExecutionAccuracy_n": 51,
+        "RewardVES": 0.12,
+        "RewardVES_n": 50,
+        "SoftF1": 0.167,
+        "SoftF1_n": 51
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.73,
+        "FinalAnswerFaithfulness": 0.77,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 52,
+        "n_answerable": 51,
+        "n_unanswerable_gold": 1,
+        "unanswerable_scenario_ids": [
+          "gt-row-17"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 51,
+          "RewardVES": 50,
+          "SoftF1": 51
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 0.9804,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.9808,
+          "RewardVES": 0.9615,
+          "SoftF1": 0.9808
+        },
+        "min_coverage": 0.9804,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_codebase_community": {
+      "results_file": "bird_vkg_benchmark_eval_bird_codebase_community_20261105_122836.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 49,
+      "batch_evaluation_id": "bird_vkg_bench_bird_codebase_community_700ca88b-f5e5dbf93d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.1304,
+        "ExecutionAccuracy_n": 46,
+        "RewardVES": 0.125,
+        "RewardVES_n": 46,
+        "SoftF1": 0.1413,
+        "SoftF1_n": 46
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.82,
+        "FinalAnswerFaithfulness": 0.82,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 49,
+        "n_answerable": 46,
+        "n_unanswerable_gold": 3,
+        "unanswerable_scenario_ids": [
+          "gt-row-02",
+          "gt-row-26",
+          "gt-row-41"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 46,
+          "RewardVES": 46,
+          "SoftF1": 46
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.9388,
+          "RewardVES": 0.9388,
+          "SoftF1": 0.9388
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_debit_card_specializing": {
+      "results_file": "bird_vkg_benchmark_eval_bird_debit_card_specializing_20261105_124213.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 30,
+      "batch_evaluation_id": "bird_vkg_bench_bird_debit_card_speciali_59f76b42-fae0adb51a",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.1111,
+        "ExecutionAccuracy_n": 27,
+        "RewardVES": 0.1019,
+        "RewardVES_n": 27,
+        "SoftF1": 0.1462,
+        "SoftF1_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.73,
+        "FinalAnswerFaithfulness": 0.68,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 30,
+        "n_answerable": 27,
+        "n_unanswerable_gold": 3,
+        "unanswerable_scenario_ids": [
+          "gt-row-06",
+          "gt-row-10",
+          "gt-row-27"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 27,
+          "RewardVES": 27,
+          "SoftF1": 27
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.9,
+          "RewardVES": 0.9,
+          "SoftF1": 0.9
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_european_football_2": {
+      "results_file": "bird_vkg_benchmark_eval_bird_european_football_2_20261105_130835.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 51,
+      "batch_evaluation_id": "bird_vkg_bench_bird_european_football_2_fd827a72-2398adb5bd",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0213,
+        "ExecutionAccuracy_n": 47,
+        "RewardVES": 0.0213,
+        "RewardVES_n": 47,
+        "SoftF1": 0.0213,
+        "SoftF1_n": 47
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.51,
+        "FinalAnswerFaithfulness": 0.53,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 51,
+        "n_answerable": 47,
+        "n_unanswerable_gold": 4,
+        "unanswerable_scenario_ids": [
+          "gt-row-01",
+          "gt-row-04",
+          "gt-row-05",
+          "gt-row-10"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 47,
+          "RewardVES": 47,
+          "SoftF1": 47
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.9216,
+          "RewardVES": 0.9216,
+          "SoftF1": 0.9216
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_financial": {
+      "results_file": "bird_vkg_benchmark_eval_bird_financial_20261105_132547.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 32,
+      "batch_evaluation_id": "bird_vkg_bench_bird_financial_1607f55c-70d1790da6",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.3333,
+        "ExecutionAccuracy_n": 27,
+        "RewardVES": 0.2685,
+        "RewardVES_n": 27,
+        "SoftF1": 0.3346,
+        "SoftF1_n": 27
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.74,
+        "FinalAnswerFaithfulness": 0.72,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 32,
+        "n_answerable": 27,
+        "n_unanswerable_gold": 5,
+        "unanswerable_scenario_ids": [
+          "gt-row-09",
+          "gt-row-12",
+          "gt-row-25",
+          "gt-row-28",
+          "gt-row-31"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 27,
+          "RewardVES": 27,
+          "SoftF1": 27
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.8438,
+          "RewardVES": 0.8438,
+          "SoftF1": 0.8438
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_formula_1": {
+      "results_file": "bird_vkg_benchmark_eval_bird_formula_1_20261105_135810.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 66,
+      "batch_evaluation_id": "bird_vkg_bench_bird_formula_1_8abde00e-f69ef3b6dc",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0893,
+        "ExecutionAccuracy_n": 56,
+        "RewardVES": 0.0759,
+        "RewardVES_n": 56,
+        "SoftF1": 0.0893,
+        "SoftF1_n": 56
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.71,
+        "FinalAnswerFaithfulness": 0.77,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 66,
+        "n_answerable": 56,
+        "n_unanswerable_gold": 10,
+        "unanswerable_scenario_ids": [
+          "gt-row-16",
+          "gt-row-24",
+          "gt-row-47",
+          "gt-row-49",
+          "gt-row-51",
+          "gt-row-52",
+          "gt-row-57",
+          "gt-row-60",
+          "gt-row-62",
+          "gt-row-64"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 56,
+          "RewardVES": 56,
+          "SoftF1": 56
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.8485,
+          "RewardVES": 0.8485,
+          "SoftF1": 0.8485
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_student_club": {
+      "results_file": "bird_vkg_benchmark_eval_bird_student_club_20261105_141335.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 48,
+      "batch_evaluation_id": "bird_vkg_bench_bird_student_club_e268df69-8186a45d34",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.2381,
+        "ExecutionAccuracy_n": 42,
+        "RewardVES": 0.2083,
+        "RewardVES_n": 42,
+        "SoftF1": 0.2381,
+        "SoftF1_n": 42
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.93,
+        "FinalAnswerFaithfulness": 0.89,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 48,
+        "n_answerable": 42,
+        "n_unanswerable_gold": 6,
+        "unanswerable_scenario_ids": [
+          "gt-row-02",
+          "gt-row-03",
+          "gt-row-25",
+          "gt-row-35",
+          "gt-row-38",
+          "gt-row-44"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 42,
+          "RewardVES": 42,
+          "SoftF1": 42
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.875,
+          "RewardVES": 0.875,
+          "SoftF1": 0.875
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_superhero": {
+      "results_file": "bird_vkg_benchmark_eval_bird_superhero_20261105_145542.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 52,
+      "batch_evaluation_id": "bird_vkg_bench_bird_superhero_84130555-f29eff0c8d",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.06,
+        "ExecutionAccuracy_n": 50,
+        "RewardVES": 0.05,
+        "RewardVES_n": 50,
+        "SoftF1": 0.06,
+        "SoftF1_n": 50
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.79,
+        "FinalAnswerFaithfulness": 0.76,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 52,
+        "n_answerable": 52,
+        "n_unanswerable_gold": 0,
+        "unanswerable_scenario_ids": [],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 50,
+          "RewardVES": 50,
+          "SoftF1": 50
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 0.9615,
+          "RewardVES": 0.9615,
+          "SoftF1": 0.9615
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.9615,
+          "RewardVES": 0.9615,
+          "SoftF1": 0.9615
+        },
+        "min_coverage": 0.9615,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_thrombosis_prediction": {
+      "results_file": "bird_vkg_benchmark_eval_bird_thrombosis_prediction_20261105_155344.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 50,
+      "batch_evaluation_id": "bird_vkg_bench_bird_thrombosis_predicti_9c5f92aa-a9cc749b10",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.0,
+        "ExecutionAccuracy_n": 37,
+        "RewardVES": 0.0,
+        "RewardVES_n": 37,
+        "SoftF1": 0.0,
+        "SoftF1_n": 37
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.71,
+        "FinalAnswerFaithfulness": 0.79,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 50,
+        "n_answerable": 37,
+        "n_unanswerable_gold": 13,
+        "unanswerable_scenario_ids": [
+          "gt-row-05",
+          "gt-row-10",
+          "gt-row-12",
+          "gt-row-13",
+          "gt-row-24",
+          "gt-row-27",
+          "gt-row-28",
+          "gt-row-30",
+          "gt-row-31",
+          "gt-row-33",
+          "gt-row-35",
+          "gt-row-36",
+          "gt-row-43"
+        ],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 37,
+          "RewardVES": 37,
+          "SoftF1": 37
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 0.74,
+          "RewardVES": 0.74,
+          "SoftF1": 0.74
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    },
+    "bird_toxicology": {
+      "results_file": "bird_vkg_benchmark_eval_bird_toxicology_20261105_160736.json",
+      "status": "COMPLETED_WITH_ERRORS",
+      "n_rows": 40,
+      "batch_evaluation_id": "bird_vkg_bench_bird_toxicology_c6986eec-10e93d2ab5",
+      "exec_metric_aggregates": {
+        "ExecutionAccuracy": null,
+        "RewardVES": null,
+        "SoftF1": null
+      },
+      "exec_metrics_by_db": {
+        "ExecutionAccuracy": 0.175,
+        "ExecutionAccuracy_n": 40,
+        "RewardVES": 0.1625,
+        "RewardVES_n": 40,
+        "SoftF1": 0.1938,
+        "SoftF1_n": 40
+      },
+      "llm_judge_aggregates": {
+        "GoalSuccess": 0.95,
+        "FinalAnswerFaithfulness": 0.95,
+        "SqlGrounded": 1.0
+      },
+      "telemetry_coverage": {
+        "n_rows": 40,
+        "n_answerable": 40,
+        "n_unanswerable_gold": 0,
+        "unanswerable_scenario_ids": [],
+        "gold_validity_note": "gold_validity.json probed 2026-08-10T04:27:34.397495+00:00: 51/500 rows unanswerable",
+        "scored_rows_per_metric": {
+          "ExecutionAccuracy": 40,
+          "RewardVES": 40,
+          "SoftF1": 40
+        },
+        "coverage_per_metric": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "coverage_per_metric_raw": {
+          "ExecutionAccuracy": 1.0,
+          "RewardVES": 1.0,
+          "SoftF1": 1.0
+        },
+        "min_coverage": 1.0,
+        "coverage_floor": 0.95,
+        "coverage_ok": true
+      }
+    }
+  },
+  "failed_runs": {}
+}

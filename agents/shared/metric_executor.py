@@ -12,6 +12,14 @@ from typing import Any, Dict
 import sqlglot
 from sqlglot import exp
 
+try:  # Container layouts differ: flat (`shared.*`) vs repo-rooted (`agents.shared.*`).
+    from agents.shared.firewall_context import check_metric_allowed, enforce_for_caller
+except ImportError:  # pragma: no cover - exercised only inside the agent images
+    from shared.firewall_context import (  # type: ignore
+        check_metric_allowed,
+        enforce_for_caller,
+    )
+
 
 def _apply_filters(sql: str, dialect: str, filters: Dict[str, Any]) -> str:
     """Return ``sql`` with each ``filters`` entry appended as a WHERE predicate.
@@ -88,6 +96,11 @@ def execute_metric(*, metric, filters: Dict[str, Any], athena,
 
     Raises:
         ValueError: A filter key is not in ``metric.supported_filters``.
+        PermissionError: The caller's grant profile declares ``allowedMetrics``
+            and this metric is not in it.
+        UnsafeSQLError: The compiled statement failed the SQL firewall's
+            structural checks, or the caller's profile denies a table or column
+            it references.
         RuntimeError: Athena reports ``FAILED`` or ``CANCELLED``.
         TimeoutError: The query did not finish within ``max_wait_s``.
     """
@@ -95,7 +108,19 @@ def execute_metric(*, metric, filters: Dict[str, Any], athena,
     if bad:
         raise ValueError(f"unsupported filter(s): {bad}")
 
+    # A metric is authorized by identity, not by the shape of its SQL, so this
+    # gate is separate from the firewall below. Checked before the filters are
+    # applied — no point parsing SQL the caller may not run at all.
+    check_metric_allowed(metric_id=metric.metric_id)
+
     sql = _apply_filters(metric.compiled_sql, metric.dialect, filters)
+    # Firewall the FINAL statement, after the filters are merged in. The
+    # predicates are AST-built rather than concatenated, but the whole point of
+    # the firewall is to be the last gate before start_query_execution, so it
+    # validates what actually runs. Parsed in the metric's own dialect —
+    # `athena` would reject a statement compiled for another engine as
+    # unparseable, which inside a restrictive profile means denied.
+    sql = enforce_for_caller(sql=sql, dialect=metric.dialect)
     # Name the federated catalog (S3 Tables) in the execution context so Athena
     # resolves the metric SQL's schema against it rather than the default Glue
     # catalog. This is the Tier 1 analogue of execute_sql_query's context.
@@ -129,11 +154,30 @@ def execute_metric(*, metric, filters: Dict[str, Any], athena,
             f"Athena query {qid} did not finish in {max_wait_s}s"
         )
 
-    rs = athena.get_query_results(QueryExecutionId=qid)["ResultSet"]
-    cols = [c["Name"] for c in rs["ResultSetMetadata"]["ColumnInfo"]]
-    data_rows = rs["Rows"][1:]  # row 0 is the column header
-    rows = [
-        {cols[i]: cell.get("VarCharValue") for i, cell in enumerate(r["Data"])}
-        for r in data_rows
-    ]
+    # Athena returns <=1000 rows per page; loop NextToken to fetch the FULL result
+    # set. Only page 1 carries the header row (index 0). A single call would
+    # silently truncate a metric returning >1000 rows.
+    cols: list = []
+    rows: list = []
+    next_token = ""
+    first_page = True
+    while True:
+        page_kwargs: Dict[str, Any] = {"QueryExecutionId": qid}
+        if next_token:
+            page_kwargs["NextToken"] = next_token
+        page = athena.get_query_results(**page_kwargs)
+        rs = page["ResultSet"]
+        if first_page:
+            cols = [c["Name"] for c in rs["ResultSetMetadata"]["ColumnInfo"]]
+            data_rows = rs["Rows"][1:]  # row 0 is the column header
+            first_page = False
+        else:
+            data_rows = rs["Rows"]
+        rows.extend(
+            {cols[i]: cell.get("VarCharValue") for i, cell in enumerate(r["Data"])}
+            for r in data_rows
+        )
+        next_token = page.get("NextToken", "") or ""
+        if not next_token:
+            break
     return {"columns": cols, "rows": rows, "metric_id": metric.metric_id}

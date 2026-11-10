@@ -11,13 +11,19 @@ monitoring plan.) The two questions:
   1. HOW did queries resolve? Every query-agent response carries a
      ``provenance`` object (``agents/shared/provenance.py``) persisted on the
      assistant turn at ``messages[].totals.provenance``. We bucket each answered
-     turn by ``provenance.tier`` into the four resolution layers:
+     turn by ``provenance.tier`` into the resolution layers:
 
         metric layer    <- tier "governed_metric"  (Tier 1 governed metric)
+        rule layer      <- tier "governed_rule"  (approved conditional rule)
         semantic layer  <- tier "semantic_sql" | "vkg"  (Tier 2 graph: slice->SQL)
         advisory layer  <- tier "advisory"  (schema / "what can I ask" questions)
-        agentic layer   <- NOT IMPLEMENTED yet (always 0; surfaced so the tab
-                           documents the planned bucket rather than hiding it)
+        document layer  <- tier "document"  (answered from the layer's uploaded
+                           documents — the entire workload of a document-only
+                           layer, and a post-SQL fallback for the others)
+        agentic layer   <- tier "agentic"  (Tier 3 supervisor loop, counted only
+                           when its judge ACCEPTED the answer; a Tier 3 attempt
+                           that failed to recover leaves the honest Tier 2
+                           degraded answer in place and stays in "semantic")
 
   2. HOW OFTEN do users CORRECT the agent? We run the correction-language
      heuristic (``correction_language.is_correction``) over each persisted USER
@@ -52,21 +58,35 @@ from services.correction_language import is_correction, matched_phrases
 logger = logging.getLogger(__name__)
 
 # provenance.tier -> resolution-layer bucket key. Two Tier-2 tiers (plain
-# semantic SQL and the VKG/Ontop path) both fold into "semantic".
+# semantic SQL and the VKG/Ontop path) both fold into "semantic"; the Tier-3
+# supervisor loop reports its own "agentic" tier when its judge accepted the
+# answer, so a rescued turn is counted there rather than under "semantic".
 _TIER_TO_BUCKET: Dict[str, str] = {
     "governed_metric": "metric",
+    # Governed rules get their own bucket: "answered by an approved conditional
+    # rule" is a different operational story from "answered by a metric", and
+    # merging them would hide the governance layer the tab exists to show.
+    "governed_rule": "rule",
     "semantic_sql": "semantic",
     "vkg": "semantic",
+    "agentic": "agentic",
     "advisory": "advisory",
+    # Answered from the layer's uploaded documents rather than from its data. Its
+    # own bucket, not folded into "advisory": both are non-SQL, but advisory
+    # describes the layer's SCHEMA while this answers from unstructured content
+    # the user supplied — and for a document-only layer this bucket is the whole
+    # workload, which folding would make unreadable.
+    "document": "document",
 }
 
-# The agentic layer is not implemented; it is always reported as 0 so the tab
-# documents the planned bucket explicitly rather than silently omitting it.
+# The agentic bucket key (Tier 3 supervisor-loop fallback).
 _AGENTIC_BUCKET = "agentic"
 
-# All resolution buckets, in display order. "agentic" is included so the tab
-# always renders five buckets even though it is currently always zero.
-_ALL_BUCKETS: List[str] = ["metric", "semantic", "advisory", _AGENTIC_BUCKET]
+# All resolution buckets, in display order. Buckets are mutually exclusive and
+# sum to the answered-turn total.
+_ALL_BUCKETS: List[str] = [
+    "metric", "rule", "semantic", "advisory", "document", _AGENTIC_BUCKET,
+]
 
 # Bound the scan so a pathological table size can't run the admin request to the
 # Lambda timeout. The chat-sessions table is TTL-bounded (24h), so in practice
@@ -314,7 +334,10 @@ class MonitoringService:
                 "label": _BUCKET_LABELS[key],
                 "count": 0,
                 "pct": 0.0,
-                "implemented": key != _AGENTIC_BUCKET,
+                # Retained for response-shape stability with older frontends.
+                # Every bucket is implemented now that Tier 3 reports its own
+                # tier; a zero here means "no traffic", not "not built".
+                "implemented": True,
             }
             for key in _ALL_BUCKETS
         ]
@@ -329,8 +352,9 @@ class MonitoringService:
                 "label": _BUCKET_LABELS[key],
                 "count": bucket_counts.get(key, 0),
                 "pct": self._pct(bucket_counts.get(key, 0), total),
-                # The agentic layer is not implemented yet; the UI greys it out.
-                "implemented": key != _AGENTIC_BUCKET,
+                # See _empty_buckets: every resolution layer is live, so a
+                # zero count is an absence of traffic rather than a missing path.
+                "implemented": True,
             }
             for key in _ALL_BUCKETS
         ]
@@ -339,7 +363,9 @@ class MonitoringService:
 # Human-readable bucket labels for the tab.
 _BUCKET_LABELS: Dict[str, str] = {
     "metric": "Metric layer",
+    "rule": "Rule layer",
     "semantic": "Semantic layer",
     "advisory": "Advisory layer",
+    "document": "Document layer",
     _AGENTIC_BUCKET: "Agentic layer",
 }

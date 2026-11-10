@@ -6,9 +6,11 @@ This document describes the query resolution flow for the Metadata Query Agent (
 > tool loop (`retrieve_kb_context → disambiguate_query_terms → execute_sql_query`),
 > but **that is not how it works**. There is no agent-wide `SYSTEM_PROMPT` and no
 > single-shot ReAct agent.
-> The live agent resolves every question with a **two-tier cascade**: Tier 1
+> The live agent resolves every question with a **three-tier cascade**: Tier 1
 > governed-metric lookup, then a **deterministic Tier 2 Strands graph** of plain
-> function calls. The only model-facing prompts on this path are `JUDGE_PROMPT`
+> function calls, and — only when Tier 2 **degrades** — a bounded **Tier 3**
+> supervisor-loop fallback ([`tier3/`](tier3/)). The only model-facing prompts on
+> the Tier 1/2 path are `JUDGE_PROMPT`
 > (Phase 3 slice judge) and `EXECUTION_PROMPT` (Phase 5 execution agent), both in
 > [`query_prompts.py`](query_prompts.py). (The Phase 4 SQL-generation prompt is
 > inline in `RagQueryGenerator`.) This doc makes the deployed flow explicit.
@@ -64,14 +66,16 @@ flowchart TD
 
 ## Where the flow lives in code
 
-| Step                             | Entry point                                                               | Module                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Orchestration                    | `_run_query` → `_run_query_core`                                          | [`main.py`](main.py)                                                                              |
-| Clarification resolution         | `load_pending_clarification` + `resolve_clarification_reply`              | [`../shared/clarification.py`](../shared/clarification.py)                                        |
-| Tier 1 lookup                    | `tier1_lookup`                                                            | [`../shared/metric_lookup.py`](../shared/metric_lookup.py)                                        |
-| Tier 1 execute                   | `tier1_execute` + `_build_response_from_metric`                           | [`../shared/metric_executor.py`](../shared/metric_executor.py) · [`main.py`](main.py)             |
-| Tier 2 entry                     | `tier2_resolve` → `tier2_rag_workflow`                                    | [`main.py`](main.py) · [`tier2/workflow.py`](tier2/workflow.py)                                   |
-| Tier 2 graph + shared primitives | `build_tier2_graph` · `WorkflowContext` · `PhaseDeps` · `run_tier2_graph` | [`tier2/workflow.py`](tier2/workflow.py) · [`../shared/tier2_graph.py`](../shared/tier2_graph.py) |
+| Step                             | Entry point                                                               | Module                                                                                                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Orchestration                    | `_run_query` → `_run_query_core`                                          | [`main.py`](main.py)                                                                                                                                                                     |
+| Clarification resolution         | `load_pending_clarification` + `resolve_clarification_reply`              | [`../shared/clarification.py`](../shared/clarification.py)                                                                                                                               |
+| Tier 1 lookup                    | `tier1_lookup`                                                            | [`../shared/metric_lookup.py`](../shared/metric_lookup.py)                                                                                                                               |
+| Tier 1 execute                   | `tier1_execute` + `_build_response_from_metric`                           | [`../shared/metric_executor.py`](../shared/metric_executor.py) · [`main.py`](main.py)                                                                                                    |
+| Tier 2 entry                     | `tier2_resolve` → `tier2_rag_workflow`                                    | [`main.py`](main.py) · [`tier2/workflow.py`](tier2/workflow.py)                                                                                                                          |
+| Tier 2 graph + shared primitives | `build_tier2_graph` · `WorkflowContext` · `PhaseDeps` · `run_tier2_graph` | [`tier2/workflow.py`](tier2/workflow.py) · [`../shared/tier2_graph.py`](../shared/tier2_graph.py)                                                                                        |
+| Tier 3 fallback (degrade only)   | `_run_tier3_supervisor` → `run_supervisor_loop` · `WorkerBudget`          | [`main.py`](main.py) · [`tier3/supervisor.py`](tier3/supervisor.py) · [`tier3/budget.py`](tier3/budget.py)                                                                               |
+| SQL firewall (all tiers)         | `bind_from_context` · `enforce_for_caller` · `resolve_profile`            | [`../shared/firewall_context.py`](../shared/firewall_context.py) · [`../shared/sql_firewall.py`](../shared/sql_firewall.py) · [`../shared/grant_profile.py`](../shared/grant_profile.py) |
 
 The deterministic phases (1, 2, 3, 3b, 4, and the grounding-gate half of 5) are
 **not** LLM agents — they are plain Python functions wrapped by the `_FnNode`
@@ -82,6 +86,66 @@ shared-closure pattern is how data and routing flags flow between phases). Only
 two phases invoke a model: the **Phase 3 slice judge** (`JUDGE_PROMPT`) and the
 **Phase 5 bounded execution agent** (`EXECUTION_PROMPT`, the only phase that
 calls `execute_sql_query`).
+
+## SQL firewall (before any tier runs)
+
+([`../shared/sql_firewall.py`](../shared/sql_firewall.py) ·
+[`../shared/firewall_context.py`](../shared/firewall_context.py) ·
+[`../shared/grant_profile.py`](../shared/grant_profile.py))
+
+Both serve-time routes to Athena are gated:
+
+- `execute_sql_query` ([`main.py`](main.py)) — the `@tool` the model calls. Its SQL is
+  **the least trusted statement in the system**: a model wrote it from a
+  natural-language question. The firewall runs before any AWS client is built.
+- `execute_metric` ([`../shared/metric_executor.py`](../shared/metric_executor.py)) —
+  the Tier 1 path, which firewalls the final statement after the caller's filters are
+  merged in, and separately applies `allowedMetrics` by identity before parsing
+  anything.
+
+Enforcement itself is two halves, and the distinction matters:
+
+- **Always on, structural.** SELECT-only at the root, plus a **deep AST scan** for
+  data-modifying nodes anywhere in the tree — so `WITH d AS (DELETE … RETURNING *)
+SELECT * FROM d` is refused even though it begins with `WITH`. Comments are stripped
+  before a pre-parse regex runs, and a dangerous-function denylist applies (sqlglot,
+  `athena` dialect). None of this depends on the caller having a grant.
+- **Per-caller, opt-in.** `tableAllowlist`, `columnDenylist` and `allowedMetrics` come
+  from the caller's merged grants. The merge is **deny-wins**: denylists union, and an
+  allowlist is the union of only the grants that _declare_ one, so a permissive grant
+  cannot erase a restrictive grant's PII denylist. `None` (no grant declares one) means
+  unconstrained and is deliberately **not** `[]`, which denies everything.
+
+**A denial here is returned, not raised** — the one deliberate difference from the VKG
+agent, whose Phase 5 SQL is deterministic Ontop output and whose denial propagates. A
+Strands `@tool` that raises has its exception handed back to the model and retried, so
+raising inside this tool would loop indefinitely; returning the reason instead lets the
+model rewrite the query into something the profile permits, which is the useful outcome.
+The denial path also clears the `query_executed` memo, since a latched flag would make
+the model's retry a silent no-op.
+
+The caller profile is bound once per invocation via a `ContextVar`, in `invoke()` before
+any tool runs — `execute_sql_query` reads the binding rather than taking it as a
+parameter, because its signature _is_ the model's tool schema and the model must not be
+able to supply its own permissions. The namespace is resolved from the ontology's
+DynamoDB config row, **never from the payload**. A failure to read the grants fails the
+turn: restrictions we cannot read are not the same as no restrictions.
+
+Where the identity comes from is worth being precise about, because the two halves differ.
+Groups — which is what resolves a role — are read **only** from the forwarded Bearer JWT's
+`cognito:groups` claim; no payload field can add one. The subject is
+`_user_id_from_context`, which prefers the JWT `sub` and falls back to `payload['userId']`,
+then to `anonymous`. `bind_from_context` deliberately takes that subject as a parameter
+rather than decoding it itself, so the precedence is decided in one place per agent and
+cannot be silently re-made with different rules further down.
+
+The agent-side firewall does **not** read `ENABLE_AUTHZ`; it is independent of whether
+the REST API's policy-decision point is enforcing. The structural half runs
+unconditionally — there is no switch that turns SELECT-only off. Only the per-caller half
+needs configuration: with `GRANTS_TABLE` unset the resolver logs
+`grant_profile_no_table` and returns identity only, which means no restrictions to apply
+(unconstrained), **not** deny-all. See the root README's
+[Namespaces, Authorization & the SQL Firewall](../../README.md#namespaces-authorization--the-sql-firewall).
 
 ## Follow-up contextualization (before Tier 1/2)
 
@@ -391,6 +455,24 @@ Phase 5 runs in two halves:
 The whole graph is bounded by `MAX_NODE_EXECUTIONS` **(40)** as a backstop
 against runaway revisits; `reset_on_revisit(True)` lets Phase 4/5 re-enter
 cleanly across the grounding back-edge.
+
+## Tier 3 — Supervisor-loop agentic fallback
+
+([`tier3/supervisor.py`](tier3/supervisor.py) · [`tier3/budget.py`](tier3/budget.py))
+
+Reached **only when Tier 2 degrades** (`wf.degraded` set) — never on a
+clarification or a success. A bounded **worker → judge → retry** loop reasons
+freely over the semantic layer to recover an answer the deterministic graph
+missed; on exhaustion the honest Tier 2 degraded answer is kept. Same shape and
+same defaults as the VKG agent's Tier 3 — see
+[`../ontology_query_agent/README.md`](../ontology_query_agent/README.md#tier-3--supervisor-loop-agentic-fallback)
+for why `WorkerBudgetExceeded` must derive from `BaseException`.
+
+| Bound                    | Default | Catches                                                   |
+| ------------------------ | ------- | --------------------------------------------------------- |
+| `DEFAULT_MAX_ROUNDS`     | `3`     | worker rounds (`supervisor.py`)                           |
+| `DEFAULT_MAX_TOOL_CALLS` | `40`    | **fast-spin** — hundreds of cheap calls burning the clock |
+| `DEFAULT_ROUND_SECONDS`  | `240.0` | **slow-spin** — few calls, each very slow                 |
 
 ## Result shaping & terminals
 

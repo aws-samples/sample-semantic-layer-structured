@@ -48,19 +48,19 @@ _CORRECTION_PATTERNS: List[re.Pattern] = [
     re.compile(r"(^|[.!?]\s+)wrong[,.!]", re.IGNORECASE),
     # "<schema-noun> is wrong" — the inverted form.
     re.compile(r"\b(table|column|field|filter|join|metric|query|schema|"
-               r"result|answer|number|value)s?\s+(is|are|was|were)\s+wrong\b",
+               + r"result|answer|number|value)s?\s+(is|are|was|were)\s+wrong\b",
                re.IGNORECASE),
     # "you're/you are missing the <something>" and "missing the fraud filter".
     re.compile(r"\b(you('?re| are)\s+)?missing\s+(the|a|an|that|my)\b",
                re.IGNORECASE),
     re.compile(r"\bmissing\s+(the\s+)?(filter|column|field|join|table|"
-               r"condition|where\s+clause)\b", re.IGNORECASE),
+               + r"condition|where\s+clause)\b", re.IGNORECASE),
     # "you forgot / you left out / you missed ..."
     re.compile(r"\byou\s+(forgot|left\s+out|missed|skipped|ignored)\b",
                re.IGNORECASE),
     # "that's not right/correct/what", "this isn't correct", "this isn't right".
     re.compile(r"\b(that('?s| is)|this\s+is|it('?s| is))\s+"
-               r"(not\s+(right|correct|what)|incorrect|wrong)\b", re.IGNORECASE),
+               + r"(not\s+(right|correct|what)|incorrect|wrong)\b", re.IGNORECASE),
     # "isn't/aren't/wasn't right|correct" — the contracted-negation form.
     re.compile(r"\b(is|are|was|were)n'?t\s+(right|correct|what)\b", re.IGNORECASE),
     # "that's incorrect" / "incorrect <noun>".
@@ -71,7 +71,7 @@ _CORRECTION_PATTERNS: List[re.Pattern] = [
     # table?" (subject "which" is excluded) or a filter "active, not cancelled"
     # (no demonstrative subject).
     re.compile(r"\b(that|this|it)(('?s)|\s+(is|was))?\s+not\s+"
-               r"(the\s+)?(\w+\s+){0,2}" + _SCHEMA_NOUN + r"\b", re.IGNORECASE),
+               + r"(the\s+)?(\w+\s+){0,2}" + _SCHEMA_NOUN + r"\b", re.IGNORECASE),
     # RESTATEMENT + negation: a back-referential verb ("I meant/asked for/said",
     # "you meant/said") in the SAME clause as a "not" — "I meant policies, not
     # products", "I asked for active policies not all of them". Requiring the
@@ -80,7 +80,7 @@ _CORRECTION_PATTERNS: List[re.Pattern] = [
     # negation). [^.?!]* stays within one sentence; it is linear (no nested
     # quantifier) so there is no ReDoS exposure.
     re.compile(r"\b(i\s+(meant|asked\s+for|wanted|said)|"
-               r"you\s+(meant|said))\b[^.?!]*\bnot\b", re.IGNORECASE),
+               + r"you\s+(meant|said))\b[^.?!]*\bnot\b", re.IGNORECASE),
     # "I meant <noun>" with NO "to" — "I meant policies" (a correction), but NOT
     # "I meant to ask about premiums" (a soft intent statement). The negative
     # lookahead on "to" is the discriminator.
@@ -97,13 +97,13 @@ _CORRECTION_PATTERNS: List[re.Pattern] = [
     # correction rate is a directional signal, and a false LOW is safer than the
     # false HIGH that pattern caused.
     re.compile(r"(^|[,—–-]\s*)not\s+(the\s+)?(\w+\s+)?"
-               r"(table|column|field|filter|join|metric|query|schema)s?\b",
+               + r"(table|column|field|filter|join|metric|query|schema)s?\b",
                re.IGNORECASE),
     # "instead of the <schema-noun>" — a correction only when it swaps a
     # concrete schema object ("use coverage instead of the holding table").
     # "revenue instead of cost" has no schema noun and is NOT counted.
     re.compile(r"\binstead\s+of\s+(the\s+)?(\w+\s+)?"
-               r"(table|column|field|filter|join|metric|query|schema)s?\b",
+               + r"(table|column|field|filter|join|metric|query|schema)s?\b",
                re.IGNORECASE),
 ]
 

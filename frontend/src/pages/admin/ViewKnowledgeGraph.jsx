@@ -13,12 +13,18 @@ import {
   Tabs,
 } from "@cloudscape-design/components";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { neptuneAPI, ontologyAPI } from "../../services/api";
+import {
+  neptuneAPI,
+  ontologyAPI,
+  computeOntologyDelta,
+} from "../../services/api";
+import DeltaPreview from "../../components/DeltaPreview";
 import GraphVisualization from "../../components/GraphVisualization";
 import OntologyEditor from "../../components/OntologyEditor";
 import LessonsLearnedTab from "../../components/LessonsLearnedTab";
 import FeedbackTab from "../../components/FeedbackTab";
 import GovernedMetricsTab from "../../components/GovernedMetricsTab";
+import GovernedRulesTab from "../../components/GovernedRulesTab";
 import MonitoringTab from "../../components/MonitoringTab";
 import GroundTruthDataset from "./GroundTruthDataset";
 import Evaluations from "./Evaluations";
@@ -83,6 +89,13 @@ export default function ViewKnowledgeGraph({ user }) {
     graphSummary?.properties ?? [],
     propertiesSorting,
   );
+
+  // The layer's stored type ("VKG" | "Hybrid" | "SemanticRAG"), handed to the
+  // governance tabs so each can apply its own rules. This page is reachable for
+  // a Hybrid layer — BuildKnowledgeGraph navigates here unconditionally — so it
+  // must not assert VKG. Stays null until the config lands; the tabs treat an
+  // unknown type as "make no claim" rather than guessing.
+  const layerType = ontologyConfig?.type ?? null;
 
   useEffect(() => {
     if (!id) {
@@ -413,7 +426,28 @@ export default function ViewKnowledgeGraph({ user }) {
                   label: "Metadata",
                   id: "edit",
                   content: id ? (
-                    <OntologyEditor id={id} />
+                    <SpaceBetween size="l">
+                      <Container>
+                        <DeltaPreview
+                          totalTables={ontologyConfig?.dataSources?.length ?? 0}
+                          onCompute={async () => {
+                            const res = await computeOntologyDelta(id);
+                            return res.data;
+                          }}
+                          onRebuild={async (scope, plan) => {
+                            await ontologyAPI.buildOntology(id, {
+                              scope,
+                              targetTables:
+                                scope === "delta" ? plan.rebuildSet : undefined,
+                              removedTables:
+                                scope === "delta" ? plan.removed : undefined,
+                            });
+                            loadGraphData();
+                          }}
+                        />
+                      </Container>
+                      <OntologyEditor id={id} />
+                    </SpaceBetween>
                   ) : (
                     <Box
                       color="text-status-inactive"
@@ -428,7 +462,28 @@ export default function ViewKnowledgeGraph({ user }) {
                   label: "Governed Metrics",
                   id: "governed-metrics",
                   content: id ? (
-                    <GovernedMetricsTab ontologyId={id} layerType="VKG" />
+                    <GovernedMetricsTab ontologyId={id} layerType={layerType} />
+                  ) : (
+                    <Box
+                      color="text-status-inactive"
+                      padding="l"
+                      textAlign="center"
+                    >
+                      No semantic layer selected
+                    </Box>
+                  ),
+                },
+                {
+                  label: "Governed Rules",
+                  id: "governed-rules",
+                  content: id ? (
+                    // currentUser is recorded on every threshold/rule approval —
+                    // an approval with no named human in it is not governance.
+                    <GovernedRulesTab
+                      ontologyId={id}
+                      layerType={layerType}
+                      currentUser={user?.email || user?.username}
+                    />
                   ) : (
                     <Box
                       color="text-status-inactive"

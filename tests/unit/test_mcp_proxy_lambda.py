@@ -7,7 +7,9 @@ rewrite on a gateway 401. Pure stdlib handler — no AWS calls except SSM (mocke
 import json
 import os
 import sys
+import re
 import urllib.error
+from urllib.parse import urlparse
 from unittest.mock import patch
 
 import pytest
@@ -157,6 +159,10 @@ def test_proxy_rewrites_www_authenticate_on_401():
 
     assert resp['statusCode'] == 401
     wa = resp['headers']['WWW-Authenticate']
-    # Rewritten to the proxy's own protected-resource metadata URL.
-    assert 'proxy.example.com' in wa
-    assert wa.endswith('/.well-known/oauth-protected-resource"')
+    # Rewritten to the proxy's own protected-resource metadata URL. Parse the
+    # URL out of the challenge and compare the host exactly, not by substring.
+    m = re.fullmatch(r'Bearer resource_metadata="([^"]+)"', wa)
+    assert m, wa
+    url = urlparse(m.group(1))
+    assert (url.scheme, url.hostname) == ('https', 'proxy.example.com')
+    assert url.path.endswith('/.well-known/oauth-protected-resource')

@@ -38,16 +38,33 @@ _SESSION_ID_VAR: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
     'prior_results_session_id', default=None,
 )
 
+# The JWT-derived caller identity bound alongside the sessionId. The lookup tool
+# uses it to reject a session whose stored ``userId`` differs from the caller —
+# so a valid-JWT holder who supplies a foreign ``sessionId`` cannot read another
+# user's rows. ``None`` (unset) skips the check, preserving the single-arg
+# contract for callers/tests that never bind a user; production always binds it.
+_USER_ID_VAR: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    'prior_results_user_id', default=None,
+)
 
-def set_session_id(session_id: str) -> None:
-    """Bind the chat sessionId to the current async context.
+
+def set_session_id(session_id: str, user_id: Optional[str] = None) -> None:
+    """Bind the chat sessionId (and optional caller identity) to the context.
 
     Called once per AG-UI run from each query agent's ``_chat_stream`` /
-    ``_run_query``. The lookup tool reads this contextvar instead of
+    ``_run_query``. The lookup tool reads these contextvars instead of
     accepting sessionId as a model-visible argument so the model can't be
     tricked into reading another user's turn.
+
+    Args:
+        session_id: The chat sessionId to scope the DDB lookup to.
+        user_id: The JWT-derived (trusted) caller identity. When provided, the
+            lookup tool asserts the session's stored ``userId`` matches it and
+            refuses to return rows otherwise. When ``None``, no ownership check
+            is applied (backward-compatible with callers that don't bind it).
     """
     _SESSION_ID_VAR.set(session_id or '')
+    _USER_ID_VAR.set(user_id)
 
 
 # Cap rows returned to the model — prevents a runaway 50k-row prior result
@@ -94,6 +111,21 @@ def get_previous_query_result(turn_id: str) -> str:
         return json.dumps({'error': f'DDB read failed: {exc}'})
 
     item = resp.get('Item') or {}
+
+    # Ownership gate: the sessionId contextvar is scoped from the request-body
+    # sessionId, which a valid-JWT caller could set to a victim's session. When a
+    # trusted (JWT-derived) user_id is bound, refuse to return rows from a session
+    # this caller does not own. Skipped only when no user_id is bound.
+    bound_user = _USER_ID_VAR.get()
+    if bound_user is not None:
+        owner = item.get('userId') or 'anonymous'
+        if owner != (bound_user or 'anonymous'):
+            logger.warning(
+                "prior_results ownership violation: session=%s owner=%s caller=%s",
+                session_id, owner, bound_user,
+            )
+            return json.dumps({'error': 'session not owned by caller'})
+
     messages = item.get('messages') or []
     # User and assistant turns share the same ``turnId`` — only assistant
     # turns carry ``totals``, so filter to those before matching.

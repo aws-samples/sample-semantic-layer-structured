@@ -1,0 +1,92 @@
+{
+ "benchmark": "bird",
+ "probed_at": "2026-08-10T04:27:34.397495+00:00",
+ "workgroup": "primary",
+ "scope": [
+  "bird_california_schools",
+  "bird_card_games",
+  "bird_codebase_community",
+  "bird_debit_card_specializing",
+  "bird_european_football_2",
+  "bird_financial",
+  "bird_formula_1",
+  "bird_student_club",
+  "bird_superhero",
+  "bird_thrombosis_prediction",
+  "bird_toxicology"
+ ],
+ "n_rows": 500,
+ "n_valid": 449,
+ "n_invalid": 51,
+ "invalid": {
+  "bird_debit_card_specializing": {
+   "gt-row-06": "TYPE_MISMATCH: line 1:767: Cannot check if varchar is BETWEEN integer and integer",
+   "gt-row-10": "FUNCTION_NOT_FOUND: line 1:8: Unexpected parameters (boolean) for function sum. Expected: sum(bigint), sum(decimal(p,s)), sum(double), sum(interval day to second), sum(interval year to month), sum(real)",
+   "gt-row-27": "TYPE_MISMATCH: line 1:237: Cannot apply operator: bigint = varchar(5)"
+  },
+  "bird_student_club": {
+   "gt-row-02": "EXPRESSION_NOT_AGGREGATE: line 1:8: 'T1.event_name' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-03": "EXPRESSION_NOT_AGGREGATE: line 1:8: 'T1.event_name' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-25": "EXPRESSION_NOT_AGGREGATE: line 1:8: 'T1.first_name' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-35": "EXPRESSION_NOT_AGGREGATE: line 1:8: 'T1.type' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-38": "EXPRESSION_NOT_AGGREGATE: line 1:8: 'T1.first_name' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-44": "TYPE_MISMATCH: line 1:95: Cannot check if date is BETWEEN varchar(10) and varchar(10)"
+  },
+  "bird_thrombosis_prediction": {
+   "gt-row-05": "TYPE_MISMATCH: line 1:80: Cannot apply operator: varchar - varchar",
+   "gt-row-10": "TYPE_MISMATCH: line 1:71: Cannot apply operator: varchar - varchar",
+   "gt-row-12": "TYPE_MISMATCH: line 1:242: Cannot apply operator: varchar - varchar",
+   "gt-row-13": "TYPE_MISMATCH: line 1:54: Cannot apply operator: varchar - varchar",
+   "gt-row-24": "EXPRESSION_NOT_IN_DISTINCT: line 1:1: For SELECT DISTINCT, ORDER BY expressions must appear in select list",
+   "gt-row-27": "TYPE_MISMATCH: line 1:62: Cannot apply operator: varchar - varchar",
+   "gt-row-28": "TYPE_MISMATCH: line 1:173: Cannot apply operator: varchar - varchar",
+   "gt-row-30": "TYPE_MISMATCH: line 1:88: Cannot apply operator: varchar - varchar",
+   "gt-row-31": "TYPE_MISMATCH: line 1:94: Cannot apply operator: varchar - varchar",
+   "gt-row-33": "TYPE_MISMATCH: line 1:80: Cannot apply operator: varchar - varchar",
+   "gt-row-35": "TYPE_MISMATCH: line 1:170: Cannot apply operator: varchar - varchar",
+   "gt-row-36": "TYPE_MISMATCH: line 1:276: Cannot apply operator: varchar - varchar",
+   "gt-row-43": "TYPE_MISMATCH: line 1:168: Cannot apply operator: varchar - varchar"
+  },
+  "bird_european_football_2": {
+   "gt-row-01": "EXPRESSION_NOT_AGGREGATE: line 1:8: 'teamInfo.team_long_name' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-04": "FUNCTION_NOT_FOUND: line 1:17: Function 'datetime' not registered",
+   "gt-row-05": "EXPRESSION_NOT_AGGREGATE: line 1:61: 'league_id' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-10": "EXPRESSION_NOT_AGGREGATE: line 1:8: 't1.player_name' must be an aggregate expression or appear in GROUP BY clause"
+  },
+  "bird_formula_1": {
+   "gt-row-16": "TYPE_MISMATCH: line 1:13: Result types for IF must be the same: varchar vs integer",
+   "gt-row-24": "TYPE_MISMATCH: line 1:64: Cannot apply operator: varchar - varchar",
+   "gt-row-47": "FUNCTION_NOT_FOUND: line 1:8: Unexpected parameters (varchar) for function avg. Expected: avg(bigint), avg(decimal(p,s)), avg(double), avg(interval day to second), avg(interval year to month), avg(real)",
+   "gt-row-49": "INVALID_CAST_ARGUMENT: Cannot cast '1:' to INT",
+   "gt-row-51": "FUNCTION_NOT_FOUND: line 1:73: Function 'julianday' not registered",
+   "gt-row-52": "FUNCTION_NOT_FOUND: line 1:69: Function 'julianday' not registered",
+   "gt-row-57": "FUNCTION_NOT_FOUND: line 1:255: Unexpected parameters (varchar) for function avg. Expected: avg(bigint), avg(decimal(p,s)), avg(double), avg(interval day to second), avg(interval year to month), avg(real)",
+   "gt-row-60": "EXPRESSION_NOT_AGGREGATE: line 1:33: 'T2.nationality' must be an aggregate expression or appear in GROUP BY clause",
+   "gt-row-62": "FUNCTION_NOT_FOUND: line 1:195: Function 'julianday' not registered",
+   "gt-row-64": "INVALID_CAST_ARGUMENT: Cannot cast '05:07' to REAL"
+  },
+  "bird_codebase_community": {
+   "gt-row-02": "TYPE_MISMATCH: line 1:56: Cannot apply operator: date < varchar(10)",
+   "gt-row-26": "COLUMN_NOT_FOUND: line 1:148: Column 'post_count' cannot be resolved or requester is not authorized to access requested resources",
+   "gt-row-41": "EXPRESSION_NOT_AGGREGATE: line 1:109: 'T1.Score' must be an aggregate expression or appear in GROUP BY clause"
+  },
+  "bird_card_games": {
+   "gt-row-17": "TYPE_MISMATCH: line 1:105: Cannot apply operator: varchar = integer"
+  },
+  "bird_california_schools": {
+   "gt-row-11": "TYPE_MISMATCH: line 1:162: Cannot apply operator: varchar = integer",
+   "gt-row-18": "TYPE_MISMATCH: line 1:99: Cannot apply operator: varchar = integer",
+   "gt-row-19": "TYPE_MISMATCH: line 1:75: Cannot apply operator: varchar = integer",
+   "gt-row-20": "TYPE_MISMATCH: line 1:31: Cannot apply operator: varchar = integer",
+   "gt-row-23": "TYPE_MISMATCH: line 1:178: Cannot check if varchar is BETWEEN integer and integer",
+   "gt-row-29": "TYPE_MISMATCH: line 1:180: Cannot apply operator: varchar = integer"
+  },
+  "bird_financial": {
+   "gt-row-09": "FUNCTION_NOT_FOUND: line 1:13: Unexpected parameters (boolean) for function sum. Expected: sum(bigint), sum(decimal(p,s)), sum(double), sum(interval day to second), sum(interval year to month), sum(real)",
+   "gt-row-12": "FUNCTION_NOT_FOUND: line 1:13: Unexpected parameters (boolean) for function sum. Expected: sum(bigint), sum(decimal(p,s)), sum(double), sum(interval day to second), sum(interval year to month), sum(real)",
+   "gt-row-25": "FUNCTION_NOT_FOUND: line 1:13: Unexpected parameters (boolean) for function sum. Expected: sum(bigint), sum(decimal(p,s)), sum(double), sum(interval day to second), sum(interval year to month), sum(real)",
+   "gt-row-28": "FUNCTION_NOT_FOUND: line 1:13: Unexpected parameters (boolean) for function sum. Expected: sum(bigint), sum(decimal(p,s)), sum(double), sum(interval day to second), sum(interval year to month), sum(real)",
+   "gt-row-31": "TYPE_MISMATCH: line 1:78: Cannot apply operator: varchar - varchar"
+  }
+ }
+}

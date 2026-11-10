@@ -24,13 +24,20 @@ import {
 } from "recharts";
 import { monitoringAPI } from "../services/api";
 
-// Per-bucket bar color. The agentic layer is greyed out because it is not
-// implemented yet (the backend always reports it as 0 with implemented=false).
+// Per-bucket bar color, one per resolution layer. All are live paths, so each
+// gets a real hue; the `implemented` flag is still honoured below purely so an
+// older backend that reports a bucket as unbuilt still renders sensibly.
+//
+// A bucket missing from this map falls back to the metric blue, which would make
+// two different layers indistinguishable in the chart — so every key in the
+// backend's _ALL_BUCKETS needs an entry here.
 const BUCKET_COLORS = {
   metric: "#0972d5", // blue   — Tier 1 governed metric
+  rule: "#0d7377", // teal   — approved conditional rule
   semantic: "#037f0c", // green  — Tier 2 graph (slice → SQL / VKG)
   advisory: "#8c4fff", // purple — schema / "what can I ask" questions
-  agentic: "#b5b9c0", // grey   — planned, not implemented
+  document: "#b3589a", // magenta — answered from the layer's uploaded documents
+  agentic: "#e07941", // orange — Tier 3 supervisor-loop fallback
 };
 
 /**
@@ -38,8 +45,12 @@ const BUCKET_COLORS = {
  *
  * Surfaces two signals over LIVE query-agent traffic (read from the
  * chat-sessions store, bucketed by each answer's provenance tier):
- *   1. Resolution breakdown across the four layers (metric / semantic /
- *      advisory / agentic-not-yet-implemented).
+ *   1. Resolution breakdown across the layers (metric / rule / semantic /
+ *      advisory / document / agentic). The rule bucket counts turns an approved
+ *      governed rule answered; the agentic bucket counts Tier-3-rescued turns:
+ *      questions the Tier 2 graph degraded on and the supervisor loop recovered;
+ *      the document bucket counts turns answered from the layer's uploaded
+ *      documents, which is the entire workload of a document-only layer.
  *   2. Share of user turns that used correction language ("that's the wrong
  *      table", "you're missing the fraud filter"), correlated with the count
  *      of lessons AgentCore Memory has extracted for the layer.
@@ -96,7 +107,7 @@ export default function MonitoringTab({ ontologyId }) {
       header={
         <Header
           variant="h2"
-          description="How live queries for this semantic layer resolve across the metric, semantic, advisory, and (planned) agentic layers — plus how often users correct the agent. Aggregated from chat, MCP, and eval sessions (rolling 24h window)."
+          description="How live queries for this semantic layer resolve across the metric, rule, semantic, advisory, document, and agentic layers — plus how often users correct the agent. Aggregated from chat, MCP, and eval sessions (rolling 24h window)."
           actions={
             <Button iconName="refresh" onClick={refresh} disabled={loading}>
               Refresh

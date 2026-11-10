@@ -104,6 +104,23 @@ def emit_grounding_span(
             messages=input_messages,
             model_id=operation_label,
         )
+        # Also stamp the executed SQL onto the span as the tool-call ATTRIBUTES the
+        # codeBased ExecutionAccuracy / RewardVES / SoftF1 evaluator scans for
+        # (benchmark-eval-handler `_extract_predicted_sql`): Pass 1 matches a span
+        # whose `gen_ai.tool.name` is an SQL-executor and reads the SQL from
+        # `gen_ai.tool.input` = {"sql": ...}. The message-body SQL above is only
+        # visible to the LLM SqlGrounded judge, NOT to the attribute-scanning
+        # codeBased evaluator — so on the successful VKG path (the ONLY path that
+        # reaches here) the executed SQL never landed on an evaluator-readable
+        # attribute and EX/R-VES/SoftF1 scored null ("No predicted SQL found").
+        # Setting these attributes closes that gap. Fail-soft with the outer try.
+        try:
+            import json as _json
+            span.set_attribute("gen_ai.tool.name", "execute_sql_query")
+            span.set_attribute(
+                "gen_ai.tool.input", _json.dumps({"sql": executed_sql}))
+        except Exception as _attr_exc:  # noqa: BLE001 — attribute stamping is best-effort
+            logger.debug("grounding span attr stamp failed (non-fatal): %s", _attr_exc)
         # Zero token usage — this is deterministic, prompt-free telemetry.
         tracer.end_model_invoke_span(
             span=span,

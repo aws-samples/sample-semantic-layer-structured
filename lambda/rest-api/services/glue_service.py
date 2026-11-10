@@ -13,11 +13,35 @@ import logging
 import os
 import time
 import boto3
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any, Optional
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
+
+# Athena LAMBDA connector catalogs whose contents are ALREADY surfaced through Glue and
+# so must not be listed twice.  The DynamoDB connector reads its schemas from the Glue
+# database `<project>_dynamodb`, which the AWSDataCatalog pass already returns complete
+# with curated table descriptions; its Athena catalog exposes only a bare `default`
+# database pointing at the same tables, which would show up as a confusing duplicate.
+# Override with a comma-separated ATHENA_CONNECTOR_CATALOG_DENYLIST to hide others
+# (or set it empty to surface every registered connector).
+_DEFAULT_CONNECTOR_CATALOG_DENYLIST = 'dynamodb_catalog'
+
+# Schemas a federated connector exposes that are never user-facing data sources.
+# Snowflake presents INFORMATION_SCHEMA in every database; enumerating it costs a
+# connector Lambda round-trip and returns hundreds of system views.
+_CONNECTOR_SYSTEM_SCHEMAS = frozenset({'INFORMATION_SCHEMA'})
+
+# Concurrency for the non-empty check in list_databases().  This check costs one API call
+# per database, and for a connector catalog that call is a connector Lambda round-trip
+# against the remote engine — measured at 3-4s per Snowflake schema versus ~0.1s for a Glue
+# database.  Run sequentially the endpoint took 17.7s for 20 databases and grew linearly
+# with each Snowflake schema, so a second Snowflake database would have pushed it past API
+# Gateway's 30s integration timeout and broken the picker outright.  Bounded rather than
+# unlimited to avoid Glue/Lake Formation throttling on accounts with many databases.
+_DB_VERIFY_MAX_WORKERS = 8
 
 
 class GlueService:
@@ -30,10 +54,18 @@ class GlueService:
         )
         self.glue_client = boto3.client('glue', config=config)
         self._s3t_client = boto3.client('s3tables', config=config)
+        # Athena client: the ONLY way to enumerate LAMBDA-type connector catalogs
+        # (e.g. Snowflake). These do not exist in Glue at all — see
+        # _connector_catalog_names() for why Glue's GetCatalogs cannot see them.
+        self._athena_client = boto3.client('athena', config=config)
         # Cache: bucket-name → ARN, populated lazily by _bucket_arn()
         self._bucket_arn_cache: Dict[str, str] = {}
         # Cache: bucket-ARN → PyIceberg RestCatalog instance
         self._iceberg_catalog_cache: Dict[str, Any] = {}
+        # Cache: list of Athena LAMBDA connector catalog names, populated lazily
+        # by _connector_catalog_names().  None = not yet fetched (an empty list is
+        # a valid, distinct result meaning "no connectors registered").
+        self._connector_catalogs: Optional[List[str]] = None
         logger.info("GlueService initialized")
 
     def _data_source_for_catalog(self, catalog_id: Optional[str]) -> str:
@@ -336,13 +368,232 @@ class GlueService:
         logger.info(f"Discovered federated catalog IDs: {catalog_ids}")
         return catalog_ids
 
+    def _connector_catalog_names(self) -> List[str]:
+        """
+        Discover Athena LAMBDA-type connector catalog names (e.g. 'snowflake_fhir_db').
+
+        These are invisible to every Glue API. A federated connector is registered as an
+        Athena DataCatalog of type LAMBDA, NOT as a Glue catalog, so glue:GetCatalogs
+        returns only 's3tablescatalog' and a connector's databases can never appear in the
+        Glue-based enumeration no matter which IAM permissions the caller holds. Athena's
+        ListDataCatalogs is the only source for them.
+
+        Catalogs named in ATHENA_CONNECTOR_CATALOG_DENYLIST are excluded because their
+        contents already reach the picker through Glue — see the module constant.
+
+        Returns:
+            List of connector catalog names, cached for the life of this instance.
+        """
+        if self._connector_catalogs is not None:
+            return self._connector_catalogs
+
+        denylist = {
+            name.strip()
+            for name in os.environ.get(
+                'ATHENA_CONNECTOR_CATALOG_DENYLIST', _DEFAULT_CONNECTOR_CATALOG_DENYLIST
+            ).split(',')
+            if name.strip()
+        }
+
+        catalogs: List[str] = []
+        try:
+            paginator = self._athena_client.get_paginator('list_data_catalogs')
+            for page in paginator.paginate():
+                for catalog in page.get('DataCatalogsSummary', []):
+                    # GLUE (and FEDERATED) types are already covered by the Glue pass.
+                    if catalog.get('Type') != 'LAMBDA':
+                        continue
+                    name = catalog['CatalogName']
+                    if name in denylist:
+                        logger.info(f"Skipping denylisted connector catalog '{name}'")
+                        continue
+                    catalogs.append(name)
+        except Exception as e:
+            # Matches _discover_catalog_ids(): a discovery failure degrades to "no connector
+            # catalogs" rather than breaking the entire data-source list. Logged at warning
+            # so a missing athena:ListDataCatalogs grant is visible in CloudWatch instead of
+            # presenting as an inexplicably short picker.
+            logger.warning(
+                f"Connector catalog discovery unavailable (athena:ListDataCatalogs): {e}"
+            )
+
+        self._connector_catalogs = catalogs
+        logger.info(f"Discovered Athena connector catalogs: {catalogs}")
+        return catalogs
+
+    def _is_connector_catalog(self, catalog_id: Optional[str]) -> bool:
+        """
+        Whether a catalog ID names an Athena LAMBDA connector catalog.
+
+        Args:
+            catalog_id: Catalog ID from a request, or None meaning AWSDataCatalog.
+
+        Returns:
+            True when this catalog must be read through the Athena metadata APIs
+            rather than through Glue.
+        """
+        if not catalog_id or catalog_id == 'AWSDataCatalog':
+            return False
+        if catalog_id.startswith('s3tablescatalog/'):
+            return False
+        return catalog_id in self._connector_catalog_names()
+
+    def _list_connector_databases(self, catalog_name: str) -> List[Dict[str, Any]]:
+        """
+        List the databases a connector catalog exposes (Snowflake schemas, for example).
+
+        Args:
+            catalog_name: Athena LAMBDA catalog name (e.g. 'snowflake_fhir_db').
+
+        Returns:
+            List of database dicts in the same shape as list_databases() entries.
+        """
+        databases: List[Dict[str, Any]] = []
+        paginator = self._athena_client.get_paginator('list_databases')
+        for page in paginator.paginate(CatalogName=catalog_name):
+            for db in page.get('DatabaseList', []):
+                name = db['Name']
+                if name.upper() in _CONNECTOR_SYSTEM_SCHEMAS:
+                    logger.debug(f"Skipping system schema '{catalog_name}.{name}'")
+                    continue
+                databases.append({
+                    'name': name,
+                    'catalogId': catalog_name,
+                    'dataSource': self._data_source_for_catalog(catalog_name),
+                    'description': db.get('Description', ''),
+                    'location': '',
+                    # Athena's metadata API exposes no schema-level timestamps.
+                    'createTime': None,
+                })
+        return databases
+
+    def _list_connector_tables(self, database_name: str, catalog_id: str) -> List[Dict[str, Any]]:
+        """
+        List tables in a connector database via Athena's ListTableMetadata.
+
+        One call returns the full column list for every table in the database, so — unlike
+        the S3 Tables path — there is no per-table enrichment round-trip and the `enrich`
+        flag has nothing to skip.
+
+        Args:
+            database_name: Database/schema name within the connector catalog.
+            catalog_id: Athena LAMBDA catalog name.
+
+        Returns:
+            List of table dicts in the same shape as list_tables().
+        """
+        tables: List[Dict[str, Any]] = []
+        try:
+            paginator = self._athena_client.get_paginator('list_table_metadata')
+            for page in paginator.paginate(CatalogName=catalog_id, DatabaseName=database_name):
+                for table in page.get('TableMetadataList', []):
+                    tables.append({
+                        'name': table['Name'],
+                        'databaseName': database_name,
+                        'catalogId': catalog_id,
+                        'dataSource': self._data_source_for_catalog(catalog_id),
+                        'description': table.get('Parameters', {}).get('comment', ''),
+                        # A federated table has no S3 storage descriptor: the data lives in
+                        # the remote engine and is reached through the connector Lambda.
+                        'location': '',
+                        'columns': len(table.get('Columns', [])),
+                        'createTime': table['CreateTime'].isoformat() if table.get('CreateTime') else None,
+                        'updateTime': (
+                            table['LastAccessTime'].isoformat() if table.get('LastAccessTime') else None
+                        ),
+                        'tableType': table.get('TableType', 'EXTERNAL_TABLE'),
+                    })
+        except ClientError as e:
+            logger.warning(
+                f"Error listing connector tables in '{catalog_id}.{database_name}': {e}",
+                exc_info=True,
+            )
+            raise
+
+        logger.info(f"Listed {len(tables)} tables in connector catalog '{catalog_id}.{database_name}'")
+        return tables
+
+    def _get_connector_table_metadata(
+        self, database_name: str, table_name: str, catalog_id: str
+    ) -> Dict[str, Any]:
+        """
+        Get one connector table's metadata via Athena's GetTableMetadata.
+
+        Returns the same dict shape as get_table_metadata() so that downstream metadata
+        extraction stays catalog-agnostic. Storage fields (location, inputFormat,
+        outputFormat, serdeInfo, numberOfBuckets) are empty by nature rather than by
+        omission — a federated table has no S3 storage descriptor.
+
+        Args:
+            database_name: Database/schema name within the connector catalog.
+            table_name: Table name.
+            catalog_id: Athena LAMBDA catalog name.
+
+        Returns:
+            Table metadata dict including columns and partition keys.
+        """
+        try:
+            response = self._athena_client.get_table_metadata(
+                CatalogName=catalog_id,
+                DatabaseName=database_name,
+                TableName=table_name,
+            )
+        except ClientError as e:
+            logger.warning(
+                f"Error getting connector table metadata for "
+                f"'{catalog_id}.{database_name}.{table_name}': {e}",
+                exc_info=True,
+            )
+            raise
+
+        table = response['TableMetadata']
+        columns = [
+            {'name': col['Name'], 'type': col['Type'], 'comment': col.get('Comment', '')}
+            for col in table.get('Columns', [])
+        ]
+        partition_keys = [
+            {'name': pk['Name'], 'type': pk['Type'], 'comment': pk.get('Comment', '')}
+            for pk in table.get('PartitionKeys', [])
+        ]
+        created = table['CreateTime'].isoformat() if table.get('CreateTime') else None
+        accessed = table['LastAccessTime'].isoformat() if table.get('LastAccessTime') else None
+
+        metadata = {
+            'name': table['Name'],
+            'databaseName': database_name,
+            'catalogId': catalog_id,
+            'dataSource': self._data_source_for_catalog(catalog_id),
+            'description': table.get('Parameters', {}).get('comment', ''),
+            'owner': '',
+            'createTime': created,
+            'updateTime': accessed,
+            'lastAccessTime': accessed,
+            'retention': 0,
+            'tableType': table.get('TableType', 'EXTERNAL_TABLE'),
+            'parameters': table.get('Parameters', {}),
+            'location': '',
+            'inputFormat': '',
+            'outputFormat': '',
+            'compressed': False,
+            'numberOfBuckets': 0,
+            'serdeInfo': {},
+            'columns': columns,
+            'partitionKeys': partition_keys,
+        }
+        logger.info(
+            f"Retrieved connector metadata for '{catalog_id}.{database_name}.{table_name}' "
+            f"({len(columns)} columns)"
+        )
+        return metadata
+
     def list_databases(self) -> List[Dict[str, Any]]:
         """
         List all non-empty Glue databases across all catalogs.
 
         Always queries the default AWSDataCatalog first, then dynamically discovers
         and queries any additional federated catalogs (e.g. S3 Tables via s3tablescatalog,
-        DynamoDB federated connector).
+        DynamoDB federated connector), and finally any Athena LAMBDA connector catalogs
+        (e.g. Snowflake) via the Athena metadata API, since those are not Glue objects.
 
         A database is excluded only when list_tables confirms it is empty (returns an empty
         list without raising). If list_tables raises for a database it is included rather than
@@ -392,26 +643,65 @@ class GlueService:
                 except ClientError as e:
                     logger.warning(f"Could not list databases for catalog '{catalog_id}': {e}")
 
+            # Athena LAMBDA connector catalogs (e.g. Snowflake). Kept separate from the Glue
+            # loop above because these catalogs are not Glue objects at all — Glue's
+            # GetCatalogs/GetDatabases cannot see them, so they need the Athena metadata API.
+            for catalog_name in self._connector_catalog_names():
+                try:
+                    all_databases.extend(self._list_connector_databases(catalog_name))
+                except ClientError as e:
+                    logger.warning(
+                        f"Could not list databases for connector catalog '{catalog_name}': {e}"
+                    )
+
             # Filter: keep only databases that are confirmed non-empty.
             # Rule: exclude on confirmed-empty (empty list, no error).
             #       include on error (can't verify — safe default avoids false negatives).
             # Use enrich=False to skip per-table Iceberg metadata API calls during this
             # existence check — descriptions are not needed here and each enrichment call
             # adds 2 API round-trips per table, which causes request timeouts at scale.
-            databases = []
-            for db in all_databases:
+            # Run the checks concurrently: see _DB_VERIFY_MAX_WORKERS for why sequential
+            # verification is too slow once a connector catalog is in the mix.  Results are
+            # collected with pool.map so the returned order stays deterministic.
+            def _is_non_empty(db: Dict[str, Any]) -> bool:
+                """
+                Whether a database has at least one table, for the non-empty filter.
+
+                Args:
+                    db: Database dict with 'name' and 'catalogId' keys.
+
+                Returns:
+                    True to keep the database (non-empty, or unverifiable), False to drop it.
+                """
+                # Connector schemas are presumed non-empty and never verified.  Verifying one
+                # means a connector Lambda round-trip that queries the remote engine, measured
+                # at 4-9s and highly variable; with three Snowflake schemas the endpoint ran
+                # 12.7-27.3s warm against API Gateway's hard 30s integration timeout, i.e. it
+                # would have failed intermittently in the picker.  Concurrency alone was not
+                # enough because the tail latency, not the sum, is what breaches the timeout.
+                # The cost of skipping is cosmetic: an empty remote schema stays listed.
+                if self._is_connector_catalog(db['catalogId']):
+                    return True
                 try:
-                    tables = self.list_tables(db['name'], catalog_id=db['catalogId'], enrich=False)
-                    if tables:
-                        databases.append(db)
-                    else:
-                        logger.debug(f"Skipping confirmed-empty database '{db['catalogId']}.{db['name']}'")
+                    return bool(
+                        self.list_tables(db['name'], catalog_id=db['catalogId'], enrich=False)
+                    )
                 except Exception as e:
                     logger.warning(
                         f"Could not verify tables for '{db['catalogId']}.{db['name']}', "
                         f"including to avoid false-negative: {e}"
                     )
+                    return True
+
+            with ThreadPoolExecutor(max_workers=_DB_VERIFY_MAX_WORKERS) as pool:
+                non_empty_flags = list(pool.map(_is_non_empty, all_databases))
+
+            databases = []
+            for db, non_empty in zip(all_databases, non_empty_flags):
+                if non_empty:
                     databases.append(db)
+                else:
+                    logger.debug(f"Skipping confirmed-empty database '{db['catalogId']}.{db['name']}'")
 
             logger.info(
                 f"Listed {len(databases)} non-empty databases "
@@ -430,6 +720,8 @@ class GlueService:
         Dispatches to the correct API based on the catalog type:
         - S3 Tables (catalog_id starts with 's3tablescatalog/') → boto3 s3tables client
           (Glue's get_tables cannot enumerate S3 Tables tables)
+        - Athena LAMBDA connector catalogs (e.g. Snowflake) → Athena ListTableMetadata
+          (these catalogs do not exist in Glue, so get_tables would raise EntityNotFound)
         - All other catalogs → Glue get_tables paginator
 
         Args:
@@ -445,6 +737,10 @@ class GlueService:
         # S3 Tables: Glue get_tables cannot list these — use the dedicated s3tables API
         if catalog_id and catalog_id.startswith('s3tablescatalog/'):
             return self._list_s3tables(database_name, catalog_id, enrich=enrich)
+
+        # Athena LAMBDA connector catalogs: not Glue objects, so read them via Athena.
+        if self._is_connector_catalog(catalog_id):
+            return self._list_connector_tables(database_name, catalog_id)
 
         try:
             tables = []
@@ -487,6 +783,10 @@ class GlueService:
         Returns:
             Dictionary containing table metadata including schema, partitions, and statistics
         """
+        # Athena LAMBDA connector catalogs (e.g. Snowflake) have no Glue table to get.
+        if self._is_connector_catalog(catalog_id):
+            return self._get_connector_table_metadata(database_name, table_name, catalog_id)
+
         try:
             get_kwargs: Dict[str, Any] = {
                 'DatabaseName': database_name,

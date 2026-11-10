@@ -26,6 +26,12 @@ strands-agents>=1.6.0  # AI agent framework for MCP client
 PyJWT>=2.12.1  # JWT token validation
 cryptography>=46.0.6  # Cryptographic functions for JWT
 
+# Authorization — Cedar policy decision point (authz/). Matches the engine the
+# Context Ontology Accelerator uses, so its access matrix ports directly.
+# A cp312 manylinux aarch64 wheel exists, so the ARM64 CodeBuild image resolves
+# this without a Rust toolchain.
+cedarpy>=4.8.0
+
 # File upload support
 python-multipart  # File upload support in FastAPI
 
@@ -43,3 +49,7 @@ pyiceberg[s3tables]>=0.8.1
 
 # Progressive disclosure — Tier 1 metric authoring
 sqlglot==30.8.0
+
+# Governed rules — RDF is the neutral IR; rules live in Neptune as triples
+rdflib==7.6.0         # matches agents/requirements.txt so both runtimes agree
+pyshacl==0.30.1       # SHACL structural validation of governed rules

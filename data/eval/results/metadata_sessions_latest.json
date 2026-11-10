@@ -1,0 +1,64 @@
+{
+  "agent_id": "semantic_layer_dev_metadata-d0VeHMHF5i",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_metadata-d0VeHMHF5i",
+  "service_name": "semantic_layer_dev_metadata-d0VeHMHF5i.DEFAULT",
+  "log_groups": [
+    "aws/spans",
+    "/aws/bedrock-agentcore/runtimes/semantic_layer_dev_metadata-d0VeHMHF5i-DEFAULT"
+  ],
+  "sessions": [
+    {
+      "sessionId": "multi_table_curated_layer-cc0a8b51-deb0-43fe-a3b2-4d03326d396e",
+      "testScenarioId": "multi_table_curated_layer",
+      "startTime": "2026-10-02T16:04:06.285018+00:00",
+      "endTime": "2026-10-02T16:52:37.240959+00:00",
+      "groundTruth": {
+        "assertions": [
+          {
+            "text": "The agent enriched metadata for every table in the input dataSources."
+          },
+          {
+            "text": "update_glue_table_metadata was called with non-empty column descriptions."
+          },
+          {
+            "text": "save_metadata_document_to_s3 persisted a markdown doc per table."
+          },
+          {
+            "text": "The final DynamoDB status is 'completed'."
+          }
+        ],
+        "expectedTrajectory": {
+          "toolNames": [
+            "get_single_table_schema",
+            "sample_table_data",
+            "update_glue_table_metadata",
+            "save_metadata_document_to_s3",
+            "update_progress"
+          ]
+        },
+        "turns": [
+          {
+            "input": {
+              "prompt": "multi_table_curated_layer"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "scenario_runs": {
+    "multi_table_curated_layer": {
+      "case_id": "semantic-rag-multi_table_curated_layer-28598e00",
+      "session_id": "multi_table_curated_layer-cc0a8b51-deb0-43fe-a3b2-4d03326d396e",
+      "status": "completed",
+      "num_tables": 40,
+      "summary": "Processed 40/40 tables.",
+      "enrich_seconds": 2901.4,
+      "input_tokens": 8479182,
+      "output_tokens": 470632,
+      "total_tokens": 8949814,
+      "invoke_start_ms": 1790957047101,
+      "invoke_end_ms": 1790959958375
+    }
+  }
+}

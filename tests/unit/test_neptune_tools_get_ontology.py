@@ -108,3 +108,89 @@ def test_get_ontology_handles_label_arriving_before_type():
     found = (payload["classes"].get(P, {}).get("label")
              or payload["properties"].get(P, {}).get("label"))
     assert found == "Party"
+
+
+def test_get_ontology_carries_the_verified_primary_key_into_mappings():
+    """The Java translator reads mappings[classIRI].primaryKey to build the OBDA
+    subject template, which Ontop treats as row identity. If this parse drops the
+    key, the translator silently falls back to guessing identity by column name —
+    the defect the key exists to fix.
+    """
+    G = "http://insurance/ontology/abc"
+    P = f"{G}/Party"
+    response = {
+        "results": {
+            "bindings": [
+                _binding(P, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                         "http://www.w3.org/2002/07/owl#Class"),
+                _binding(P, "https://semantic-layer.aws/virtual-kg/mapsToTable",
+                         "insurance_db.party"),
+                _binding(P, "https://semantic-layer.aws/virtual-kg/hasPrimaryKey",
+                         "party.party_id"),
+            ]
+        }
+    }
+
+    with patch.object(index, "execute_sparql_query", return_value=response), \
+         patch.object(index, "_resolve_graph_uri", return_value=G):
+        payload = json.loads(index.tool_get_ontology_from_neptune("abc"))
+
+    assert payload["mappings"][P]["primaryKey"] == "party.party_id"
+    assert payload["mappings"][P]["table"] == "insurance_db.party"
+
+
+def test_primary_key_survives_arriving_before_maps_to_table():
+    """'hasPrimaryKey' sorts BEFORE 'mapsToTable' under ORDER BY ?predicate, so the
+    key arrives first for the same class subject. A mapsToTable handler that
+    assigned a fresh dict would silently discard it.
+    """
+    G = "http://insurance/ontology/abc"
+    P = f"{G}/Party"
+    response = {
+        "results": {
+            "bindings": [
+                _binding(P, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                         "http://www.w3.org/2002/07/owl#Class"),
+                # Key first, table second — the real ORDER BY ?predicate ordering.
+                _binding(P, "https://semantic-layer.aws/virtual-kg/hasPrimaryKey",
+                         "party.party_id"),
+                _binding(P, "https://semantic-layer.aws/virtual-kg/mapsToTable",
+                         "insurance_db.party"),
+            ]
+        }
+    }
+
+    with patch.object(index, "execute_sparql_query", return_value=response), \
+         patch.object(index, "_resolve_graph_uri", return_value=G):
+        payload = json.loads(index.tool_get_ontology_from_neptune("abc"))
+
+    assert payload["mappings"][P]["primaryKey"] == "party.party_id"
+    assert payload["mappings"][P]["table"] == "insurance_db.party"
+
+
+def test_composite_primary_key_literal_is_carried_verbatim():
+    """A junction table's identity is the COMBINATION; the comma-separated literal
+    must reach the translator intact so it can build a <Class/{a};{b}> template.
+    """
+    G = "http://uni/ontology/abc"
+    E = f"{G}/Enrolment"
+    response = {
+        "results": {
+            "bindings": [
+                _binding(E, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
+                         "http://www.w3.org/2002/07/owl#Class"),
+                _binding(E, "https://semantic-layer.aws/virtual-kg/mapsToTable",
+                         "uni.enrolment"),
+                _binding(E, "https://semantic-layer.aws/virtual-kg/hasPrimaryKey",
+                         "enrolment.student_id, enrolment.course_id"),
+            ]
+        }
+    }
+
+    with patch.object(index, "execute_sparql_query", return_value=response), \
+         patch.object(index, "_resolve_graph_uri", return_value=G):
+        payload = json.loads(index.tool_get_ontology_from_neptune("abc"))
+
+    assert payload["mappings"][E]["primaryKey"] == (
+        "enrolment.student_id, enrolment.course_id"
+    )

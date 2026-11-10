@@ -35,7 +35,7 @@ def test_1_imports():
         )
         print("✅ All main functions imported successfully")
 
-        from metadata_agent.token_manager import count_tokens, get_token_status
+        from shared.token_manager import count_tokens, get_token_status
         print("✅ token_manager imported successfully")
 
         token_count = count_tokens("Hello world")
@@ -54,7 +54,7 @@ def test_2_token_manager():
     """Test 2: Test token management utilities"""
     print("\n=== Test 2: Token Manager ===")
     try:
-        from metadata_agent.token_manager import count_tokens, get_token_status
+        from shared.token_manager import count_tokens, get_token_status
 
         test_cases = [
             ("", 0),
@@ -459,3 +459,157 @@ def test_s3tables_empty_version_token_skipped(mock_session):
     assert result["success"] is True
     _, update_kwargs = glue.update_table.call_args
     assert "VersionId" not in update_kwargs
+
+
+@patch("metadata_agent.main.get_boto_session")
+def test_zero_column_glue_table_returns_error_not_nameerror(mock_session):
+    """A Glue table with an empty StorageDescriptor.Columns (empty table / view)
+    after an Athena DESCRIBE failure must return a clean error JSON — NOT raise
+    NameError on the unbound `glue_error_val`. Regression for the fall-through
+    path where `if columns:` is False and the Glue `except` never ran."""
+    import metadata_agent.main as m
+    glue = MagicMock()
+    # Glue get_table SUCCEEDS but the table has zero columns and no partitions.
+    glue.get_table.return_value = {
+        "Table": {
+            "Name": "empty_view",
+            "StorageDescriptor": {"Columns": []},
+            "PartitionKeys": [],
+        }
+    }
+    # Athena DESCRIBE fails so we fall through to the Glue branch.
+    athena = MagicMock()
+    athena.start_query_execution.side_effect = Exception("DESCRIBE failed")
+
+    def client_factory(service, **kwargs):
+        return {"glue": glue, "athena": athena}[service]
+
+    mock_session.return_value.client.side_effect = client_factory
+    mock_session.return_value.region_name = "us-east-1"
+
+    # Standard (non-s3tables) catalog so the Athena path is attempted first.
+    result = _json.loads(m.get_single_table_schema(
+        database_name="ns1",
+        table_name="empty_view",
+        catalog_id="AWSDataCatalog",
+    ))
+
+    assert "error" in result
+    assert result["table_name"] == "empty_view"
+
+
+@patch("metadata_agent.main.get_boto_session")
+def test_describe_paginates_get_query_results(mock_session):
+    """A wide table (>1000 columns) yields >1 page of DESCRIBE rows. The fetch
+    must loop NextToken and accumulate ALL pages, else the schema is silently
+    truncated. Page 1 carries the header row (index 0, skipped by [1:]); later
+    pages do not. Regression for the single-call truncation bug."""
+    import metadata_agent.main as m
+    glue = MagicMock()
+    # Best-effort Glue description lookup must return JSON-serializable data.
+    glue.get_table.return_value = {"Table": {"Description": "wide table"}}
+    athena = MagicMock()
+    athena.start_query_execution.return_value = {"QueryExecutionId": "q-1"}
+    athena.get_query_execution.return_value = {
+        "QueryExecution": {"Status": {"State": "SUCCEEDED"}},
+    }
+
+    def _row(name, typ):
+        return {"Data": [{"VarCharValue": name}, {"VarCharValue": typ}]}
+
+    # Page 1: header row + one column def; Page 2: one more column def, no token.
+    page_1 = {
+        "ResultSet": {
+            "Rows": [
+                _row("col_name", "data_type"),  # DESCRIBE header (page 1 only)
+                _row("policy_id", "string"),
+            ]
+        },
+        "NextToken": "tok-2",
+    }
+    page_2 = {
+        "ResultSet": {
+            "Rows": [
+                _row("premium", "double"),
+            ]
+        },
+    }
+    athena.get_query_results.side_effect = [page_1, page_2]
+
+    def client_factory(service, **kwargs):
+        return {"glue": glue, "athena": athena}[service]
+
+    mock_session.return_value.client.side_effect = client_factory
+    mock_session.return_value.region_name = "us-east-1"
+
+    result = _json.loads(m.get_single_table_schema(
+        database_name="ns1",
+        table_name="wide_table",
+        catalog_id="AWSDataCatalog",
+    ))
+
+    # BOTH column defs survive across pages; the page-1 header is skipped once.
+    assert result["source"] == "athena_describe"
+    assert [c["name"] for c in result["columns"]] == ["policy_id", "premium"]
+    assert athena.get_query_results.call_count == 2
+    _, second_kwargs = athena.get_query_results.call_args_list[1]
+    assert second_kwargs["NextToken"] == "tok-2"
+
+
+def test_annotation_mode_requires_target_version():
+    """Revision mode must fail loud (KeyError) when targetVersion is absent —
+    never write a None-keyed record. Mirrors ontology_agent._run_revision_mode."""
+    import metadata_agent.main as m
+    import pytest as _pytest
+    with _pytest.raises(KeyError):
+        m._run_annotation_mode(
+            job_id="job-1",
+            config={},  # no targetVersion
+            tables_list=[],
+            annotations=[],
+            build_started_at="2026-07-02T00:00:00Z",
+        )
+
+
+@patch("metadata_agent.main.get_boto_session")
+def test_partition_columns_not_double_counted(mock_session):
+    """I2: Athena DESCRIBE repeats partition columns under '# Partition
+    Information'. The parse must dedup by name so the metadata agent's column SET
+    matches what the delta planner hashes (GlueService columns + partitionKeys,
+    each once) — otherwise a partitioned table is permanently schemaChanged."""
+    import metadata_agent.main as m
+
+    def _row(*vals):
+        return {"Data": [{"VarCharValue": v} for v in vals]}
+
+    describe_rows = [
+        _row("col_name", "data_type", "comment"),   # result-set header (skipped)
+        _row("id", "string", "pk"),
+        _row("amount", "double", ""),
+        _row("dt", "date", "partition col"),        # partition col in main list
+        _row("", "", ""),                            # blank separator
+        _row("# Partition Information", "", ""),      # section header
+        _row("# col_name", "data_type", "comment"),  # section's own header
+        _row("dt", "date", "partition col"),         # REPEATED partition col
+    ]
+    athena = MagicMock()
+    athena.start_query_execution.return_value = {"QueryExecutionId": "q1"}
+    athena.get_query_execution.return_value = {
+        "QueryExecution": {"Status": {"State": "SUCCEEDED"}}
+    }
+    athena.get_query_results.return_value = {"ResultSet": {"Rows": describe_rows}}
+    glue = MagicMock()
+    glue.get_table.return_value = {"Table": {"Description": ""}}
+
+    def client_factory(service, **kwargs):
+        return {"glue": glue, "athena": athena}[service]
+
+    mock_session.return_value.client.side_effect = client_factory
+    mock_session.return_value.region_name = "us-east-1"
+
+    result = _json.loads(m.get_single_table_schema(
+        database_name="ns1", table_name="orders", catalog_id="AWSDataCatalog",
+    ))
+    names = [c["name"] for c in result["columns"]]
+    assert names == ["id", "amount", "dt"]   # dt exactly once
+    assert result["total_columns"] == 3

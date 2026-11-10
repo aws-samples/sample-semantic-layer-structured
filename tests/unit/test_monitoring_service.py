@@ -103,21 +103,28 @@ def test_buckets_by_tier(table):
         _user("show by product"), _assistant('semantic_sql'),
         _user("graph it"), _assistant('vkg'),
         _user("what can I ask?"), _assistant('advisory'),
+        _user("the hard one"), _assistant('agentic'),
+        _user("is this holding at risk?"), _assistant('governed_rule'),
     ])
     out = _service(table).aggregate(ontology_id='ont-1')
 
     assert out['sessionCount'] == 1
     res = out['resolution']
-    assert res['totalAnswered'] == 4
+    assert res['totalAnswered'] == 6
     buckets = {b['key']: b for b in res['buckets']}
     assert buckets['metric']['count'] == 1
     assert buckets['semantic']['count'] == 2  # semantic_sql + vkg
     assert buckets['advisory']['count'] == 1
-    assert buckets['agentic']['count'] == 0
-    assert buckets['semantic']['pct'] == 50.0
-    # agentic is documented but not implemented
-    assert buckets['agentic']['implemented'] is False
+    # An approved-rule answer is its own operational story, not a metric.
+    assert buckets['rule']['count'] == 1
+    # Tier 3 rescues land in their own bucket, NOT folded into semantic.
+    assert buckets['agentic']['count'] == 1
+    assert buckets['semantic']['pct'] == pytest.approx(33.3, abs=0.1)
+    # Every resolution layer is a live path now that Tier 3 reports a tier.
+    assert buckets['agentic']['implemented'] is True
     assert buckets['metric']['implemented'] is True
+    # Buckets are mutually exclusive and account for every answered turn.
+    assert sum(b['count'] for b in res['buckets']) == res['totalAnswered']
 
 
 def test_scopes_by_ontology_id(table):
@@ -186,10 +193,44 @@ def test_not_configured_returns_empty_shape(monkeypatch):
     assert out['configured'] is False
     assert out['sessionCount'] == 0
     assert out['resolution']['totalAnswered'] == 0
-    # all five buckets still present so the UI renders consistently
+    # every bucket still present so the UI renders consistently
     assert [b['key'] for b in out['resolution']['buckets']] == [
-        'metric', 'semantic', 'advisory', 'agentic'
+        'metric', 'rule', 'semantic', 'advisory', 'document', 'agentic'
     ]
+
+
+def test_a_governed_rule_turn_lands_in_the_rule_bucket():
+    """A rule answer must not be silently uncounted, nor merged into metric.
+
+    A tier absent from ``_TIER_TO_BUCKET`` is dropped from the breakdown with no
+    error, so the Monitoring tab would report the rule layer as always-zero —
+    the same class of bug the agentic tier had.
+    """
+    from services.monitoring_service import _ALL_BUCKETS, _TIER_TO_BUCKET
+
+    assert _TIER_TO_BUCKET['governed_rule'] == 'rule'
+    assert 'rule' in _ALL_BUCKETS
+    assert _TIER_TO_BUCKET['governed_metric'] == 'metric'
+
+
+def test_every_provenance_tier_has_a_bucket():
+    """Agreement test: the tier vocabulary and the bucket map must not drift.
+
+    They live in two packages (``agents/shared`` and the REST Lambda), so a tier
+    added on one side without the other silently loses traffic from the tab.
+    """
+    from agents.shared.provenance import VALID_TIERS
+    from services.monitoring_service import _ALL_BUCKETS, _TIER_TO_BUCKET
+
+    assert set(VALID_TIERS) == set(_TIER_TO_BUCKET)
+    assert set(_TIER_TO_BUCKET.values()) <= set(_ALL_BUCKETS)
+
+
+def test_every_bucket_has_a_label():
+    """A bucket without a label KeyErrors the whole tab, not just its own row."""
+    from services.monitoring_service import _ALL_BUCKETS, _BUCKET_LABELS
+
+    assert set(_ALL_BUCKETS) <= set(_BUCKET_LABELS)
 
 
 def test_empty_layer_has_zero_pct(table):

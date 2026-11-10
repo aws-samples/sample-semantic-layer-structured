@@ -23,6 +23,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 
 from services.agentcore_service import AgentCoreService
+from services.delta_planner_service import DeltaPlannerService
+from services.glue_service import GlueService
 from services.guardrail_service import GuardrailService
 from services.ontology_service import convert_decimals
 
@@ -75,6 +77,59 @@ class MetadataService:
             return None
 
         return max(items, key=lambda item: _version_num(item.get('version', 'v0')))
+
+    def compute_delta_plan(self, id: str) -> Dict[str, Any]:
+        """Compute (do not run) the delta plan for a Semantic-RAG layer.
+
+        Args:
+            id: The layer/config id.
+
+        Returns:
+            The DeltaPlan dict (see DeltaPlannerService.compute_plan).
+        """
+        planner = DeltaPlannerService(
+            metadata_table=self._metadata_table,
+            glue_service=GlueService(),
+            artifacts_bucket=self.artifacts_bucket,
+            region=self.region,
+        )
+        return planner.compute_plan(id, layer_type="SemanticRAG")
+
+    def cleanup_removed_for_plan(self, id: str, plan: Dict[str, Any]) -> None:
+        """Run artifact cleanup for the plan's removed tables (RAG: S3 docs).
+
+        A removed table is NOT in current dataSources, so its catalog is resolved
+        from the STORED fingerprint (Task 2 stores catalogId for exactly this). A
+        table with no stored fingerprint defaults to AWSDataCatalog and logs a
+        warning (its S3 Tables doc may be orphaned rather than deleted).
+
+        Args:
+            id: The layer/config id.
+            plan: A DeltaPlan (or {'removed': [...]}) whose 'removed' list drives cleanup.
+
+        Returns:
+            None.
+        """
+        if not plan.get("removed"):
+            return
+        config = self._get_latest_metadata_item(id) or {}
+        version = config.get("version", "v1")
+        stored = config.get("tableFingerprints") or {}
+        removed = []
+        for dt in plan["removed"]:
+            db, tbl = dt.split(".", 1)
+            fp = stored.get(dt) or {}
+            cat = fp.get("catalogId", "AWSDataCatalog")
+            if not fp:
+                logger.warning(
+                    "cleanup: removed table %s has no stored fingerprint; "
+                    "defaulting catalog to AWSDataCatalog (S3 Tables doc may be "
+                    "orphaned rather than deleted)", dt)
+            removed.append((db, tbl, cat))
+        DeltaPlannerService(
+            metadata_table=self._metadata_table, glue_service=GlueService(),
+            artifacts_bucket=self.artifacts_bucket, region=self.region,
+        ).cleanup_removed(id, version=version, layer_type="SemanticRAG", removed=removed)
 
     def get_metadata_versions(self, id: str) -> list:
         """Return all version records for id, sorted newest-first."""
@@ -170,6 +225,18 @@ class MetadataService:
         if annotations:
             update_expr += ', enrichmentAnnotations = :annotations'
             expr_values[':annotations'] = annotations
+
+        # Delta scope handling MUST be the last modification to update_expr so
+        # that all comma-joined SET clauses stay contiguous and the REMOVE
+        # (which takes no leading comma) is the final token. DynamoDB requires
+        # every SET clause to precede the REMOVE clause in a single expression.
+        if target_tables:
+            # Delta build: persist the explicit scope so the agent filters its loop.
+            update_expr += ', deltaTargetTables = :delta'
+            expr_values[':delta'] = list(target_tables)
+        else:
+            # Full build: clear any stale delta scope so the agent processes everything.
+            update_expr += ' REMOVE deltaTargetTables'
 
         self._metadata_table.update_item(
             Key={'id': job_id, 'version': config['version']},
@@ -297,7 +364,7 @@ class MetadataService:
                 logger.info(f"KB metadata key not found: {key}")
                 return {'success': False, 'error': 'Metadata not yet generated for this table'}
             logger.error(f"Error reading KB metadata for {database_name}.{table_name}: {e}")
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': 'Failed to read metadata document; see server logs for details'}
 
         logger.info(f"Loaded KB metadata from {key}")
         parsed = self._parse_metadata_markdown(content)

@@ -9,9 +9,13 @@
  * callback through the AppLayout. Same hook handles optimistic archive.
  */
 import { useCallback, useEffect, useState } from "react";
-import { chatAPI } from "../services/api";
 
 export const CHAT_SESSIONS_CHANGED_EVENT = "chat-sessions-changed";
+
+// Lazily load the API layer so axios (~134 KB) stays out of the boot bundle.
+// This hook mounts inside the authenticated shell and only touches the API
+// asynchronously, so importing it on first use costs nothing on first paint.
+const getChatAPI = () => import("../services/api").then((m) => m.chatAPI);
 
 export default function useChatSessions() {
   const [sessions, setSessions] = useState([]);
@@ -21,6 +25,7 @@ export default function useChatSessions() {
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
+    const chatAPI = await getChatAPI();
     const result = await chatAPI.listSessions({ limit: 50 });
     if (result.success && Array.isArray(result.data?.sessions)) {
       setSessions(result.data.sessions);
@@ -45,6 +50,7 @@ export default function useChatSessions() {
   const archive = useCallback(
     async (sessionId) => {
       setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      const chatAPI = await getChatAPI();
       const result = await chatAPI.deleteSession(sessionId);
       if (!result.success) {
         refresh();
@@ -57,6 +63,7 @@ export default function useChatSessions() {
   // the list, then reconciles with the server if the bulk call fails.
   const archiveAll = useCallback(async () => {
     setSessions([]);
+    const chatAPI = await getChatAPI();
     const result = await chatAPI.deleteAllSessions();
     if (!result.success) {
       refresh();

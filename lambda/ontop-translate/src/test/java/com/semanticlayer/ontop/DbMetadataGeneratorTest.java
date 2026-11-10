@@ -68,11 +68,14 @@ class DbMetadataGeneratorTest {
         final DbMetadataGenerator gen = new DbMetadataGenerator();
         final String json = gen.generate(ontology);
 
-        // Both relations present with the 2-part ["db","table"] name (catalog-less).
-        assertTrue(json.contains("\"normalized\"") && json.contains("\"admin_codes\""),
-            "admin_codes relation name should be 2-part [db,table]; got:\n" + json);
-        assertTrue(json.contains("\"parties\""),
-            "parties relation should be present; got:\n" + json);
+        // Both relations present with the 2-part [db,table] name (catalog-less), each
+        // segment QUOTED so the RelationID matches the quoted OBDA source identifier.
+        // Ontop case-folds only unquoted IDs, so quoting one side alone makes the
+        // relation unresolvable — assert the exact quoted array, not a loose substring.
+        assertTrue(json.contains("\"name\":[\"\\\"normalized\\\"\",\"\\\"admin_codes\\\"\"]"),
+            "admin_codes relation name should be quoted 2-part [db,table]; got:\n" + json);
+        assertTrue(json.contains("\"name\":[\"\\\"normalized\\\"\",\"\\\"parties\\\"\"]"),
+            "parties relation name should be quoted 2-part [db,table]; got:\n" + json);
 
         // All four bare columns appear.
         assertTrue(json.contains("\"code_value\""), "missing code_value; got:\n" + json);
@@ -84,13 +87,14 @@ class DbMetadataGeneratorTest {
         assertFalse(json.contains("__pk"),
             "db-metadata must not contain the synthetic __pk column; got:\n" + json);
 
-        // Constraints depend on whether the subject column is key-like (todo item 3):
-        //   AdminCode → subject code_value (preference-3, NON-key) → empty constraints.
-        //   Party     → subject id (key-like) → a uniqueConstraint naming it.
-        assertTrue(json.contains("\"uniqueConstraints\":[]"),
-            "non-key subject (admin_codes.code_value) keeps empty uniqueConstraints; got:\n" + json);
-        assertTrue(json.contains("\"determinants\":[\"id\"]"),
-            "key-like subject (parties.id) yields a uniqueConstraint; got:\n" + json);
+        // NEITHER class declares a primaryKey, so NEITHER may carry a uniqueConstraint —
+        // not even Party, whose subject column is named `id`. A uniqueConstraint licenses
+        // Ontop to drop de-duplication, so inferring it from a column NAME is unsound: the
+        // old rule asserted it on every `*_id` subject and was measurably false on
+        // many-side FK columns (trans/disp/order.account_id all repeat).
+        assertFalse(json.contains("\"determinants\""),
+            "no class declares a primaryKey, so no uniqueConstraint may be emitted "
+                + "(a name like 'id' is not evidence of uniqueness); got:\n" + json);
         assertTrue(json.contains("\"foreignKeys\":[]"),
             "foreignKeys should be empty; got:\n" + json);
         assertTrue(json.contains("\"otherFunctionalDependencies\":[]"),
@@ -141,19 +145,109 @@ class DbMetadataGeneratorTest {
     }
 
     /**
-     * A class whose subject column is key-like ({@code *_id}/{@code id}/{@code pk}) must
-     * carry a {@code uniqueConstraint} naming that column, so Ontop drops the defensive
-     * DISTINCT + IS-NOT-NULL that otherwise undercounts a class-level COUNT (todo item 3).
+     * A class with a DECLARED {@code primaryKey} carries a {@code uniqueConstraint} naming
+     * it, so Ontop drops the defensive DISTINCT + IS-NOT-NULL that otherwise undercounts a
+     * class-level COUNT. A name-heuristic subject must NOT — see
+     * {@link #omitsUniqueConstraintWhenNoPrimaryKeyIsDeclared}.
      */
     @Test
-    void emitsUniqueConstraintForKeyLikeSubjectColumn() {
-        // The shared fixture's subject column is admin_code_id (*_id → key-like).
+    void emitsUniqueConstraintForDeclaredPrimaryKey() {
+        final Map<String, Object> ontology = Map.of(
+            "classes", Map.of("http://x/AdminCode", Map.of("label", "Admin Code")),
+            "properties", Map.of(
+                "http://x/AdminCode/code", Map.of("type", "owl#DatatypeProperty"),
+                "http://x/AdminCode/adminCodeId", Map.of("type", "owl#DatatypeProperty")),
+            "mappings", Map.of(
+                "http://x/AdminCode",
+                    Map.of("table", "normalized.admin_codes",
+                           "primaryKey", "admin_codes.admin_code_id"),
+                "http://x/AdminCode/code", Map.of("column", "admin_codes.code_value"),
+                "http://x/AdminCode/adminCodeId", Map.of("column", "admin_codes.admin_code_id")),
+            "databases", List.of(Map.of("name", "normalized", "catalog", "AwsDataCatalog")));
+
+        final String json = new DbMetadataGenerator().generate(ontology);
+        assertTrue(json.contains("\"determinants\":[\"admin_code_id\"]"),
+            "declared primaryKey should yield a uniqueConstraint naming it; got:\n" + json);
+    }
+
+    /**
+     * A COMPOSITE declared key constrains the COMBINATION of columns, not each one — the
+     * correct identity for a junction table, and precisely where a single-column name
+     * guess is most wrong.
+     */
+    @Test
+    void emitsCompositeUniqueConstraintForCompositeDeclaredKey() {
+        final Map<String, Object> ontology = Map.of(
+            "classes", Map.of("http://x/Enrolment", Map.of()),
+            "properties", Map.of(
+                "http://x/Enrolment/studentId", Map.of("type", "owl#DatatypeProperty"),
+                "http://x/Enrolment/courseId", Map.of("type", "owl#DatatypeProperty"),
+                "http://x/Enrolment/grade", Map.of("type", "owl#DatatypeProperty")),
+            "mappings", Map.of(
+                "http://x/Enrolment",
+                    Map.of("table", "uni.enrolment",
+                           "primaryKey", "enrolment.student_id, enrolment.course_id"),
+                "http://x/Enrolment/studentId", Map.of("column", "enrolment.student_id"),
+                "http://x/Enrolment/courseId", Map.of("column", "enrolment.course_id"),
+                "http://x/Enrolment/grade", Map.of("column", "enrolment.grade")),
+            "databases", List.of(Map.of("name", "uni", "catalog", "AwsDataCatalog")));
+
+        final String json = new DbMetadataGenerator().generate(ontology);
+        assertTrue(json.contains("\"determinants\":[\"student_id\",\"course_id\"]"),
+            "composite key must constrain the combination in declaration order; got:\n" + json);
+    }
+
+    /**
+     * With NO declared {@code primaryKey}, the subject column is a name GUESS, so no
+     * uniqueConstraint may be emitted even when the guess is named {@code *_id}. The
+     * constraint tells Ontop it may skip de-duplication; asserting that from a name was
+     * measurably false on many-side FK columns.
+     */
+    @Test
+    void omitsUniqueConstraintWhenNoPrimaryKeyIsDeclared() {
+        // The shared fixture's heuristic subject column is admin_code_id (*_id), but the
+        // fixture declares no primaryKey.
         final String json = new DbMetadataGenerator().generate(TestFixtures.adminCodesOntology());
         assertTrue(json.contains("admin_code_id"),
-            "subject column must be declared; got:\n" + json);
-        assertFalse(json.contains("\"uniqueConstraints\":[]"),
-            "key-like subject must yield a NON-empty uniqueConstraint; got:\n" + json);
-        assertTrue(json.contains("\"determinants\":[\"admin_code_id\"]"),
-            "uniqueConstraint should name the subject column; got:\n" + json);
+            "subject column must still be declared as a column; got:\n" + json);
+        assertTrue(json.contains("\"uniqueConstraints\":[]"),
+            "a guessed subject must stay unconstrained; got:\n" + json);
+    }
+
+    /**
+     * A numeric xsd:range must promote the column to a real SQL numeric type so
+     * Ontop can reformulate SUM/AVG natively instead of failing to serialize a
+     * decimal cast over a VARCHAR-declared column (the dominant BIRD/CWD failure).
+     * A string-ranged column stays VARCHAR.
+     */
+    @Test
+    void numericRangesPromoteColumnToNumericSqlType() {
+        final Map<String, Object> ontology = Map.of(
+            "classes", Map.of("http://x/YearMonth", Map.of("label", "Year Month")),
+            "properties", Map.of(
+                "http://x/YearMonth/id",
+                    Map.of("type", "owl#DatatypeProperty",
+                           "range", "http://www.w3.org/2001/XMLSchema#string"),
+                "http://x/YearMonth/consumption",
+                    Map.of("type", "owl#DatatypeProperty",
+                           "range", "http://www.w3.org/2001/XMLSchema#double"),
+                "http://x/YearMonth/customerid",
+                    Map.of("type", "owl#DatatypeProperty",
+                           "range", "http://www.w3.org/2001/XMLSchema#long")),
+            "mappings", Map.of(
+                "http://x/YearMonth", Map.of("table", "bird_x.yearmonth"),
+                "http://x/YearMonth/id", Map.of("column", "yearmonth.id"),
+                "http://x/YearMonth/consumption", Map.of("column", "yearmonth.consumption"),
+                "http://x/YearMonth/customerid", Map.of("column", "yearmonth.customerid")),
+            "databases", List.of(Map.of("name", "bird_x", "catalog", "AwsDataCatalog")));
+
+        final String json = new DbMetadataGenerator().generate(ontology);
+
+        assertTrue(json.contains("\"name\":\"consumption\",\"datatype\":\"DOUBLE\""),
+            "numeric #double column must be declared DOUBLE; got:\n" + json);
+        assertTrue(json.contains("\"name\":\"customerid\",\"datatype\":\"BIGINT\""),
+            "numeric #long column must be declared BIGINT; got:\n" + json);
+        assertTrue(json.contains("\"name\":\"id\",\"datatype\":\"VARCHAR\""),
+            "string column must stay VARCHAR; got:\n" + json);
     }
 }

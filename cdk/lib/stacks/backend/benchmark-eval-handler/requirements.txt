@@ -1,0 +1,6 @@
+# Deps for the vendored exec_metrics + athena_bench modules and the handler.
+# boto3 is pinned so the Lambda uses a build that carries the Athena APIs
+# run_sql relies on (the 3.12 runtime's bundled boto3 lags). sqlglot is the
+# SQL-parsing dep shared by the exec-metrics tooling in agents/shared.
+boto3==1.43.15
+sqlglot==30.8.0

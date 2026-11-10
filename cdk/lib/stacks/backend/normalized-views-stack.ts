@@ -10,6 +10,7 @@ import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as path from 'path';
 import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
+import { LfAdminRegistration } from '../../common/constructs/lf-admin-registration';
 import { DataLakeStack } from './data-lake-stack';
 import { ZeroEtlStack } from './zeroetl';
 
@@ -169,7 +170,29 @@ export class NormalizedViewsStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(5),
       code: lambda.Code.fromInline(
         [
+          'import time',
           'import boto3',
+          '',
+          '# The LF admin registration this resource depends on completes seconds before',
+          '# this handler runs, and the first grant can still see the pre-registration',
+          '# state. Retry AccessDenied with backoff for ~2 min before declaring failure.',
+          'RETRY_BUDGET_S = 120',
+          '',
+          'def _grant(lf, role_arn, catalog_id, ns, name):',
+          '    deadline = time.time() + RETRY_BUDGET_S',
+          '    delay = 5',
+          '    while True:',
+          '        try:',
+          '            lf.grant_permissions(',
+          '                Principal={"DataLakePrincipalIdentifier": role_arn},',
+          '                Resource={"Table": {"CatalogId": catalog_id, "DatabaseName": ns, "Name": name}},',
+          '                Permissions=["SELECT", "DESCRIBE"])',
+          '            return',
+          '        except lf.exceptions.AccessDeniedException:',
+          '            if time.time() + delay > deadline:',
+          '                raise',
+          '            time.sleep(delay)',
+          '            delay = min(delay * 2, 30)',
           '',
           'def handler(event, context):',
           '    if event["RequestType"] == "Delete":',
@@ -177,7 +200,7 @@ export class NormalizedViewsStack extends cdk.Stack {
           '    p = event["ResourceProperties"]',
           '    bucket_arn, catalog_id, role_arn = p["TableBucketArn"], p["CatalogId"], p["RoleArn"]',
           '    s3t = boto3.client("s3tables"); lf = boto3.client("lakeformation")',
-          '    granted = 0',
+          '    granted, failed = 0, []',
           '    for page in s3t.get_paginator("list_namespaces").paginate(tableBucketARN=bucket_arn):',
           '        for entry in page["namespaces"]:',
           '            ns = entry["namespace"][0]',
@@ -185,14 +208,17 @@ export class NormalizedViewsStack extends cdk.Stack {
           '                continue',
           '            for t in s3t.list_tables(tableBucketARN=bucket_arn, namespace=ns).get("tables", []):',
           '                try:',
-          '                    lf.grant_permissions(',
-          '                        Principal={"DataLakePrincipalIdentifier": role_arn},',
-          '                        Resource={"Table": {"CatalogId": catalog_id, "DatabaseName": ns, "Name": t["name"]}},',
-          '                        Permissions=["SELECT", "DESCRIBE"])',
+          '                    _grant(lf, role_arn, catalog_id, ns, t["name"])',
           '                    granted += 1',
           '                except Exception as e:',
-          '                    print("skip " + ns + "." + t["name"] + ": " + str(e))',
+          '                    failed.append(ns + "." + t["name"] + ": " + str(e))',
+          '                    if isinstance(e, lf.exceptions.AccessDeniedException):',
+          '                        break  # same denial for every table; do not burn the retry budget 24x',
           '    print("granted " + str(granted) + " table permissions")',
+          '    if failed:',
+          '        # Fail the deploy: a silently-skipped grant leaves the MV job unable',
+          '        # to see its source tables, and every scheduled run then fails.',
+          '        raise RuntimeError(str(len(failed)) + " zetl LF grant(s) failed; first: " + failed[0])',
           '    return {"PhysicalResourceId": "grant-zetl-lf", "Data": {"granted": granted}}',
         ].join('\n')
       ),
@@ -203,12 +229,32 @@ export class NormalizedViewsStack extends cdk.Stack {
         resources: ['*'],
       })
     );
+    // GetDataAccess is NOT optional here even though this Lambda never vends
+    // credentials: on the S3 Tables federated catalog, GrantPermissions resolves
+    // the target table through Lake Formation's own data-access path, and without
+    // it every grant fails with the misleading "Insufficient Glue permissions to
+    // access table" — identical to the error for missing glue:GetTable. Bisected
+    // live on 2026-11-05: LF admin + glue reads alone still fail; adding
+    // GetDataAccess is what flips the grants to success.
     grantZetlLfFn.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['lakeformation:GrantPermissions'],
+        actions: ['lakeformation:GrantPermissions', 'lakeformation:GetDataAccess'],
         resources: ['*'],
       })
     );
+    // LF GrantPermissions reads the target through the Glue catalog; without
+    // these every grant fails "Insufficient Glue permissions to access table".
+    grantZetlLfFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['glue:GetCatalog', 'glue:GetDatabase', 'glue:GetTable'],
+        resources: ['*'],
+      })
+    );
+    // The grantor holds no grantable permissions on the zetl_* tables (Zero-ETL
+    // creates them), so it can only grant as an LF admin. See LfAdminRegistration.
+    const grantZetlLfAdmin = new LfAdminRegistration(this, 'GrantZetlLfAdminSettings', {
+      adminArns: [grantZetlLfFn.role!.roleArn],
+    });
 
     const grantZetlProvider = new cr.Provider(this, 'GrantZetlLfProvider', {
       onEventHandler: grantZetlLfFn,
@@ -223,6 +269,7 @@ export class NormalizedViewsStack extends cdk.Stack {
         Nonce: Date.now().toString(),
       },
     });
+    grantZetlLf.node.addDependency(grantZetlLfAdmin);
 
     // Grant CREATE_TABLE on the target 'normalized' namespace
     const lfNormalizedGrant = new lakeformation.CfnPermissions(this, 'LFNormalizedDbGrant', {

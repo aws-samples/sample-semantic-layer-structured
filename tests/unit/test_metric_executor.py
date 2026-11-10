@@ -105,6 +105,54 @@ def test_execute_passes_federated_catalog_into_query_context():
     }
 
 
+def test_execute_paginates_get_query_results_across_pages():
+    """A metric returning >1 page must NOT be truncated: loop NextToken and
+    accumulate every page. Page 1 carries the header row (index 0); later pages
+    do not. Regression for the single-call truncation bug."""
+    metric = MagicMock(
+        metric_id="x", compiled_sql="SELECT n", dialect="athena",
+        supported_filters=[], supported_dimensions=[],
+    )
+    athena = MagicMock()
+    athena.start_query_execution.return_value = {"QueryExecutionId": "q-1"}
+    athena.get_query_execution.return_value = {
+        "QueryExecution": {"Status": {"State": "SUCCEEDED"}},
+    }
+    page_1 = {
+        "ResultSet": {
+            "Rows": [
+                {"Data": [{"VarCharValue": "n"}]},  # header (page 1 only)
+                {"Data": [{"VarCharValue": "1"}]},
+            ],
+            "ResultSetMetadata": {"ColumnInfo": [{"Name": "n"}]},
+        },
+        "NextToken": "tok-2",
+    }
+    page_2 = {
+        "ResultSet": {
+            "Rows": [
+                {"Data": [{"VarCharValue": "2"}]},  # no header on page 2
+            ],
+            "ResultSetMetadata": {"ColumnInfo": [{"Name": "n"}]},
+        },
+        # no NextToken ⇒ last page
+    }
+    athena.get_query_results.side_effect = [page_1, page_2]
+
+    out = execute_metric(
+        metric=metric, filters={}, athena=athena,
+        workgroup="wg", output_loc="s3://bkt/",
+    )
+
+    assert out["columns"] == ["n"]
+    # BOTH rows survive — no truncation, no dropped page-2 row, no re-skipped header.
+    assert out["rows"] == [{"n": "1"}, {"n": "2"}]
+    assert athena.get_query_results.call_count == 2
+    # Page 2 fetch must carry the NextToken from page 1.
+    _, second_kwargs = athena.get_query_results.call_args_list[1]
+    assert second_kwargs["NextToken"] == "tok-2"
+
+
 def test_execute_omits_result_configuration_when_no_output_loc():
     """Empty output_loc ⇒ defer to the workgroup's enforced result location."""
     metric = MagicMock(

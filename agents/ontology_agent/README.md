@@ -54,7 +54,7 @@ flowchart TD
 | Assembly + S3 persist              | concat fragments · `save_ontology_to_s3`                              | [`main.py`](main.py)                                            |
 | Glue enrichment                    | `update_glue_metadata_from_ontology`                                  | [`main.py`](main.py)                                            |
 | Prompts + namespace + N-Quads spec | Phase-1/2/revision system prompts · XSD maps · namespace URIs         | [`prompt_builder.py`](prompt_builder.py)                        |
-| Token budgeting                    | tiktoken counts; 150k per-request limit                               | [`token_manager.py`](token_manager.py)                          |
+| Token budgeting                    | tiktoken counts; 150k per-request limit                               | [`../shared/token_manager.py`](../shared/token_manager.py)      |
 | Model manifest (IAM grants)        | `foundation_models`                                                   | [`models.json`](models.json)                                    |
 | Container                          | `opentelemetry-instrument python -m ontology_agent.main`              | [`../Dockerfile.ontology`](../Dockerfile.ontology)              |
 

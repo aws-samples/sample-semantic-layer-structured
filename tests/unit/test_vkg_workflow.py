@@ -166,6 +166,32 @@ def test_grounding_span_not_emitted_on_degraded_execution(monkeypatch):
     assert calls["n"] == 0, "grounding span must not be emitted on a degraded execution"
 
 
+def test_sql_execution_failed_reaches_degraded_terminal_emitter():
+    # Regression: an execution-time degrade (sql_execution_failed) must ROUTE to
+    # the ``degraded`` terminal so its answer_emitter fires — previously phase5
+    # dead-ended on this reason (no matching out-edge), so the terminal never ran
+    # and the executed SQL never landed on a harvested span → the codeBased
+    # exec-metric evaluator saw "No predicted SQL found" and scored null instead
+    # of an honest 0.
+    emitted = {"n": 0}
+
+    deps = PhaseDeps(
+        router=_Router([f"{EX}Policy"]),
+        builder=_Builder(_POLICY_SLICE),
+        generator=_Gen(f"PREFIX ex: <{EX}> SELECT ?x WHERE "
+                       "{ ?x a ex:Policy . ?x ex:hasPremium ?p }"),
+        run_execution=lambda sparql, **_kw: {"columns": [], "rows": [], "n_quads": [],
+                                      "degraded": "sql_execution_failed",
+                                      "answer": "failed", "sql": "SELECT 1 FROM t"},
+        answer_emitter=lambda _c: emitted.__setitem__("n", emitted["n"] + 1),
+    )
+    ctx = tier2_vkg_workflow(question="policies", namespace="ns", deps=deps)
+    assert ctx.degraded == "sql_execution_failed"
+    assert emitted["n"] == 1, (
+        "sql_execution_failed must reach the degraded terminal so the answer "
+        "emitter (which stamps executed_sql on a harvested span) fires")
+
+
 def test_phase3_insufficient_slice_short_circuits_to_degraded():
     # When the judge never reaches sufficiency within MAX_PHASE3_ROUNDS, the
     # graph must degrade (phase3_max_rounds) and NOT generate/execute SPARQL

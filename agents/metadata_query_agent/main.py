@@ -26,7 +26,15 @@ except ImportError:
 from datetime import datetime, timezone
 from strands import Agent, tool
 from strands.models import BedrockModel
-from .token_manager import count_tokens
+try:
+    from agents.shared.token_manager import count_tokens
+    from agents.shared.streaming import chunk_text
+    # set_boto_session re-exported for notebook/test credential injection.
+    from agents.shared.boto_session import get_boto_session, set_boto_session  # noqa: F401
+except ImportError:
+    from shared.token_manager import count_tokens  # type: ignore
+    from shared.streaming import chunk_text  # type: ignore
+    from shared.boto_session import get_boto_session, set_boto_session  # type: ignore  # noqa: F401
 from boto3.dynamodb.conditions import Key
 from .query_prompts import QUERY_MODEL_ID, JUDGE_PROMPT, ROUTER_MODEL_ID, ROUTER_PROMPT
 try:
@@ -47,6 +55,7 @@ try:
     from agents.shared.answer_span import emit_answer_span
     from agents.shared.provenance import build_provenance
     from agents.shared.advisory import build_advisory_answer, classify_intent
+    from agents.shared.document_answer import DocumentAnswer, try_document_answer
 except ImportError:
     from shared.prior_results import (  # type: ignore
         set_session_id as _set_prior_results_session_id,
@@ -65,18 +74,30 @@ except ImportError:
     from shared.answer_span import emit_answer_span  # type: ignore
     from shared.provenance import build_provenance  # type: ignore
     from shared.advisory import build_advisory_answer, classify_intent  # type: ignore
+    from shared.document_answer import (  # type: ignore
+        DocumentAnswer,
+        try_document_answer,
+    )
 
 # Tier 1 (governed-metric) pre-check wiring. Tier 2 is now the Strands graph
 # workflow (see .tier2.workflow); the old Tier 3 supervised-worker hand-off has
 # been removed in favour of the graph's Phase 5 bounded execution agent.
 try:
     from agents.shared.metric_lookup import lookup as tier1_lookup
+    from agents.shared.metric_lookup import MetricMatch
+    from agents.shared.metric_gate import gate_tier1
     from agents.shared.metric_executor import execute_metric as tier1_execute
+    from agents.shared import firewall_context
+    from agents.shared.sql_firewall import UnsafeSQLError
     from agents.shared import knn_index
     from agents.shared import cw_metrics
 except ImportError:  # container path: agents/ is on PYTHONPATH
     from shared.metric_lookup import lookup as tier1_lookup  # type: ignore
+    from shared.metric_lookup import MetricMatch  # type: ignore
+    from shared.metric_gate import gate_tier1  # type: ignore
     from shared.metric_executor import execute_metric as tier1_execute  # type: ignore
+    from shared import firewall_context  # type: ignore
+    from shared.sql_firewall import UnsafeSQLError  # type: ignore
     from shared import knn_index  # type: ignore
     from shared import cw_metrics  # type: ignore
 from .tier2.rag_topic_router import RagTopicRouter
@@ -94,7 +115,14 @@ from .tier2.execution_agent import (
     ensure_limit,
     run_execution,
 )
-from .query_prompts import EXECUTION_PROMPT
+from .query_prompts import EXECUTION_PROMPT, TIER3_WORKER_PROMPT, TIER3_JUDGE_PROMPT
+from .tier3 import (
+    JudgeVerdict,
+    WorkerAttempt,
+    WorkerBudget,
+    parse_judge_verdict,
+    run_supervisor_loop,
+)
 try:
     from agents.ontology_query_agent.tier2.slice_judge import build_slice_judge
 except ImportError:  # container path: agents/ is on PYTHONPATH
@@ -213,26 +241,8 @@ def _get_state() -> dict:
             'cached_results': {},
         })
 
-# Global boto3 session for credential injection
-_boto_session = None
-
-def set_boto_session(session: boto3.Session):
-    """
-    Set the boto3 session to use for all AWS API calls.
-
-    Args:
-        session: Configured boto3.Session with desired credentials
-    """
-    global _boto_session
-    _boto_session = session
-    logger.info(f"Boto3 session set with region: {session.region_name}")
-
-def get_boto_session() -> boto3.Session:
-    """Get the configured boto3 session, or create a default one"""
-    global _boto_session
-    if _boto_session is None:
-        _boto_session = boto3.Session()
-    return _boto_session
+# boto3 session management (set_boto_session / get_boto_session) is provided by
+# agents.shared.boto_session, imported above.
 
 def reset_agent_state(session_id: str = None):
     """Reset agent state for a new invocation."""
@@ -356,6 +366,12 @@ def retrieve_kb_context_structured(*, user_query: str, kb_id: str,
                           or meta.get('catalog') or '')
             database_name = (meta.get('database_name') or meta.get('database')
                              or (table_id.split('.', 1)[0] if '.' in table_id else ''))
+            # A federated catalog (S3 Tables `s3tablescatalog/...`) MUST carry an
+            # explicit catalog_id in the chunk metadata — without it, execution
+            # resolves the schema against the default AwsDataCatalog and fails
+            # SCHEMA_NOT_FOUND. The metadata agent stamps catalog_id per chunk
+            # (see agents/metadata_agent save_metadata_document_to_s3); this is
+            # the read side of that contract.
             if catalog_id:
                 cand['catalog_id'] = catalog_id
             if database_name:
@@ -397,6 +413,27 @@ def execute_sql_query(sql_query: str, database_name: str, catalog_id: str) -> st
         logger.info("=== execute_sql_query STARTED ===")
         logger.info(f"SQL query: {sql_query}")
         logger.info(f"Database: {database_name}")
+
+        # The firewall runs FIRST, before any AWS client is built: this SQL was
+        # written by the model from a natural-language question, so it is the
+        # least trusted statement in the system. A denial is returned as a tool
+        # result rather than raised — a Strands @tool that raises has its
+        # exception handed back to the model and retried, so raising here would
+        # loop. Returning the reason lets the model rewrite the query into
+        # something the profile permits, which is the useful outcome.
+        try:
+            sql_query = firewall_context.enforce_for_caller(sql=sql_query)
+        except UnsafeSQLError as denial:
+            logger.warning("execute_sql_query denied by firewall: %s", denial)
+            # Clear the memo: the model is expected to retry with different SQL,
+            # and a latched `query_executed` would make the retry a no-op.
+            state['query_executed'] = False
+            return json.dumps({
+                "error": f"Query denied: {denial}",
+                "sql_query": sql_query,
+                "database_name": database_name,
+                "catalog_id": catalog_id,
+            })
 
         region = os.getenv('AWS_REGION', 'us-east-1')
         session = get_boto_session()
@@ -570,6 +607,14 @@ def execute_sql_query(sql_query: str, database_name: str, catalog_id: str) -> st
     except Exception as e:
         logger.error(f"Error executing SQL query: {str(e)}")
         return json.dumps({"error": str(e), "sql_query": sql_query, "database_name": database_name, "catalog_id": catalog_id})
+
+
+# Stable reference to the module-level execute tool so the Tier 3 worker's own
+# ``execute_sql_query`` wrapper (which shadows the name in its local scope) can
+# still delegate to the real implementation after clearing the per-invocation
+# memo. A ``@tool``-decorated object is callable and invokes the underlying fn.
+_execute_sql_query_tool = execute_sql_query
+
 
 def get_latest_metadata_item(id: str) -> Optional[dict]:
         """Return the metadata item with the highest version for the given id.
@@ -857,8 +902,13 @@ def _metric_rows_to_positional(*, columns: List[str],
     return out
 
 
-def _build_response_from_metric(*, metric, result: Dict[str, Any],
-                                id: str) -> Dict[str, Any]:
+def _build_response_from_metric(
+    *,
+    metric,
+    result: Dict[str, Any],
+    id: str,
+    provenance_metric: Optional[Dict[str, object]] = None,
+) -> Dict[str, Any]:
     """Shape a Tier 1 metric result into the same payload as a Tier 2/3 answer.
 
     Produces a real NL answer from the rows (not a bare row/column count) and
@@ -866,6 +916,15 @@ def _build_response_from_metric(*, metric, result: Dict[str, Any],
     and result table the same way the semantic-layer (Tier 2) path does. The
     Tier 1 call site additionally emits phase-sink events carrying this SQL +
     columns + rows so the live "Show reasoning" panel renders them.
+
+    :param metric: The governed ``Metric`` that answered.
+    :param result: The ``metric_executor.execute_metric`` result
+        (``columns`` + dict ``rows``).
+    :param id: The ontology/namespace id, echoed into ``metadata``.
+    :param provenance_metric: The ``metric_ref`` + ``binding`` block from
+        ``gate_tier1``, so the answer states which metric answered and the scope
+        it applied. None only in legacy/test callers.
+    :returns: The uniform answer payload.
     """
     cols = result.get("columns", []) or []
     pos_rows = _metric_rows_to_positional(columns=cols, rows=result.get("rows", []))
@@ -898,6 +957,7 @@ def _build_response_from_metric(*, metric, result: Dict[str, Any],
         "provenance": build_provenance(
             tier="governed_metric",
             sources=[f"metric:{metric.metric_id}"],
+            metric=provenance_metric,
         ),
     }
 
@@ -1007,8 +1067,23 @@ def _build_phase_deps(*, kb_id: str, recall_resolver=None) -> PhaseDeps:
             slice_text=slice_text,
         )
         # The execute_sql_query tool caches its parsed result in per-invocation
-        # state; read it back and apply over-limit trimming/flagging.
+        # state ONLY on a successful run; every error path returns error JSON
+        # WITHOUT populating the cache. So a missing 'query_result' key means the
+        # query never succeeded — surface that as an explicit failure rather than
+        # fabricating an empty 0-row result that reads as a valid (but empty)
+        # answer (fail-loudly). Phase 5 turns this into degraded=execution_failed.
         cached = _get_state().get('cached_results', {})
+        if 'query_result' not in cached:
+            return {
+                'execution_failed': True,
+                'error': run_out.get('answer', '') or 'query execution failed',
+                'columns': [],
+                'rows': [],
+                'over_limit': False,
+                'total_row_count': 0,
+                'answer': run_out.get('answer', ''),
+                'usage': run_out.get('usage', {}),
+            }
         try:
             result = json.loads(cached.get('query_result', '{}') or '{}')
         except (json.JSONDecodeError, TypeError):
@@ -1060,6 +1135,222 @@ def tier2_resolve(question: str, namespace: str, kb_id: str = "",
     )
 
 
+# ----------------------------------------------------------------------------
+# Tier 3 — supervisor-loop agentic fallback (runs only when Tier 2 degrades)
+# ----------------------------------------------------------------------------
+def _tier2_failure_context(wf: WorkflowContext) -> str:
+    """Summarize why Tier 2 degraded, to seed the Tier 3 worker.
+
+    Names the terminal reason, the specific Phase-3 gap detail when present, and
+    the last-generated (gate-rejected or failed) SQL so the worker does not
+    repeat the approach that already failed.
+    """
+    parts = [f"Tier 2 degraded terminal: {wf.degraded or 'unknown'}"]
+    detail = getattr(wf, "degraded_detail", None)
+    if detail:
+        parts.append(f"Detail: {detail}")
+    if wf.sql:
+        parts.append(f"Last SQL Tier 2 produced (did not succeed):\n{wf.sql}")
+    if wf.candidates:
+        parts.append("Candidate tables Tier 2 considered: " + ", ".join(wf.candidates[:8]))
+    return "\n".join(parts)
+
+
+def _build_tier3_worker_agent(*, kb_id: str, database_name: str, catalog_id: str):
+    """Construct the Tier 3 worker: a free-flowing Strands agent with both tools.
+
+    Unlike the Phase-5 execution agent, the worker MAY re-retrieve KB context and
+    author new SQL — it is the agentic fallback. It is given a KB-retrieval tool
+    (bound to this invocation's kb_id + layer scope) and the shared
+    ``execute_sql_query`` tool, and told the database/catalog to run against.
+    """
+    @tool
+    def retrieve_semantic_layer(query: str) -> str:
+        """Retrieve knowledge-base table/column metadata relevant to a query.
+
+        Args:
+            query: A natural-language description of the tables/columns/meaning
+                to look up in the semantic layer.
+        """
+        _TIER3_WORKER_BUDGET.check(tool_name="retrieve_semantic_layer")
+        try:
+            structured = retrieve_kb_context_structured(user_query=query, kb_id=kb_id)
+        except Exception as exc:  # noqa: BLE001 — worker treats empty as a known case
+            logger.warning("[tier3] retrieve_semantic_layer failed (non-fatal): %s", exc)
+            return json.dumps({"candidates": [], "chunks": []})
+        return json.dumps({
+            "candidates": structured.get("candidates", []),
+            "chunks": structured.get("chunks", []),
+        })
+
+    @tool
+    def execute_sql_query(sql_query: str, database_name: str, catalog_id: str) -> str:
+        """Execute an Athena SQL SELECT query and return the result.
+
+        Args:
+            sql_query: The Athena SQL SELECT to run.
+            database_name: Athena database (schema) to query against.
+            catalog_id: Athena catalog to query against.
+        """
+        _TIER3_WORKER_BUDGET.check(tool_name="execute_sql_query")
+        # The module-level ``execute_sql_query`` MEMOIZES on per-invocation state
+        # (returns the first result for every later call). Tier 2's Phase 5 may
+        # have already populated that cache in THIS invocation, and the Tier 3
+        # worker authors MULTIPLE different queries across its ReAct loop — so the
+        # memo must be cleared before each execution or the worker would keep
+        # getting the same stale rows. Clear the flag, then delegate to the real
+        # tool (keeping all its retry/error handling).
+        state = _get_state()
+        state['query_executed'] = False
+        state['cached_results'].pop('query_result', None)
+        return _execute_sql_query_tool(sql_query, database_name, catalog_id)
+
+    return Agent(
+        model=_build_query_model(),
+        system_prompt=(
+            f"{TIER3_WORKER_PROMPT}\n\n"
+            f"Athena identifiers for execute_sql_query: "
+            f"database_name={database_name or '(default)'}, "
+            f"catalog_id={catalog_id or '(default Glue catalog)'}."
+        ),
+        tools=[retrieve_semantic_layer, execute_sql_query],
+    )
+
+
+def _run_tier3_worker(task: str) -> WorkerAttempt:
+    """Run one Tier 3 worker attempt and normalize it into a :class:`WorkerAttempt`.
+
+    Reads the SQL result the ``execute_sql_query`` tool cached in per-invocation
+    state so the outcome (clean run vs. error) is observed the same deterministic
+    way Tier 2 observes it, rather than parsed out of the agent's prose.
+
+    ``_run_tier3_worker`` closes over the agent built for this invocation via the
+    module-level ``_TIER3_WORKER_AGENT`` slot (set by the driver just before the
+    loop), keeping the loop's ``worker_fn`` signature a plain ``str -> WorkerAttempt``.
+    """
+    agent = _TIER3_WORKER_AGENT
+    if agent is None:  # defensive: driver always sets it before running the loop
+        raise RuntimeError("tier3 worker agent not initialized")
+
+    # Fresh budget per round: each attempt gets its own tool-call and wall-clock
+    # allowance rather than inheriting one the previous round already spent.
+    global _TIER3_WORKER_BUDGET
+    _TIER3_WORKER_BUDGET = WorkerBudget()
+    response = agent(task)
+    try:
+        answer = response.message["content"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        answer = str(response)
+
+    # Read back the tool's cached SQL result — the deterministic success signal.
+    cached = _get_state().get("cached_results", {})
+    try:
+        qr = json.loads(cached.get("query_result", "{}") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        qr = {}
+    usage = {}
+    try:
+        from agents.shared.tier2_graph import extract_usage
+    except ImportError:  # container path
+        from shared.tier2_graph import extract_usage  # type: ignore
+    try:
+        usage = extract_usage(response)
+    except Exception:  # noqa: BLE001 — usage is best-effort telemetry
+        usage = {}
+
+    if not isinstance(qr, dict) or not qr:
+        return WorkerAttempt(answer=answer, error="worker produced no SQL result", usage=usage)
+    if "error" in qr:
+        return WorkerAttempt(
+            answer=answer, sql=qr.get("sql_query", ""),
+            error=str(qr.get("error", "unknown error")), usage=usage,
+        )
+    return WorkerAttempt(
+        answer=answer,
+        sql=qr.get("sql_query", ""),
+        results=qr.get("rows", []),
+        columns=qr.get("columns", []),
+        usage=usage,
+    )
+
+
+# Per-invocation Tier 3 worker agent, set by the driver just before the loop and
+# read by ``_run_tier3_worker``. Mirrors the ``_STREAMING_PHASE_SINK`` seam — the
+# loop's ``worker_fn`` stays a clean ``str -> WorkerAttempt`` closure.
+_TIER3_WORKER_AGENT = None
+
+# Per-ROUND worker budget, rebound by ``_run_tier3_worker`` before each attempt
+# and read by the budgeted @tool functions. The supervisor bounds the number of
+# rounds; nothing in Strands bounds the ReAct loop INSIDE a round, so without
+# this a worker facing a non-convergent error retries until the client gives up
+# (measured on the sibling VKG agent: 157 tool calls in one round, 1100s vs a
+# 900s client timeout). Same module-level-slot pattern as the agent above, so the
+# loop's ``worker_fn`` stays a plain ``str -> WorkerAttempt`` closure.
+_TIER3_WORKER_BUDGET = WorkerBudget()
+
+
+def _make_tier3_judge():
+    """Build the Tier 3 supervisor judge callable ``(question, attempt) -> JudgeVerdict``.
+
+    One structured Bedrock ``converse`` call per verdict on the judge model. Any
+    error yields a not-sufficient verdict so a judge failure never falsely
+    accepts an attempt (fail-soft toward keeping the Tier 2 answer).
+    """
+    def _judge(question: str, attempt: WorkerAttempt) -> JudgeVerdict:
+        preview_rows = attempt.results[:10]
+        prompt = (
+            f"{TIER3_JUDGE_PROMPT}\n\n"
+            f"── Question ──\n{question}\n\n"
+            f"── Worker SQL ──\n{attempt.sql or '(none)'}\n\n"
+            f"── Rows (first 10 of {len(attempt.results)}) ──\n"
+            f"{json.dumps(preview_rows, default=str)[:2000]}\n\n"
+            f"── Worker answer ──\n{attempt.answer or '(none)'}"
+        )
+        try:
+            client = get_boto_session().client("bedrock-runtime")
+            resp = client.converse(
+                modelId=QUERY_MODEL_ID,
+                messages=[{"role": "user", "content": [{"text": prompt}]}],
+                inferenceConfig={"maxTokens": 500},
+            )
+            text = resp["output"]["message"]["content"][0]["text"]
+        except Exception as e:  # noqa: BLE001 — fail-soft: don't falsely accept
+            logger.warning("[tier3] judge call failed (%s) — treating as not sufficient", e)
+            return JudgeVerdict(sufficient=False)
+        return parse_judge_verdict(text)
+
+    return _judge
+
+
+def _run_tier3_supervisor(
+    *, question: str, wf: WorkflowContext, kb_id: str,
+    database_name: str, catalog_id: str,
+):
+    """Drive the Tier 3 supervisor loop for a degraded Tier 2 run.
+
+    Wires the per-invocation worker agent and judge, then runs the bounded loop.
+    Fail-soft: any setup error returns ``None`` so the caller keeps the Tier 2
+    answer. Returns the :class:`SupervisorOutcome` otherwise (which the caller
+    only honors when ``accepted`` is True).
+    """
+    global _TIER3_WORKER_AGENT
+    try:
+        _TIER3_WORKER_AGENT = _build_tier3_worker_agent(
+            kb_id=kb_id, database_name=database_name, catalog_id=catalog_id,
+        )
+        return run_supervisor_loop(
+            question=question,
+            failure_context=_tier2_failure_context(wf),
+            worker_fn=_run_tier3_worker,
+            judge_fn=_make_tier3_judge(),
+        )
+    except Exception as e:  # noqa: BLE001 — Tier 3 is a best-effort fallback
+        logger.warning("[tier3] supervisor driver error (%s) — keeping Tier 2 answer", e)
+        return None
+    finally:
+        _TIER3_WORKER_AGENT = None
+
+
 def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
     """Resolve one question through the Tier 1 metric lookup → Tier 2 graph cascade.
 
@@ -1076,6 +1367,11 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
         import uuid
         # Wall-clock runtime — surfaced in run_finished.totals.runtimeMs.
         run_started_at = time.monotonic()
+        # Governed metrics surfaced but not used, filled in by the Tier 1 gate
+        # below and read by the Tier 2 provenance. Initialized here so an early
+        # return or a future refactor cannot raise UnboundLocalError — the whole
+        # point of this feature is that provenance never breaks the answer.
+        related_metrics: List[Dict[str, object]] = []
         # Prefer the REST-API session id so AgentCore Memory partitions per
         # chat session and follow-ups see prior turns.
         chat_session_id = payload.get('sessionId') or ''
@@ -1086,10 +1382,6 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             _otel_context.attach(_otel_baggage.set_baggage(
                 "session.id", context.session_id if hasattr(context, "session_id") else session_id))
         reset_agent_state(session_id)
-        # Scope the lazy prior-results lookup to this chat session so the
-        # tool can fetch DDB-stored rows without exposing sessionId to the
-        # model.
-        _set_prior_results_session_id(chat_session_id)
 
         # Trusted caller identity for ownership checks + memory scoping. Derive
         # from the platform-validated JWT (Cognito sub) on EVERY path, not just
@@ -1098,6 +1390,27 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
         # becomes a no-op (both sides attacker-controlled). _user_id_from_context
         # falls back to payload['userId'] only when no Bearer token is present.
         trusted_user_id = _user_id_from_context(context, payload) or 'anonymous'
+
+        # Scope the lazy prior-results lookup to this chat session so the tool
+        # can fetch DDB-stored rows without exposing sessionId to the model.
+        # Bind the trusted user_id too so the tool refuses a foreign sessionId
+        # (a valid-JWT caller could otherwise read a victim's stored rows).
+        _set_prior_results_session_id(chat_session_id, trusted_user_id)
+
+        # Bind the caller's grant profile for the SQL firewall. Must happen
+        # before any tool runs, because execute_sql_query reads the binding
+        # rather than taking it as a parameter (its signature is the model's
+        # tool schema). The namespace is resolved from the ontology's config
+        # row, never from the payload — see firewall_context.
+        # A failure here fails the turn: restrictions we cannot read are not the
+        # same as no restrictions.
+        firewall_context.bind_from_context(
+            context=context,
+            user_id=trusted_user_id,
+            namespace=firewall_context.namespace_for_ontology(
+                ontology_id=payload.get('ontologyId', '') or payload.get('id', '')
+            ),
+        )
 
         question = payload.get('question', '')
         if not question:
@@ -1323,7 +1636,7 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
 
         # --- Tier 1: governed-metric lookup -----------------------------------
         try:
-            metric = tier1_lookup(
+            match = tier1_lookup(
                 question=question, namespace=namespace,
                 ddb_table=metrics_table(), knn=knn_index,
                 knn_endpoint="",
@@ -1331,8 +1644,20 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             )
         except Exception as e:  # noqa: BLE001
             logger.warning("tier1_lookup error (%s) — falling through", e)
-            metric = None
-        if metric is not None:
+            match = MetricMatch()
+        # One shared decision for both agents (see shared/metric_gate.py).
+        # group_by_supported=False until metric_executor gains _apply_group_by
+        # (Branch 3) — a requested breakdown declines Tier 1 rather than silently
+        # returning an ungrouped total under a governed-metric badge.
+        decision = gate_tier1(
+            question=question, match=match, group_by_supported=False,
+        )
+        # Carried into the Tier 2 provenance below when Tier 1 declines or misses,
+        # so the user still sees that a governed metric exists and why it wasn't
+        # used.
+        related_metrics = decision.related
+        if decision.metric is not None:
+            metric = decision.metric
             _write_step("tier1_metric_hit")
             try:
                 # Resolve the layer's Athena catalog/database so the metric's
@@ -1341,7 +1666,7 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
                 # catalog (which has no `normalized` schema → SCHEMA_NOT_FOUND).
                 metric_catalog_id, metric_database = _catalog_database_for_layer(config)
                 result = tier1_execute(
-                    metric=metric, filters={},
+                    metric=metric, filters=decision.filters,
                     athena=_athena_client(),
                     workgroup=os.environ.get("ATHENA_WORKGROUP", ""),
                     output_loc=os.environ.get("ATHENA_OUTPUT_LOCATION", ""),
@@ -1350,6 +1675,7 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
                 )
                 response = _build_response_from_metric(
                     metric=metric, result=result, id=id,
+                    provenance_metric=decision.provenance_metric,
                 )
                 # Emit a live phase event so the chat "Show reasoning" panel
                 # renders the metric's SQL + result table — the UI only shows
@@ -1501,10 +1827,103 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
                 "I couldn't build a query fully grounded in the available "
                 "schema for your question."
             )
+        elif wf.degraded == "execution_failed":
+            # The SQL was grounded and ran, but Athena returned an error (bad
+            # cast, timeout, connector failure). Surface it as a failure rather
+            # than an empty 0-row success.
+            detail = getattr(wf, "degraded_detail", None)
+            result_text = (
+                "The query was built but failed to execute against the data "
+                "source."
+                + (f" ({detail})" if detail else "")
+            )
         else:
             result_text = exec_result.get('answer', '') or (
                 f"Query returned {len(rows)} row(s) across {len(columns)} column(s)."
             )
+
+        # --- Tier 3: supervisor-loop agentic fallback -------------------------
+        # Runs ONLY when Tier 2 degraded (wf.degraded set). Escalation is
+        # deterministic: a clean Tier 2 run — including an empty result set —
+        # never reaches here. Fail-soft: Tier 3 only REPLACES the answer when its
+        # supervisor judge accepts an attempt; otherwise the honest Tier 2
+        # degraded answer above stands. ``executionMode`` reports which tier
+        # actually produced the answer the user sees.
+        execution_mode = 'workflow'
+        # ``effective_degraded`` mirrors ``wf.degraded`` unless Tier 3 recovers a
+        # grounded answer, in which case the turn is no longer degraded and the
+        # response/provenance report None (the answer executed and was accepted).
+        effective_degraded = wf.degraded
+        if wf.degraded is not None:
+            _write_step('tier3_agentic')
+            t3_catalog_id, t3_database = _catalog_database_for_layer(config)
+            outcome = _run_tier3_supervisor(
+                question=question, wf=wf, kb_id=kb_id,
+                database_name=t3_database, catalog_id=t3_catalog_id,
+            )
+            if outcome is not None and outcome.accepted:
+                execution_mode = 'agentic'
+                effective_degraded = None
+                result_text = outcome.answer or result_text
+                sql_query = outcome.sql or sql_query
+                executed_sql = outcome.sql
+                executed = True
+                columns = outcome.columns or columns
+                rows = outcome.results or rows
+                results_list = [
+                    {col: (row[i] if i < len(row) else '') for i, col in enumerate(columns)}
+                    for row in rows
+                ]
+                data_source = "Athena execution (Tier 3 agentic)"
+                logger.info(
+                    "Session %s — Tier 3 recovered answer in %d round(s)",
+                    session_id, outcome.rounds,
+                )
+            elif outcome is not None:
+                logger.info(
+                    "Session %s — Tier 3 did not recover (%s); keeping Tier 2 answer",
+                    session_id, outcome.reason,
+                )
+
+        # --- Document terminal: answer FROM the layer's uploaded documents ----
+        # Reached ONLY when no SQL could serve the question (Tier 2 degraded and
+        # Tier 3 did not recover), so a layer with tables behaves exactly as
+        # before whenever SQL succeeds. This is also what makes a layer with NO
+        # tables answerable at all — the whole point of a purely-unstructured
+        # Semantic RAG layer.
+        #
+        # The identical call is wired into the ontology (VKG) and semantic-layer
+        # (Hybrid) agents at their own abstain points; the single call shape is
+        # the consistency guarantee. See agents/shared/document_answer.py.
+        document_answer: Optional[DocumentAnswer] = None
+        if effective_degraded is not None:
+            _write_step('document_terminal')
+            document_answer = try_document_answer(
+                question=question,
+                kb_id=kb_id,
+                layer_id=id,
+                synthesize=_advisory_synthesize,
+                kb_client=_bedrock_agent_runtime(),
+            )
+        if document_answer is not None:
+            logger.info(
+                "Session %s — answered from documents after SQL degrade (%s); "
+                "citations=%s",
+                session_id, effective_degraded, document_answer.citations,
+            )
+            result_text = document_answer.answer
+            data_source = 'Uploaded documents (Bedrock Knowledge Base)'
+            execution_mode = 'document'
+            # `degraded` drives the UI's "this turn failed" badge and the
+            # provenance flag, and this turn did NOT fail — same reasoning as the
+            # Tier 3 clear above. What did happen is still unambiguous: no SQL
+            # ran (`executed` False, `executed_sql` ""), executionMode and the
+            # provenance tier both say 'document', and the SQL-path reason is
+            # preserved in the reasoning trace below and in this log line.
+            sql_degrade_reason = effective_degraded
+            effective_degraded = None
+        else:
+            sql_degrade_reason = None
 
         over_limit = bool(exec_result.get('over_limit'))
         summarization = (
@@ -1558,6 +1977,10 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             if wf.candidates
             else ["kb"]
         )
+        if document_answer is not None:
+            # `doc:<docId>#<n>` — the exact retrieved passage, not merely the
+            # document, so a claim is traceable back to what grounded it.
+            prov_sources = document_answer.sources
 
         return {
             "answer": result_text,
@@ -1568,14 +1991,21 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
             # ``executed`` so a gate-rejected query is not judged as if it ran.
             "executed_sql": executed_sql,
             "executed": executed,
-            "degraded": wf.degraded,
+            "degraded": effective_degraded,
+            # Which tier produced the answer the user sees: 'workflow' (Tier 2)
+            # or 'agentic' (Tier 3 supervisor loop recovered a degraded run).
+            "executionMode": execution_mode,
             "grounding_rounds": wf.grounding_rounds,
             "results": results_list,
             "n_quads": wf.kb_sources,
             "reasoning": {
                 "interpretation": f"Resolved {len(wf.candidates)} candidate table(s) via KB retrieval",
                 "graphTraversal": disambig_summary,
-                "dataSourceSelection": data_source,
+                "dataSourceSelection": (
+                    f"{data_source} (no SQL path: {sql_degrade_reason})"
+                    if sql_degrade_reason
+                    else data_source
+                ),
                 # Only surface SQL in the reasoning trace when it ACTUALLY ran.
                 # On a degrade ``sql_query`` is the gate-rejected query; emitting
                 # it here would leak it into the OTEL span context where the
@@ -1591,12 +2021,21 @@ def _run_query_core(payload: Dict[str, Any], context=None) -> Dict[str, Any]:
                 "overLimit": over_limit,
                 "usage": wf.usage,
             },
-            # Uniform answer-source label (Tier 2 = semantic SQL). ``degraded``
-            # mirrors the terminal reason so the badge can flag a degraded run.
+            # Uniform answer-source label (Tier 2 = semantic SQL; ``agentic``
+            # when the Tier 3 supervisor loop rescued a degraded run and its
+            # judge accepted the answer). ``degraded`` mirrors the terminal
+            # reason so the badge can flag a degraded run — and because Tier 3
+            # success clears it, the tier is the only signal that an escalation
+            # happened at all.
             "provenance": build_provenance(
-                tier="semantic_sql",
+                tier=(
+                    "document" if execution_mode == 'document'
+                    else "agentic" if execution_mode == 'agentic'
+                    else "semantic_sql"
+                ),
                 sources=prov_sources,
-                degraded=wf.degraded,
+                degraded=effective_degraded,
+                related_metrics=related_metrics,
             ),
         }
 
@@ -1763,14 +2202,6 @@ except ImportError:  # pragma: no cover — runtime container has shared on PYTH
         from shared.agui_emitter import AGUIEmitter  # type: ignore
     except ImportError:
         AGUIEmitter = None  # noqa: N806
-
-
-def _chunk_text(text: str, *, max_chars: int = 80):
-    """Split text into chunks for streaming the assistant message."""
-    if not text:
-        return
-    for i in range(0, len(text), max_chars):
-        yield text[i : i + max_chars]
 
 
 # Chat INPUT guardrail + turn-persistence singletons. ``cw_metrics`` is already
@@ -1980,7 +2411,7 @@ def _chat_stream(payload: Dict[str, Any], context):
             yield line
 
     answer_text = (result.get('answer') or '') if isinstance(result, dict) else str(result)
-    for delta in _chunk_text(answer_text):
+    for delta in chunk_text(answer_text):
         emitter.message_chunk(delta=delta)
         for line in emitter.drain():
             yield line

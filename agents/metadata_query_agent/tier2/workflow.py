@@ -641,6 +641,21 @@ def _make_phase5(ctx: WorkflowContext, deps: PhaseDeps) -> Callable[[WorkflowCon
         ) or {}
         delta = dict(ctx.execution_result.get("usage", {}) or {})
         add_usage(ctx, delta)
+        # A failed execution (Athena error, timeout, connector failure) must NOT
+        # be reported as a valid 0-row answer. run_execution flags it with
+        # execution_failed / error; degrade so the response layer surfaces the
+        # failure instead of an empty success (fail-loudly).
+        if ctx.execution_result.get("execution_failed") or \
+                ctx.execution_result.get("error"):
+            ctx.degraded = "execution_failed"
+            ctx.degraded_detail = str(
+                ctx.execution_result.get("error") or "query execution failed"
+            )
+            _emit_phase(ctx, phase=5, action="phase_result", grounded=True,
+                        degraded=ctx.degraded,
+                        inputTokens=delta.get("inputTokens", 0),
+                        outputTokens=delta.get("outputTokens", 0))
+            return
         _emit_phase(ctx, phase=5, action="phase_result", grounded=True,
                     rowCount=len(ctx.execution_result.get("rows", [])),
                     overLimit=bool(ctx.execution_result.get("over_limit")),
@@ -719,6 +734,7 @@ def build_tier2_graph(*, ctx: WorkflowContext, deps: PhaseDeps) -> Any:
     #         | degraded (unresolved) | terminal (grounded)
     gb.add_edge("phase5", "phase4", condition=lambda s: bool(ctx.grounding_missing))
     gb.add_edge("phase5", "degraded", condition=lambda s: ctx.degraded == "grounding_unresolved")
+    gb.add_edge("phase5", "degraded", condition=lambda s: ctx.degraded == "execution_failed")
     # grounded terminal: no out-edge needed — phase5 with nothing pending ends.
 
     gb.reset_on_revisit(True)

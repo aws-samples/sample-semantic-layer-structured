@@ -164,6 +164,39 @@ public class TestFixtures {
     }
 
     /**
+     * Ontology mapped to a DynamoDB-connector table whose name carries HYPHENS — the
+     * shape of the raw-DynamoDB A/B arm. DynamoDB-federated Glue tables are queried via
+     * the {@code dynamodb_catalog} Lambda connector with {@code database="default"} and a
+     * hyphenated table name ({@code semantic-layer-dev-riders}). A hyphen is NOT a legal
+     * bare SQL identifier char, so the emitted {@code FROM default.semantic-layer-dev-riders}
+     * would be parsed by Ontop as arithmetic subtraction. Per-segment quoting emits
+     * {@code FROM "default"."semantic-layer-dev-riders"} instead, which parses as one
+     * literal identifier pair.
+     *
+     * <p>Single class {@code http://x/Rider} → table {@code "default.semantic-layer-dev-riders"}
+     * with a {@code rider_id} natural-key column (the subject) plus a plain {@code status}
+     * column.
+     *
+     * @return ontology JSON as a nested {@link Map}.
+     */
+    public static Map<String, Object> hyphenatedDynamoTableOntology() {
+        return Map.of(
+            "classes", Map.of(
+                "http://x/Rider", Map.of("label", "Rider")),
+            "properties", Map.of(
+                "http://x/Rider/rider_id",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty", "label", "id"),
+                "http://x/Rider/status",
+                    Map.of("type", "http://www.w3.org/2002/07/owl#DatatypeProperty", "label", "status")),
+            "mappings", Map.of(
+                "http://x/Rider", Map.of("table", "default.semantic-layer-dev-riders"),
+                "http://x/Rider/rider_id", Map.of("column", "semantic-layer-dev-riders.rider_id"),
+                "http://x/Rider/status", Map.of("column", "semantic-layer-dev-riders.status")),
+            "databases", List.of(
+                Map.of("name", "default", "catalog", "dynamodb_catalog")));
+    }
+
+    /**
      * A minimal {@link Context} stub for AgentCore Gateway invocations whose
      * {@code getClientContext().getCustom()} returns
      * {@code {"bedrockAgentCoreToolName": toolName}}. Every other Context accessor

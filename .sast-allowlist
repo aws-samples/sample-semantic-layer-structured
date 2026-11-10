@@ -1,0 +1,19 @@
+# Triaged semgrep findings, read by the `sast-gate` job in .gitlab-ci.yml.
+#
+# Format: one entry per line, `<semgrep-rule-id> <repo-relative-path>`. An entry
+# suppresses EVERY finding of that rule in that file, not a single line — line numbers
+# move and a line-pinned allowlist silently stops matching after an unrelated edit.
+#
+# The gate blocks Critical and High only (SAST_GATE_BLOCK_SEVERITIES). Medium and below
+# are reported in the job log and do not need an entry here. It also prints any entry
+# that matched nothing, so a stale line is visible rather than quietly inert.
+#
+# Every entry needs a reason. "It's a test file" is not one — .semgrepignore already
+# excludes those directories wholesale.
+
+# bandit.B608 (SQL built with string formatting). The interpolated value is a SQLite
+# table name and `safe_ident(name=table)` runs on the line immediately above, raising
+# ValueError on anything outside `[A-Za-z_][A-Za-z0-9_]*`. SQLite cannot parameterise an
+# identifier — `PRAGMA table_info(?)` is not valid SQL — so validate-then-interpolate is
+# the only available shape. The input is a local benchmark .sqlite file, not user data.
+bandit.B608 scripts/benchmarks/ingest_common.py

@@ -1159,7 +1159,18 @@ def build_vkg_graph(*, ctx: WorkflowContext, deps: PhaseDeps) -> Any:
     #   grounded              → terminal (no out-edge)
     gb.add_edge("phase5", "phase3", condition=lambda s: ctx.grounding_route == "expand")
     gb.add_edge("phase5", "phase4", condition=lambda s: ctx.grounding_route == "regenerate")
-    gb.add_edge("phase5", "degraded", condition=lambda s: ctx.degraded == "grounding_unresolved")
+    # Route ALL Phase-5 degrade reasons to the degraded terminal — not just
+    # ``grounding_unresolved``. An execution-time degrade (``sql_execution_failed``
+    # /``sparql_translation_failed``, set at ~L1053) previously matched NO out-edge,
+    # so phase5 dead-ended WITHOUT running the ``degraded`` node — meaning
+    # ``_emit_terminal_answer`` → ``emit_answer_span(executed_sql=...)`` never fired
+    # and the codeBased exec-metric evaluator saw "No predicted SQL found" for every
+    # failed-execution row (they scored null instead of an honest 0). Reaching the
+    # terminal stamps the executed SQL on a harvested ``invoke_agent`` span so those
+    # rows are scored. (``sparql_translation_failed`` rows carry empty SQL and stay
+    # correctly unscored.)
+    gb.add_edge("phase5", "degraded", condition=lambda s: ctx.degraded in (
+        "grounding_unresolved", "sql_execution_failed", "sparql_translation_failed"))
 
     gb.reset_on_revisit(True)
     gb.set_max_node_executions(MAX_NODE_EXECUTIONS)

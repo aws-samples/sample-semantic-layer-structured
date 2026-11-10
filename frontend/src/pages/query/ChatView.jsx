@@ -43,7 +43,11 @@ export default function ChatView({ sessionIdOverride }) {
   const [ontologyVersion, setOntologyVersion] = useState(
     location.state?.ontologyVersion || "",
   );
-  const [mode, setMode] = useState(location.state?.mode || "vkg");
+  // No "vkg" default: the mode decides WHICH agent answers, so guessing it sends
+  // the question to the wrong engine (a Hybrid session used to be answered by the
+  // VKG agent after a refresh). Empty until it arrives from navigation state or is
+  // recovered from the persisted session row below.
+  const [mode, setMode] = useState(location.state?.mode || "");
   const [resolveError, setResolveError] = useState(null);
   const [resolving, setResolving] = useState(!location.state?.ontologyId);
 
@@ -59,7 +63,18 @@ export default function ChatView({ sessionIdOverride }) {
       if (cancelled) return;
       if (result.success && result.data?.ontologyId) {
         setOntologyId(result.data.ontologyId);
-        setMode(result.data.mode || "vkg");
+        // A session row without a mode cannot be resumed: we would have to guess
+        // which agent to ask. Report it instead of defaulting to VKG.
+        if (!result.data.mode) {
+          setResolveError(
+            "Could not load this chat — the stored session has no query mode, " +
+              "so the semantic layer it belongs to cannot be determined. " +
+              "Please start a new chat from the layer you want to query.",
+          );
+          setResolving(false);
+          return;
+        }
+        setMode(result.data.mode);
         // Backend hydrates name + version onto the session row (best-effort).
         if (result.data.ontologyName) {
           setOntologyName(result.data.ontologyName);

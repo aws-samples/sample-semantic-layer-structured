@@ -1,0 +1,101 @@
+{
+  "agent_id": "semantic_layer_dev_ontology-9p5fpw8oav",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_ontology-9p5fpw8oav",
+  "batch_evaluation_id": "ontology_gen_batch_bff98b94-a3cfc450b1",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:batch-evaluate/ontology_gen_batch_bff98b94-a3cfc450b1",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "Builtin.GoalSuccessRate",
+    "OntologyQuality_4ec23147-NH48n163FN"
+  ],
+  "custom_evaluators": {
+    "OntologyQuality": "OntologyQuality_4ec23147-NH48n163FN"
+  },
+  "aggregate_summaries": [
+    {
+      "Evaluator": "Builtin.GoalSuccessRate",
+      "AvgScore": "0.000",
+      "Evaluated": 1,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "OntologyQuality_4ec23147-NH48n163FN",
+      "AvgScore": "0.000",
+      "Evaluated": 1,
+      "Failed": 0
+    }
+  ],
+  "per_scenario_events": [
+    {
+      "scenario_id": "ontology_curated_layer",
+      "evaluator": "Builtin.GoalSuccessRate",
+      "score": 0.0,
+      "label": "No",
+      "explanation": "The conversation record is empty \u2014 there is no agent behavior, tool calls, or outputs to evaluate. Without any evidence of the agent generating OWL/RDF ontologies, modeling foreign-key relationships as owl:ObjectProperty, persisting N-Quad fragments via save_intermediate_ontology, or setting a DynamoDB status to 'completed', none of the success assertions can be considered satisfied."
+    },
+    {
+      "scenario_id": "ontology_curated_layer",
+      "evaluator": "OntologyQuality_4ec23147",
+      "score": 0.0,
+      "label": "poor",
+      "explanation": "The actual tool trajectory is empty, meaning no calls to get_single_table_schema, append_nquads, save_intermediate_ontology, append_fk_triples, or persist_file_to_neptune were made. There is no evidence of any owl:Class, owl:DatatypeProperty, owl:ObjectProperty, or rdfs:comment annotations being generated in the session. Since no N-Quads or ontology content is present in the context, the generated ontology was not found."
+    }
+  ],
+  "scenario_runs": {
+    "ontology_curated_layer": {
+      "case_id": "vkg-ontology_curated_layer-3d1b9153",
+      "session_id": "ontology_curated_layer-e13c500b-30b6-4da4-9656-b2dd8adae2c7",
+      "status": "completed",
+      "num_tables": 40,
+      "tables": [
+        "address",
+        "admin_codes",
+        "annuity_detail",
+        "arrangement_destination",
+        "arrangement_source",
+        "carrier_appointment",
+        "coverage",
+        "coverage_product",
+        "distribution_level",
+        "email_address",
+        "financial_activity",
+        "financial_statement",
+        "govt_id_info",
+        "holding",
+        "holding_activity",
+        "holding_arrangement",
+        "holding_dbg",
+        "holding_loan",
+        "holding_payout",
+        "holding_projection",
+        "holding_restriction",
+        "holding_subaccount",
+        "invest_product",
+        "life_detail",
+        "life_participant",
+        "loan_activity",
+        "party",
+        "party_banking",
+        "party_license",
+        "phone",
+        "policy_loan_summary",
+        "policy_product",
+        "producer_agreement",
+        "reinsurance_info",
+        "relation",
+        "rider",
+        "rider_participant",
+        "subaccount_activity",
+        "substandard_rating",
+        "type_codes"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 7399.8
+    }
+  },
+  "performance": {
+    "scenarios": 1,
+    "avg_build_seconds": 7399.8,
+    "total_build_seconds": 7399.8
+  }
+}

@@ -245,11 +245,32 @@ export class AgentCoreEvalStack extends cdk.Stack {
 
     // The bedrock-agentcore service uses the Lambda caller's credentials to validate and configure
     // the aws/spans log group index (for OTEL spans). These permissions are needed on the Lambda's role.
+    // PutIndexPolicy acts on the log-GROUP resource, whose ARN has NO trailing ':*'
+    // (that suffix matches log STREAMS). CloudTrail confirmed the denied resource is
+    // ``arn:...:log-group:aws/spans`` (bare), so BOTH ARN forms must be granted or the
+    // eval service's "add index to aws/spans" step fails with AccessDenied → rollback.
     evalConfigHandler.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['logs:DescribeIndexPolicies', 'logs:PutIndexPolicy'],
-        resources: [`arn:aws:logs:${this.region}:${this.account}:log-group:aws/spans:*`],
+        resources: [
+          `arn:aws:logs:${this.region}:${this.account}:log-group:aws/spans`,
+          `arn:aws:logs:${this.region}:${this.account}:log-group:aws/spans:*`,
+        ],
+      })
+    );
+
+    // The handler pre-creates the runtime OTLP log group if AgentCore has not yet
+    // (it does so lazily on first invocation, so on a fresh deploy the group is
+    // absent and CreateOnlineEvaluationConfig fails "log groups do not exist").
+    // CreateLogGroup + DescribeLogGroups on the runtime log-group namespace.
+    evalConfigHandler.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['logs:CreateLogGroup', 'logs:DescribeLogGroups'],
+        resources: [
+          `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/bedrock-agentcore/runtimes/*`,
+        ],
       })
     );
 

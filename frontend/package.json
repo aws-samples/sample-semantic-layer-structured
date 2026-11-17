@@ -56,7 +56,6 @@
     "serialize-javascript": ">=7.0.3",
     "underscore": ">=1.13.8",
     "fast-xml-parser": "5.5.8",
-    "socket.io-parser": "4.2.6",
-    "shell-quote": ">=1.8.4"
+    "socket.io-parser": "4.2.6"
   }
 }

@@ -23,7 +23,9 @@ def _doc(table_id: str = "AWSDataCatalog.ins.policy") -> str:
     The SQL strings in the Query Patterns / Reference Tables sections are inert
     test-fixture text, not executed SQL (nosec B608).
     """
-    return textwrap.dedent(f"""
+    # The SQL strings in the fixture below are inert markdown test-fixture text,
+    # not executed SQL (see nosec on the fixture's closing line).
+    _fixture = f"""
     # {table_id}
 
     ## Overview
@@ -52,7 +54,8 @@ def _doc(table_id: str = "AWSDataCatalog.ins.policy") -> str:
 
     ## Sample Data
     irrelevant for tests
-    """).strip()
+    """  # nosec B608 — inert markdown test fixture, not executed SQL
+    return textwrap.dedent(_fixture).strip()
 
 
 def test_parse_columns_returns_table_id_name_type_description():

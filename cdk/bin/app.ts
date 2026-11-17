@@ -41,6 +41,9 @@ import { LambdaRestApiStack } from '../lib/stacks/backend/lambda-rest-api';
 import { GuardrailsStack } from '../lib/stacks/backend/guardrails';
 import { ZeroEtlStack } from '../lib/stacks/backend/zeroetl';
 import { NormalizedViewsStack } from '../lib/stacks/backend/normalized-views-stack';
+import { RetainLakeFormationPermissions } from '../lib/common/aspects/retain-lf-permissions';
+import { resolveSnowflakeConfig } from './snowflake-config';
+import { readEnvFile, snowflakeContextFromEnv } from './env-config';
 
 const app = new cdk.App();
 
@@ -83,6 +86,16 @@ const enableBatchReplication = _batchCtx === true || _batchCtx === 'true';
 const _semanticRagCtx = app.node.tryGetContext('enableSemanticRag');
 const enableSemanticRag = _semanticRagCtx !== false && _semanticRagCtx !== 'false';
 
+// enableHybrid (default true) → two Hybrid semantic-layer runtimes
+//   (semantic-layer-query chat path + semantic-layer-creation build path).
+// On by default so all three layer types are offered in the admin wizard: the
+// Hybrid card requires enableOntologyAgents && enableSemanticRag && enableHybrid,
+// and REACT_APP_ENABLE_HYBRID is baked into the frontend bundle at build time, so
+// leaving this off silently hid the option. Opt out with:
+//   cdk deploy --context enableHybrid=false
+const _hybridCtx = app.node.tryGetContext('enableHybrid');
+const enableHybrid = _hybridCtx !== false && _hybridCtx !== 'false';
+
 const _acordCtx = app.node.tryGetContext('enableAcordSampleData');
 const enableAcordSampleData = _acordCtx === true || _acordCtx === 'true';
 
@@ -95,6 +108,79 @@ const enableAcordSampleData = _acordCtx === true || _acordCtx === 'true';
 // migrated to per-group basis.
 const _oboCtx = app.node.tryGetContext('enableOboPassthrough');
 const enableOboPassthrough = _oboCtx === true || _oboCtx === 'true';
+
+// Ontology-native governed rules (docs/plans/2026-07-28-ontology-native-governed-rules-design.md).
+// ON BY DEFAULT via `enableGovernedRules: true` in `cdk/cdk.json` — the authoring
+// loop ships end to end, so a bare `cdk deploy --all` arms both halves (the REST
+// Lambda's /rules router and the ontology-query runtime's rule tier). v1 is
+// VKG-only and depends on Ontop reformulation. `-c enableGovernedRules=false` is
+// the rollback: it deletes no rules, it only unmounts the router and makes the
+// query tier return before its first Neptune call. The source-level default here
+// stays false so an explicit `=false` and an absent context behave identically;
+// `__tests__/governed-rules-flag.test.ts` pins the cdk.json value.
+const _rulesCtx = app.node.tryGetContext('enableGovernedRules');
+const enableGovernedRules = _rulesCtx === true || _rulesCtx === 'true';
+
+// Cedar authorization enforcement (docs/plans/2026-08-23-namespaces-authz-firewall-design.md).
+// OFF BY DEFAULT, and deliberately not flipped in cdk.json — unlike the flags
+// above, this one can lock the operator out of the API that would fix it.
+//
+// The namespaces and grants tables, the /namespaces router, the bootstrap seeding
+// and the SQL firewall all deploy unconditionally; this flag only decides whether
+// a failed Cedar decision returns 403 instead of being logged. The intended
+// sequence is: deploy (tables + seeding land, nothing denies) → confirm your
+// Cognito user resolves to platform-admin via GET /namespaces → redeploy with
+// `-c enableAuthz=true`. Turning it on in the first deploy would arm enforcement
+// against a grants table whose seeding has not been verified.
+const _authzCtx = app.node.tryGetContext('enableAuthz');
+const enableAuthz = _authzCtx === true || _authzCtx === 'true';
+
+// Extra principals to seed with a platform-admin grant, e.g.
+// `-c platformAdminUsers=me@example.com,other@example.com`. Optional: the role
+// resolver already maps the `Admin` Cognito group to platform-admin, so an
+// operator in that group needs no entry here.
+const _adminUsersCtx = app.node.tryGetContext('platformAdminUsers');
+const platformAdminUsers =
+  typeof _adminUsersCtx === 'string' && _adminUsersCtx.trim()
+    ? _adminUsersCtx
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    : [];
+
+// Snowflake federated connector (item: Snowflake connector plan) — ON BY DEFAULT
+// via `enableSnowflakeConnector: true` in `cdk/cdk.json`. When on, `snowflakeAccount`
+// and `snowflakeWarehouse` MUST resolve (no source-level default — resolveSnowflakeConfig
+// throws otherwise); the other settings fall back to generic defaults.
+// `snowflakeConfig` is consumed by AthenaStack. Gating (flag off → undefined) happens
+// inside resolveSnowflakeConfig, so there is no separate boolean flag local here.
+//
+// WHY THE DEFAULT FLIPPED (2026-08-14): the flag used to be `false` in cdk.json and had
+// to be re-supplied as `-c enableSnowflakeConnector=true` on EVERY deploy. Forgetting it
+// once does not merely skip the connector — it DESTROYS the deployed one (spill bucket,
+// secret, connector role, AWS::Serverless::Application, AWS::Athena::DataCatalog) and
+// strips the Snowflake `lambda:InvokeFunction` + spill-bucket grants out of every agent
+// role. That destructive diff is easy to miss because it blends into routine asset-hash
+// churn. A persistent default in cdk.json removes the footgun: the connector is part of
+// this deployment, so its enablement belongs in checked-in config, not in muscle memory.
+// Turn it off for a deploy with `-c enableSnowflakeConnector=false` (CLI context wins).
+//
+// CONSEQUENCE, ACCEPTED: because the flag is now on by default, a checkout WITHOUT
+// `cdk/.env` (a fresh clone, or any git worktree — `.env` is gitignored) fails synth with
+// "enableSnowflakeConnector is on but snowflakeAccount / snowflakeWarehouse context is
+// not set". That is the intended trade: a loud, self-describing error beats silently
+// tearing down live infrastructure. See cdk/.env.example for the two required keys.
+//
+// Settings resolve with CDK context taking precedence over `cdk/.env`:
+//   `-c snowflakeAccount=…`  >  SNOWFLAKE_ACCOUNT in cdk/.env  >  (throw | default)
+// Only NON-SECRET identifiers come from `.env` here — snowflakeContextFromEnv omits
+// the credential keys by construction, so no secret can reach a synthesized template.
+// The credential itself goes straight to Secrets Manager via
+// `npm run sync:snowflake-secret`; see cdk/README.md § Snowflake Athena connector.
+const snowflakeEnvContext = snowflakeContextFromEnv(readEnvFile());
+const snowflakeConfig = resolveSnowflakeConfig(
+  (k) => app.node.tryGetContext(k) ?? snowflakeEnvContext[k]
+);
 
 // 1. Networking Stack - VPC for Neptune and private resources
 const networkingStack = new NetworkingStack(app, `${deployName}-networking`, {
@@ -208,6 +294,10 @@ const athenaStack = new AthenaStack(app, `${deployName}-athena`, {
   dynamodbStack,
   vpc: networkingStack.vpc,
   additionalLakeFormationAdmins,
+  // Snowflake federated connector — undefined unless `-c enableSnowflakeConnector=true`
+  // (resolved near the feature flags above via resolveSnowflakeConfig). When set,
+  // AthenaStack provisions the SAR connector + snowflake_catalog DataCatalog.
+  snowflakeConfig,
 });
 
 // 10b. AgentCore Memory Stack — single Memory resource with a SemanticStrategy
@@ -271,6 +361,12 @@ const agentcoreStack = new AgentCoreStack(app, `${deployName}-agentcore`, {
   normalizedViewsEnabled: enableBatchReplication,
   enableRealtimeReplication,
   enableSemanticRag,
+  // Governed-rule tier on the ontology-query runtime (opt-in; default false).
+  // Same context flag as the REST API stack's /rules router, but a different
+  // env-var name there — see the AgentCoreStack prop doc for why.
+  enableGovernedRules,
+  // Two Hybrid semantic-layer runtimes (opt-in; default false).
+  enableHybrid,
   // Cognito user pool + client for the query runtimes' JWT inbound authorizer
   // (chat-gateway JWT_PASSTHROUGH → runtime re-validates → decodes sub).
   userPool: authStack.userPool,
@@ -312,9 +408,20 @@ const docPipelineStack = new DocPipelineStack(app, `${deployName}-doc-pipeline`,
   description: 'Step Functions doc pipeline (chunk → ner → embed → link → index)',
   supplementaryDocsBucket: dataLakeStack.artifactsBucket,
   metadataTable: dynamodbStack.metadataTable,
+  // The indexer writes each document to `metadata/{layerId}/_documents/{docId}.md`
+  // on the artifacts bucket and ingests it into the EXISTING semantic-rag KB —
+  // that prefix is already inside the semantic-rag data source's
+  // inclusionPrefixes and it reads the same artifacts bucket, so documents
+  // become retrievable with no new KB and no data-source replacement.
+  // Omitting these two args is what made the indexer log a warning and skip
+  // ingestion, so no uploaded document has ever reached a Knowledge Base.
+  supplementaryDocsKbId: bedrockKbStack.semanticRagKbId,
+  supplementaryDocsDataSourceId: bedrockKbStack.semanticRagDataSourceId,
 });
 docPipelineStack.addDependency(dataLakeStack);
 docPipelineStack.addDependency(dynamodbStack);
+// The KB id / data source id are CloudFormation attributes of the KB stack.
+docPipelineStack.addDependency(bedrockKbStack);
 
 // 16. Lambda REST API Stack - Serverless API for semantic layer operations
 // Lambda handles REST API endpoints and delegates to AgentCore Runtime for data operations
@@ -328,6 +435,14 @@ const lambdaApiStack = new LambdaRestApiStack(app, `${deployName}-lambda-api`, {
   identityPoolId: authStack.identityPool.identityPoolId,
   // S3 buckets
   artifactsBucket: dataLakeStack.artifactsBucket,
+  // Athena stack — supplies the Snowflake connector function names the admin
+  // data-source picker must be allowed to invoke to read federated metadata,
+  // and the spill buckets the governed-rule publish gate's smoke query reads back.
+  athenaStack,
+  // Where that smoke query's results land. The workgroup enforces its own output
+  // location, so this must be the bucket AthenaStack configured on the workgroup —
+  // not the artifacts bucket main.py falls back to.
+  athenaResultsBucket: dataLakeStack.athenaResultsBucket,
   // Ontology metadata table
   ontologyMetadataTable: dynamodbStack.metadataTable,
   // Chat sessions table for AG-UI multi-turn chat (item #1 — see
@@ -338,17 +453,29 @@ const lambdaApiStack = new LambdaRestApiStack(app, `${deployName}-lambda-api`, {
   // Per-turn user feedback (👍/👎) table — surfaced as the admin
   // "Feedback" tab; comments are guardrail-redacted before write.
   feedbackTable: dynamodbStack.feedbackTable,
+  // Namespaces as a real primitive + Cedar authorization. The tables are wired
+  // unconditionally so the registry, the /namespaces router and the bootstrap
+  // seeding always deploy; `enableAuthz` alone decides whether decisions deny.
+  namespacesTable: dynamodbStack.namespacesTable,
+  grantsTable: dynamodbStack.grantsTable,
+  enableAuthz,
+  platformAdminUsers,
   // Lessons-learned long-term memory id (item #2). Lambda reads/deletes
   // records via the bedrock-agentcore data plane.
   lessonsMemoryId: agentcoreMemoryStack.memoryId,
   // OBO identity passthrough flag (item #4)
   enableOboPassthrough,
+  // Governed rules feature flag (VKG-only; rules live in Neptune)
+  enableGovernedRules,
   // AgentCore Runtime ARNs
   ontologyRuntimeArn: agentcoreStack.ontologyRuntimeArn, // undefined when flag off
   queryRuntimeArn: agentcoreStack.queryRuntimeArn, // undefined when flag off
   metadataRuntimeArn: agentcoreStack.metadataRuntimeArn,
   metadataQueryRuntimeArn: agentcoreStack.metadataQueryRuntimeArn,
   suggestionsRuntimeArn: agentcoreStack.suggestionsRuntimeArn,
+  // Hybrid semantic-layer creation (build-path) runtime ARN — undefined when
+  // the hybrid feature flag is off; REST stack falls back to '' in that case.
+  semanticLayerCreationRuntimeArn: agentcoreStack.semanticLayerCreationRuntimeArn,
   // M2M OAuth so the REST API invokes JWT-inbound runtimes via Bearer token.
   m2mClientId: authStack.m2mClient.userPoolClientId,
   m2mClientSecret: authStack.m2mClientSecret,
@@ -393,6 +520,9 @@ const mcpServerStack = new McpServerStack(app, `${deployName}-mcp-server`, {
   queryRuntimeArn: agentcoreStack.queryRuntimeArn,
   metadataQueryRuntimeArn: agentcoreStack.metadataQueryRuntimeArn,
   suggestionsRuntimeArn: agentcoreStack.suggestionsRuntimeArn,
+  // Hybrid semantic-layer query runtime — chat gateway adds a
+  // `semantic-layer-query` target for it (undefined when enableHybrid is off).
+  semanticLayerQueryRuntimeArn: agentcoreStack.semanticLayerQueryRuntimeArn,
   guardrailId: guardrailsStack.guardrailId,
   guardrailVersion: guardrailsStack.guardrailVersion,
   userPoolId: authStack.userPool.userPoolId,
@@ -444,6 +574,12 @@ const frontendStack = new FrontendStack(app, `${deployName}-frontend`, {
   websiteBucket: cloudfrontStorageStack.websiteBucket,
   enableOntologyAgents,
   enableSemanticRag,
+  // Gates the Hybrid card in the layer-type picker on the SAME flag that
+  // deploys the hybrid runtimes, so the two can never disagree: a deploy with
+  // `-c enableHybrid=false` hides the card rather than offering a type whose
+  // build/query runtimes do not exist and whose chat invocation would fail on
+  // an unresolvable gateway target.
+  enableHybrid,
   chatGatewayUrl: mcpServerStack.chatGatewayUrl,
   // MCP endpoints surfaced on the Settings page (proxy = what Claude Code adds;
   // gateway = the AgentCore Gateway behind it).
@@ -487,6 +623,7 @@ lambdaApiStack.addDependency(authStack); // Needs Cognito configuration
 lambdaApiStack.addDependency(dataLakeStack); // Needs artifacts bucket
 lambdaApiStack.addDependency(dynamodbStack); // Needs ontology metadata table
 lambdaApiStack.addDependency(agentcoreStack); // Needs AgentCore Runtime ARNs
+lambdaApiStack.addDependency(athenaStack); // Needs Snowflake connector function names
 lambdaApiStack.addDependency(guardrailsStack); // Needs guardrail ID and version
 frontendStack.addDependency(cloudfrontStorageStack); // Uses existing distribution and bucket
 frontendStack.addDependency(authStack);
@@ -501,6 +638,12 @@ cdk.Tags.of(app).add('ManagedBy', 'CDK');
 
 // Apply cdk-nag security checks to all stacks
 Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
+
+// RETAIN all LakeFormation::Permissions on delete so a fragile Revoke can never
+// strand a stack in DELETE_FAILED and block the destroy cycle (see the Aspect's
+// docstring; observed jamming a from-scratch destroy 2026-07-28). Leftover grants
+// are harmless — re-created idempotently on the next deploy.
+Aspects.of(app).add(new RetainLakeFormationPermissions());
 
 // Suppress known false positives and CDK-managed construct violations
 // These suppressions are intentional architectural decisions documented per rule

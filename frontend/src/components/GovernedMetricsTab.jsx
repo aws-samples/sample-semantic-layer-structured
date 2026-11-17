@@ -17,6 +17,7 @@ import {
   Textarea,
 } from "@cloudscape-design/components";
 import { metricsAPI } from "../services/api";
+import { hasOntologyGraph } from "../utils/layerCapabilities";
 
 // Dialects the backend knows how to compile + execute (metric_models.py
 // ALLOWED_DIALECTS). Kept in sync manually — the backend is the source of truth
@@ -97,10 +98,15 @@ function formFromMetric(m) {
  * config has no namespace field — so the layer id IS the namespace.
  *
  * @param {string} ontologyId  semantic-layer id (used as the API namespace).
- * @param {string} layerType   'VKG' | 'SemanticRAG'; VKG exposes `linked_class`.
+ * @param {string} layerType   'VKG' | 'Hybrid' | 'SemanticRAG'; the two
+ *                             graph-backed types expose `linked_class`. May be
+ *                             null before the layer's config has loaded.
  */
 export default function GovernedMetricsTab({ ontologyId, layerType }) {
-  const isVkg = layerType === "VKG";
+  // `linked_class` is an ontology class IRI, so it is offered for any layer that
+  // has a graph — not VKG alone. Hybrid builds one too, and hiding the field for
+  // Hybrid would silently drop a class a steward had already linked.
+  const showLinkedClass = hasOntologyGraph(layerType);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -174,8 +180,12 @@ export default function GovernedMetricsTab({ ontologyId, layerType }) {
     dialect: form.dialect,
     supported_dimensions: parseList(form.supported_dimensions),
     supported_filters: parseList(form.supported_filters),
-    // Send linked_class only for VKG; null clears it on the model.
-    linked_class: isVkg && form.linked_class.trim() ? form.linked_class.trim() : null,
+    // Send whatever the form holds — NOT gated on the layer type. The form is
+    // seeded from the metric (`linked_class: m.linked_class ?? ""`), so gating
+    // on the type would send null for a metric that already had a class linked
+    // whenever the type is unknown, silently clearing it. Empty still means
+    // "clear it", which is what the steward asked for by emptying the field.
+    linked_class: form.linked_class.trim() ? form.linked_class.trim() : null,
     lifecycle: form.lifecycle,
   });
 
@@ -483,9 +493,9 @@ export default function GovernedMetricsTab({ ontologyId, layerType }) {
               />
             </FormField>
 
-            {isVkg && (
+            {showLinkedClass && (
               <FormField
-                label="Linked class (VKG)"
+                label="Linked class"
                 description="Optional ontology class IRI this metric is associated with."
               >
                 <Input

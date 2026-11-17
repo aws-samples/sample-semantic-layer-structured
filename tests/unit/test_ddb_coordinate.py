@@ -30,11 +30,41 @@ def _session_with_location(location):
 
 def test_derives_connector_coordinate_from_ddb_arn():
     sess = _session_with_location(
-        "arn:aws:dynamodb:us-east-1:381492284087:table/semantic-layer-dev-parties"
+        "arn:aws:dynamodb:us-east-1:111122223333:table/semantic-layer-dev-parties"
     )
     coord = _ddb_query_coordinate(sess, "semantic_layer_dev_dynamodb",
                                   "semantic_layer_dev_parties", "dynamodb_catalog")
     assert coord == ("dynamodb_catalog", "default", "semantic-layer-dev-parties")
+
+
+def test_awsdatacatalog_describe_still_yields_connector_catalog():
+    """The DESCRIBE catalog is 'AWSDataCatalog' in practice, and must not be echoed back.
+
+    `lambda/rest-api/services/glue_service.py` denylists `dynamodb_catalog` from the admin
+    data-source picker (its contents are already surfaced through the Glue database
+    `<project>_dynamodb`), so a user selecting a DynamoDB table hands every downstream caller
+    `catalogId='AWSDataCatalog'`. Preserving that catalog records an unqueryable coordinate in
+    the KB sidecar and the executor fails `Schema 'default' does not exist`. Once the Location
+    is confirmed to be a DynamoDB ARN, the connector is the only place the table can be read,
+    so the catalog it was described under is irrelevant.
+    """
+    sess = _session_with_location(
+        "arn:aws:dynamodb:us-east-1:111122223333:table/semantic-layer-dev-parties"
+    )
+    coord = _ddb_query_coordinate(sess, "semantic_layer_dev_dynamodb",
+                                  "semantic_layer_dev_parties", "AWSDataCatalog")
+    assert coord == ("dynamodb_catalog", "default", "semantic-layer-dev-parties")
+
+
+def test_connector_catalog_is_env_overridable(monkeypatch):
+    # The connector catalog name is deployment-configurable; a hardcoded 'dynamodb_catalog'
+    # would silently mis-route every non-default deployment.
+    monkeypatch.setenv("DYNAMODB_CONNECTOR_CATALOG", "ddb_conn")
+    sess = _session_with_location(
+        "arn:aws:dynamodb:us-east-1:111122223333:table/semantic-layer-dev-parties"
+    )
+    coord = _ddb_query_coordinate(sess, "d", "t", "AWSDataCatalog")
+    assert coord == ("ddb_conn", "default", "semantic-layer-dev-parties")
 
 
 def test_non_ddb_location_returns_none():
@@ -53,7 +83,7 @@ def test_empty_or_missing_location_returns_none():
 
 def test_malformed_ddb_arn_raises():
     # A DDB ARN with no ':table/' tail is a real data problem → fail loud.
-    sess = _session_with_location("arn:aws:dynamodb:us-east-1:381492284087:")
+    sess = _session_with_location("arn:aws:dynamodb:us-east-1:111122223333:")
     with pytest.raises(ValueError):
         _ddb_query_coordinate(sess, "d", "t", "dynamodb_catalog")
 
@@ -102,7 +132,7 @@ def _doc_body(fake_s3):
 def test_sidecar_records_connector_coordinate_for_ddb_table(monkeypatch):
     fake_s3 = _capture_s3(
         monkeypatch,
-        "arn:aws:dynamodb:us-east-1:381492284087:table/semantic-layer-dev-parties",
+        "arn:aws:dynamodb:us-east-1:111122223333:table/semantic-layer-dev-parties",
     )
     main.save_metadata_document_to_s3(
         database_name="semantic_layer_dev_dynamodb",
@@ -125,6 +155,35 @@ def test_sidecar_records_connector_coordinate_for_ddb_table(monkeypatch):
     body = _doc_body(fake_s3)
     assert '"semantic-layer-dev-parties"' in body
     assert "FROM semantic_layer_dev_parties" not in body  # old bare Glue name gone from SQL
+
+
+def test_sidecar_records_connector_catalog_when_described_under_awsdatacatalog(monkeypatch):
+    """End-to-end of the picker's real input: catalogId='AWSDataCatalog' on a DDB table.
+
+    This is the shape a Semantic-RAG build actually receives (see
+    test_awsdatacatalog_describe_still_yields_connector_catalog for why), so the sidecar has
+    to name the connector even though nothing in the call said 'dynamodb'.
+    """
+    fake_s3 = _capture_s3(
+        monkeypatch,
+        "arn:aws:dynamodb:us-east-1:111122223333:table/semantic-layer-dev-parties",
+    )
+    main.save_metadata_document_to_s3(
+        database_name="semantic_layer_dev_dynamodb",
+        table_name="semantic_layer_dev_parties",
+        catalog_id="AWSDataCatalog",
+        metadata_content=(
+            "# semantic_layer_dev_dynamodb.semantic_layer_dev_parties\n\n"
+            "## Overview\nParties.\n\n## Common Query Patterns\n"
+            "- SELECT partyid FROM semantic_layer_dev_parties LIMIT 10\n"
+        ),
+        semantic_layer_id="semantic-rag-raw-dynamodb-y",
+        semantic_layer_version="v1",
+    )
+    attrs = _sidecar_attrs(fake_s3)
+    assert attrs["catalog_id"] == "dynamodb_catalog"
+    assert attrs["database_name"] == "default"
+    assert attrs["table_name"] == "semantic-layer-dev-parties"
 
 
 def test_sidecar_unchanged_for_non_ddb_table(monkeypatch):

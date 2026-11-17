@@ -32,7 +32,7 @@ def test_1_imports():
         )
         print("✅ All main functions imported successfully")
 
-        from ontology_agent.token_manager import count_tokens, get_token_status
+        from shared.token_manager import count_tokens, get_token_status
         print("✅ token_manager imported successfully")
 
         token_count = count_tokens("Hello world")
@@ -49,7 +49,7 @@ def test_2_token_manager():
     """Test 2: Test token management utilities"""
     print("\n=== Test 2: Token Manager ===")
     try:
-        from ontology_agent.token_manager import count_tokens, get_token_status
+        from shared.token_manager import count_tokens, get_token_status
 
         test_cases = [
             ("", 0),
@@ -350,6 +350,103 @@ def test_9_document_tools_structure():
         import traceback
         traceback.print_exc()
         return False
+
+def test_describe_paginates_get_query_results():
+    """FIX 3a: a wide table (>1000 columns) yields >1 page of DESCRIBE rows. The
+    fetch must loop NextToken and accumulate ALL pages, else the schema is
+    silently truncated. Page 1 carries the header row (index 0, skipped by
+    [1:]); later pages do not."""
+    from unittest.mock import MagicMock, patch
+
+    def _row(name, typ):
+        return {"Data": [{"VarCharValue": name}, {"VarCharValue": typ}]}
+
+    athena = MagicMock()
+    athena.start_query_execution.return_value = {"QueryExecutionId": "q-1"}
+    athena.get_query_execution.return_value = {
+        "QueryExecution": {"Status": {"State": "SUCCEEDED"}},
+    }
+    page_1 = {
+        "ResultSet": {
+            "Rows": [
+                _row("col_name", "data_type"),  # DESCRIBE header (page 1 only)
+                _row("policy_id", "string"),
+            ]
+        },
+        "NextToken": "tok-2",
+    }
+    page_2 = {"ResultSet": {"Rows": [_row("premium", "double")]}}
+    athena.get_query_results.side_effect = [page_1, page_2]
+
+    glue = MagicMock()
+
+    def client_factory(service, **kwargs):
+        return {"glue": glue, "athena": athena}[service]
+
+    with patch("ontology_agent.main.get_boto_session") as mock_session:
+        mock_session.return_value.client.side_effect = client_factory
+        mock_session.return_value.region_name = "us-east-1"
+        from ontology_agent.main import get_single_table_schema
+
+        result = json.loads(get_single_table_schema(
+            database_name="ns1", table_name="wide_table",
+            catalog_id="AWSDataCatalog",
+        ))
+
+    assert result["source"] == "athena_describe"
+    assert [c["name"] for c in result["columns"]] == ["policy_id", "premium"]
+    assert athena.get_query_results.call_count == 2
+    _, second_kwargs = athena.get_query_results.call_args_list[1]
+    assert second_kwargs["NextToken"] == "tok-2"
+
+
+def test_run_athena_query_paginates_get_query_results():
+    """FIX 3b: the shared `query`-param executor must loop NextToken so a caller
+    fetching >1000 rows is not silently truncated. Page 1 carries the header row
+    (index 0, skipped); later pages do not."""
+    from unittest.mock import MagicMock, patch
+
+    athena = MagicMock()
+    athena.start_query_execution.return_value = {"QueryExecutionId": "q-1"}
+    athena.get_query_execution.return_value = {
+        "QueryExecution": {"Status": {"State": "SUCCEEDED"}},
+    }
+    page_1 = {
+        "ResultSet": {
+            "Rows": [
+                {"Data": [{"VarCharValue": "n"}]},  # header (page 1 only)
+                {"Data": [{"VarCharValue": "1"}]},
+            ],
+            "ResultSetMetadata": {"ColumnInfo": [{"Label": "n"}]},
+        },
+        "NextToken": "tok-2",
+    }
+    page_2 = {
+        "ResultSet": {
+            "Rows": [{"Data": [{"VarCharValue": "2"}]}],
+            "ResultSetMetadata": {"ColumnInfo": [{"Label": "n"}]},
+        },
+    }
+    athena.get_query_results.side_effect = [page_1, page_2]
+
+    with patch("ontology_agent.main.get_boto_session") as mock_session:
+        mock_session.return_value.client.return_value = athena
+        from ontology_agent.main import _run_athena_query
+
+        import os
+        os.environ["ATHENA_OUTPUT_LOCATION"] = "s3://bkt/athena-results/"
+        out = _run_athena_query(
+            query="SELECT n FROM t", database="db", catalog="AWSDataCatalog",
+        )
+
+    assert out["success"] is True
+    assert out["columns"] == ["n"]
+    # BOTH rows survive across pages — no truncation.
+    assert out["rows"] == [{"n": "1"}, {"n": "2"}]
+    assert athena.get_query_results.call_count == 2
+    _, second_kwargs = athena.get_query_results.call_args_list[1]
+    assert second_kwargs["NextToken"] == "tok-2"
+
 
 def run_all_tests():
     """Run all tests"""

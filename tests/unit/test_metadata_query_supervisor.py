@@ -7,6 +7,7 @@ The metadata agent no longer uses the supervised-worker loop (``run_supervised``
 from unittest.mock import MagicMock
 
 from agents.metadata_query_agent.tier2.workflow import WorkflowContext
+from agents.shared.metric_lookup import MetricMatch
 
 
 def test_run_query_routes_into_tier2_workflow(monkeypatch):
@@ -25,7 +26,7 @@ def test_run_query_routes_into_tier2_workflow(monkeypatch):
             execution_result={"columns": ["c"], "rows": [["1"]], "answer": "ok"},
         )
 
-    monkeypatch.setattr(main, 'tier1_lookup', lambda **_: None)
+    monkeypatch.setattr(main, 'tier1_lookup', lambda **_: MetricMatch())
     monkeypatch.setattr(main, 'tier2_resolve', fake_tier2_resolve)
     monkeypatch.setattr(main, 'get_latest_metadata_item',
                         lambda _id: {'name': 'demo', 'namespace': 'ns-x',

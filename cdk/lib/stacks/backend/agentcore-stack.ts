@@ -14,6 +14,7 @@ import { execSync } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import { ArmBuildConstruct } from '../../common/constructs/arm-build-construct';
+import { LfAdminRegistration } from '../../common/constructs/lf-admin-registration';
 import { AgentCoreNeptuneGateway } from './agentcore/neptune-gateway-construct';
 import { runtimeFingerprint } from './runtime-fingerprint';
 import { NeptuneStack } from './neptune-stack';
@@ -48,6 +49,34 @@ export interface AgentCoreStackProps extends cdk.StackProps {
    * @default false
    */
   enableSemanticRag?: boolean;
+  /**
+   * When true, the ontology-query AND semantic-layer-query runtimes evaluate
+   * PUBLISHED governed rules between the Tier 1 metric check and Tier 2.
+   * Surfaces as `GOVERNED_RULES_ENABLED` on both.
+   *
+   * Both, not VKG-only: a rule compiles to SPARQL and the gateway's Ontop
+   * reformulator translates it against whatever graph carries the
+   * `vkg:mapsToTable` / `vkg:mapsToColumn` mappings, which a Hybrid layer's thin
+   * VKG also emits. Semantic RAG builds no graph, so it has nothing for a rule
+   * to bind to and its runtimes do not receive this flag.
+   *
+   * Deliberately a DIFFERENT env-var name from the REST API stack's
+   * `RULES_ENABLED`: they gate different deployments (authoring vs execution),
+   * and one shared name would let an API-only rollout silently arm the query
+   * path — an admin could publish a rule and have it start answering user
+   * questions before this runtime had been redeployed.
+   * @default false
+   */
+  enableGovernedRules?: boolean;
+  /**
+   * When true, the two Hybrid semantic-layer runtimes are provisioned:
+   *   * semantic-layer-query   — chat path (JWT authorizer + gateway target)
+   *   * semantic-layer-creation — REST/M2M build path (M2M inbound only)
+   * plus their IAM roles, log groups, CodeBuild builds, and CfnOutputs.
+   * Purely additive — existing VKG/SemanticRAG modes are unaffected.
+   * @default false
+   */
+  enableHybrid?: boolean;
   /** AgentCore Memory id for lessons-learned (item #2). Threaded into every
    *  runtime as ``LESSONS_MEMORY_ID``; the Strands ``LessonsMemoryHooks``
    *  provider PII-redacts and writes turns into this memory. Optional —
@@ -177,6 +206,13 @@ export class AgentCoreStack extends cdk.Stack {
   public readonly suggestionsAgentRole?: iam.Role;
   public readonly suggestionsRuntime?: agentcore.Runtime;
   public readonly suggestionsRuntimeArn?: string;
+  // Hybrid semantic-layer agents (gated on enableHybrid).
+  public readonly semanticLayerQueryAgentRole?: iam.Role;
+  public readonly semanticLayerQueryRuntime?: agentcore.Runtime;
+  public readonly semanticLayerQueryRuntimeArn?: string;
+  public readonly semanticLayerCreationAgentRole?: iam.Role;
+  public readonly semanticLayerCreationRuntime?: agentcore.Runtime;
+  public readonly semanticLayerCreationRuntimeArn?: string;
   public readonly neptuneGateway?: AgentCoreNeptuneGateway;
 
   constructor(scope: Construct, id: string, props: AgentCoreStackProps) {
@@ -188,6 +224,14 @@ export class AgentCoreStack extends cdk.Stack {
     // Feature flag: skip metadata, metadata-query, and query-suggestions runtimes when false.
     // When disabled, props.bedrockKbStack.semanticRagKbId / semanticRagDataSourceId may be undefined.
     const semanticRagEnabled = props.enableSemanticRag === true;
+    // Feature flag: skip the two Hybrid semantic-layer runtimes when false.
+    // Purely additive — existing VKG/SemanticRAG runtimes are unaffected.
+    const hybridEnabled = props.enableHybrid === true;
+
+    // Project name with hyphens → underscores, used for AgentCore runtime names
+    // + OTEL log-group names throughout (runtime names disallow hyphens). Hoisted
+    // here so the hybrid block above the log-delivery section can reference it.
+    const pn = props.projectName.replace(/-/g, '_');
 
     // Two-step migration helper for replacing the SemanticRAG KB data source
     // (e.g. a chunking-strategy change, which is immutable on CfnDataSource).
@@ -212,6 +256,25 @@ export class AgentCoreStack extends cdk.Stack {
       LESSONS_MEMORY_ID: props.lessonsMemoryId ?? '',
       GUARDRAIL_IDENTIFIER: props.guardrailId ?? '',
       GUARDRAIL_VERSION: props.guardrailVersion ?? '',
+    };
+
+    // SQL-firewall env, threaded into the three runtimes that EXECUTE SQL (the
+    // ontology-query, metadata-query, and hybrid-query agents).
+    //
+    // ``agents/shared/firewall_context.py`` resolves the caller's data-access
+    // restrictions from this table on every invocation, keyed by the JWT-derived
+    // subject. If the var is unset the module logs `grant_profile_no_table` and
+    // resolves identity only — the firewall's structural checks still run, but no
+    // tableAllowlist or columnDenylist can be enforced. That is a silent
+    // downgrade to a weaker posture, which is exactly why it is wired here rather
+    // than left to a runtime default.
+    //
+    // The namespace whose restrictions apply is NOT threaded in: it is read
+    // server-side from the ontology's own metadata row (already granted to these
+    // roles), because a caller who could name their own namespace could name one
+    // where their grants happen to be unrestricted.
+    const grantsEnv: Record<string, string> = {
+      GRANTS_TABLE: props.dynamodbStack.grantsTable.tableName,
     };
 
     // Helper: grant the lessons-learned permissions to any agent role we
@@ -482,6 +545,67 @@ export class AgentCoreStack extends cdk.Stack {
         })
       );
 
+      // Catalog metadata reads. Phase 1 decides HOW to introspect each table from the
+      // catalog's registered Type: a Lambda-backed (federated) catalog rejects
+      // `DESCRIBE "db"."table"` and must be read via `SELECT * ... LIMIT 0` instead.
+      // Without athena:GetDataCatalog that lookup is denied, the agent falls back to
+      // guessing from the catalog NAME, and a Snowflake catalog takes the DESCRIBE path
+      // → parse error → Glue fallback → no schema at all. The agent then writes the
+      // ontology from the LLM's domain knowledge instead of the real columns, and the
+      // build still reports `completed` — so this grant is what keeps a federated
+      // ontology honest, not merely faster.
+      this.ontologyAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:GetDataCatalog',
+            'athena:GetDatabase',
+            'athena:GetTableMetadata',
+            'athena:ListDataCatalogs',
+            'athena:ListDatabases',
+            'athena:ListTableMetadata',
+          ],
+          resources: [`arn:aws:athena:${this.region}:${this.account}:datacatalog/*`],
+        })
+      );
+
+      // Athena invokes a federated connector Lambda as the QUERY's own principal, so
+      // the ontology agent needs invoke on every connector it introspects through —
+      // both the schema probe and sample_table_data run as this role. It also reads
+      // back oversize result fragments the connector spills to S3 (KMS-encrypted for
+      // the DDB connector). Mirrors the queryAgentRole grants below.
+      this.ontologyAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lambda:InvokeFunction'],
+          resources: [
+            `arn:aws:lambda:${this.region}:${this.account}:function:${props.projectName}-ddb-connector`,
+          ],
+        })
+      );
+      props.athenaStack.spillBucket.grantReadWrite(this.ontologyAgentRole);
+      props.athenaStack.spillEncryptionKey.grantEncryptDecrypt(this.ontologyAgentRole);
+
+      // Snowflake connector equivalent. Guarded because the connector is flag-gated,
+      // and driven off AthenaStack's function names so a database added to
+      // `snowflakeDatabases` is granted automatically. No KMS decrypt: the Snowflake
+      // spill bucket uses SSE-S3 (bucket-managed), not a customer key.
+      if (
+        props.athenaStack.snowflakeConnectorFunctionNames.length > 0 &&
+        props.athenaStack.snowflakeSpillBucket
+      ) {
+        this.ontologyAgentRole.addToPolicy(
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['lambda:InvokeFunction'],
+            resources: props.athenaStack.snowflakeConnectorFunctionNames.map(
+              (name) => `arn:aws:lambda:${this.region}:${this.account}:function:${name}`
+            ),
+          })
+        );
+        props.athenaStack.snowflakeSpillBucket.grantReadWrite(this.ontologyAgentRole);
+      }
+
       // Grant S3 permissions for Athena results (ontology agent)
       props.dataLakeStack.athenaResultsBucket.grantReadWrite(this.ontologyAgentRole);
 
@@ -663,8 +787,33 @@ export class AgentCoreStack extends cdk.Stack {
       // authoring is exclusively through the REST API).
       props.dynamodbStack.metricsTable.grantReadData(this.queryAgentRole);
 
+      // SQL firewall: read the caller's grants to resolve their table/column
+      // restrictions. Read-only — grants are written exclusively through the REST
+      // API. `grantReadData` also covers `<tableArn>/index/*`, which matters
+      // because the resolver reads the PrincipalIndex GSI, not the base table.
+      props.dynamodbStack.grantsTable.grantReadData(this.queryAgentRole);
+
       // Tier 1 metric lookup uses an in-memory KNN index hydrated from DDB
       // on cold start — no OpenSearch dependency.
+
+      // Bedrock KB retrieve — the DOCUMENT TERMINAL only (see
+      // agents/shared/document_answer.py). The VKG query path itself reads
+      // Neptune, so this is the one KB call the agent makes: after SPARQL fails,
+      // it retrieves the layer's uploaded document chunks from the semantic-rag
+      // KB (filtered to doc_type='document') and answers from them. Without this
+      // grant the retrieve is denied and the terminal fails soft to an abstain —
+      // a document-backed VKG layer would silently answer nothing.
+      if (props.bedrockKbStack.semanticRagKbId) {
+        this.queryAgentRole.addToPolicy(
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['bedrock:Retrieve'],
+            resources: [
+              `arn:aws:bedrock:${this.region}:${this.account}:knowledge-base/${props.bedrockKbStack.semanticRagKbId}`,
+            ],
+          })
+        );
+      }
 
       // Grant Athena query permissions
       this.queryAgentRole.addToPolicy(
@@ -742,6 +891,13 @@ export class AgentCoreStack extends cdk.Stack {
             's3tables:ListNamespaces',
             's3tables:ListTables',
             's3tables:GetTableData',
+            // GetTableBucket is REQUIRED for Athena to RESOLVE the federated
+            // S3 Tables catalog ('s3tablescatalog/<bucket>'). Without it the
+            // VKG agent's translated SQL fails with CATALOG_NOT_FOUND (a
+            // resolution error, NOT AccessDenied) — every ExecutionAccuracy /
+            // RewardVES / SoftF1 row then scores null because no SQL executes.
+            // Same requirement the benchmark-eval Lambda role needed.
+            's3tables:GetTableBucket',
           ],
           resources: [
             props.dataLakeStack.tableBucketArn,
@@ -855,6 +1011,51 @@ export class AgentCoreStack extends cdk.Stack {
       );
       props.athenaStack.spillBucket.grantReadWrite(this.queryAgentRole);
       props.athenaStack.spillEncryptionKey.grantEncryptDecrypt(this.queryAgentRole);
+
+      // When the Snowflake connector is deployed, the VKG query agent may run SQL
+      // against a snowflake_<database> catalog — Athena routes those through that
+      // database's connector Lambda, so the agent role needs invoke + spill read/write
+      // (mirrors the dynamodb_catalog grant above). No KMS decrypt: the Snowflake spill
+      // bucket uses SSE-S3 (bucket-managed), not a customer KMS key. Guarded because the
+      // connector is flag-gated.
+      //
+      // One statement listing every connector ARN rather than a per-database statement:
+      // the function names come from AthenaStack, so a database added to
+      // `snowflakeDatabases` is granted automatically and cannot be forgotten here.
+      if (
+        props.athenaStack.snowflakeConnectorFunctionNames.length > 0 &&
+        props.athenaStack.snowflakeSpillBucket
+      ) {
+        this.queryAgentRole.addToPolicy(
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['lambda:InvokeFunction'],
+            resources: props.athenaStack.snowflakeConnectorFunctionNames.map(
+              (name) => `arn:aws:lambda:${this.region}:${this.account}:function:${name}`
+            ),
+          })
+        );
+        props.athenaStack.snowflakeSpillBucket.grantReadWrite(this.queryAgentRole);
+
+        // Federated catalogs are resolved through the Athena data-catalog APIs before any
+        // Lambda is invoked. Without these the agent's first query fails with
+        // CATALOG_NOT_FOUND, which reads like a missing catalog rather than a missing
+        // permission. Scoped to this account's catalogs in this region.
+        this.queryAgentRole.addToPolicy(
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: [
+              'athena:GetDataCatalog',
+              'athena:ListDataCatalogs',
+              'athena:ListDatabases',
+              'athena:GetDatabase',
+              'athena:ListTableMetadata',
+              'athena:GetTableMetadata',
+            ],
+            resources: [`arn:aws:athena:${this.region}:${this.account}:datacatalog/*`],
+          })
+        );
+      }
 
       // Grant Lake Formation permissions to Query Agent role — dynamodb database
       new lakeformation.CfnPermissions(this, 'QueryLFDynamoDBDatabasePermissions', {
@@ -1265,6 +1466,9 @@ export class AgentCoreStack extends cdk.Stack {
       // hydrated from DDB on cold start, so no OpenSearch grant is needed.
       props.dynamodbStack.metricsTable.grantReadData(this.metadataQueryAgentRole);
 
+      // SQL firewall — see the note on the ontology-query role's grant.
+      props.dynamodbStack.grantsTable.grantReadData(this.metadataQueryAgentRole);
+
       // Bedrock KB retrieve — reads from Semantic RAG KB for query enrichment
       this.metadataQueryAgentRole.addToPolicy(
         new iam.PolicyStatement({
@@ -1518,6 +1722,12 @@ export class AgentCoreStack extends cdk.Stack {
     // When Zero-ETL + NormalizedViewsStack are deployed, agent roles need LF SELECT
     // on the 'normalized' S3 Tables namespace for Athena SQL queries to succeed.
     // LF hides tables without SELECT as TABLE_OR_VIEW_NOT_FOUND, not ACCESS_DENIED.
+    // Hoisted out of the block below so the HYBRID roles — which are created
+    // later (see `if (hybridEnabled)`) — can depend on the same namespace CR when
+    // they add their own 'normalized' LF grants. Stays undefined when normalized
+    // views are off, which is exactly when there is nothing to grant on.
+    let ensureNormalizedNsRef: cr.AwsCustomResource | undefined;
+
     if (props.normalizedViewsEnabled) {
       const tableBucketArn = `arn:aws:s3tables:${this.region}:${this.account}:bucket/${props.dataLakeStack.tableBucketName}`;
 
@@ -1541,6 +1751,7 @@ export class AgentCoreStack extends cdk.Stack {
           }),
         ]),
       });
+      ensureNormalizedNsRef = ensureNormalizedNs;
 
       // metadataQueryAgentRole only exists when semantic-rag is enabled
       if (semanticRagEnabled && this.metadataQueryAgentRole) {
@@ -1764,9 +1975,11 @@ export class AgentCoreStack extends cdk.Stack {
     // ============================================================
     // Lake Formation: preserve infrastructure admins
     //
-    // This CfnDataLakeSettings supersedes AthenaStack's
-    // AthenaDataLakeAdminSettings (last writer wins per account/region).
-    // ALL prior admins must be carried forward here.
+    // Additively register LF admins via a read-modify-write custom resource
+    // instead of CfnDataLakeSettings — the latter is a per-account singleton
+    // (physical id = account id) so multiple stacks declaring it collide on a
+    // fresh deploy. The additive merge also makes the historical "carry forward
+    // ALL prior admins" concern automatic. See LfAdminRegistration.
     //
     // Agent roles are NOT listed as LF admins — they receive narrow
     // CfnPermissions grants above (DESCRIBE on databases, SELECT +
@@ -1774,21 +1987,15 @@ export class AgentCoreStack extends cdk.Stack {
     // (semantic_layer_iceberg), the queryAgentRole is granted via
     // QueryLFIcebergDatabasePermissions / QueryLFIcebergTablePermissions.
     // ============================================================
-    new lakeformation.CfnDataLakeSettings(this, 'AgentCoreLFAdminSettings', {
-      admins: [
+    new LfAdminRegistration(this, 'AgentCoreLFAdminSettings', {
+      adminArns: [
         // CDK bootstrap roles (must be preserved)
-        {
-          dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
-        },
-        {
-          dataLakePrincipalIdentifier: `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
-        },
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-cfn-exec-role-${this.account}-${this.region}`,
+        `arn:aws:iam::${this.account}:role/cdk-hnb659fds-deploy-role-${this.account}-${this.region}`,
         // AwsCustomResource singleton role (established by DataLakeStack's S3TablesLFRegistration)
-        { dataLakePrincipalIdentifier: props.dataLakeStack.lfGrantSingletonRoleArn },
+        props.dataLakeStack.lfGrantSingletonRoleArn,
         // Human/SSO admin roles forwarded from app.ts
-        ...(props.additionalLakeFormationAdmins ?? []).map((arn) => ({
-          dataLakePrincipalIdentifier: arn,
-        })),
+        ...(props.additionalLakeFormationAdmins ?? []),
       ],
     });
 
@@ -1857,6 +2064,12 @@ export class AgentCoreStack extends cdk.Stack {
     let metadataRuntimeEnv: Record<string, string> | undefined;
     let metadataQueryRuntimeEnv: Record<string, string> | undefined;
     let querySuggestionsRuntimeEnv: Record<string, string> | undefined;
+    // Hybrid semantic-layer runtimes — env blocks + image tags hoisted so the
+    // CloudResourceId / RuntimeFingerprint loop below can digest them.
+    let semanticLayerQueryRuntimeEnv: Record<string, string> | undefined;
+    let semanticLayerCreationRuntimeEnv: Record<string, string> | undefined;
+    let semanticLayerQueryImageTag: string | undefined;
+    let semanticLayerCreationImageTag: string | undefined;
 
     if (semanticRagEnabled) {
       metadataLogGroup = new logs.LogGroup(this, 'MetadataAgentLogGroup', {
@@ -2093,6 +2306,7 @@ export class AgentCoreStack extends cdk.Stack {
       // Deploy Ontology Query Agent to AgentCore Runtime
       ontologyQueryRuntimeEnv = {
         ...lessonsEnv,
+        ...grantsEnv,
         AWS_REGION: this.region,
         ATHENA_WORKGROUP: props.athenaStack.workgroup.name,
         PROJECT_NAME: props.projectName,
@@ -2100,6 +2314,22 @@ export class AgentCoreStack extends cdk.Stack {
         // Tier 1 governed-metric lookup hydrates an in-memory KNN index
         // from this DDB table on cold start — no OpenSearch dependency.
         METRICS_TABLE: props.dynamodbStack.metricsTable.tableName,
+        // Semantic-rag KB id — read ONLY by the document terminal (main.py's
+        // try_document_answer call), never by the VKG query path itself, which
+        // reads Neptune. A VKG layer's uploaded documents live in this KB under
+        // metadata/{layerId}/_documents/ with doc_type='document', exactly as for
+        // the other two layer types; without this variable the terminal is a
+        // no-op and a document-backed VKG layer answers nothing. Empty string
+        // when enableSemanticRag=false, which the terminal treats as "no
+        // documents" rather than an error. Paired with the bedrock:Retrieve grant
+        // on queryAgentRole above.
+        SEMANTIC_RAG_KB_ID: props.bedrockKbStack.semanticRagKbId ?? '',
+        // Governed-rule tier (design §7). Read by main.py's _rule_tier_answer;
+        // when 'false' the whole block short-circuits before any Neptune,
+        // embedding, or KNN call, so the default deployment is unchanged.
+        // Distinct from the REST Lambda's RULES_ENABLED on purpose — see the
+        // enableGovernedRules prop doc.
+        GOVERNED_RULES_ENABLED: String(props.enableGovernedRules === true),
         // Read by agents/shared/prior_results.py to lazily fetch full SQL
         // rows from a prior assistant turn when the user follow-up needs
         // them — keeps history token cost low.
@@ -2276,6 +2506,7 @@ export class AgentCoreStack extends cdk.Stack {
       // Deploy Metadata Query Agent to AgentCore Runtime
       metadataQueryRuntimeEnv = {
         ...lessonsEnv,
+        ...grantsEnv,
         AWS_REGION: this.region,
         ONTOLOGY_METADATA_TABLE: props.dynamodbStack.metadataTable.tableName,
         // Read by agents/shared/prior_results.py — see ontology runtime env.
@@ -2451,13 +2682,703 @@ export class AgentCoreStack extends cdk.Stack {
       this.suggestionsRuntimeArn = this.suggestionsRuntime.agentRuntimeArn;
     } // end if (semanticRagEnabled) — metadata/metadata-query/suggestions runtimes
 
+    // ============================================================
+    // Hybrid semantic-layer agents (enableHybrid) — purely additive.
+    //   * QUERY    — chat path: JWT authorizer + gateway target + M2M inbound.
+    //                Data plane: Neptune/Ontop gateway INVOKE (M2M) + Bedrock KB
+    //                retrieve + Athena + DynamoDB (chat-sessions/feedback/metrics/
+    //                metadata) read.
+    //   * CREATION — REST/M2M build path: M2M inbound only, NO chat authorizer,
+    //                NO gateway target. Data plane: Neptune/S3 write + KB
+    //                ingestion + DynamoDB metadata.
+    // ============================================================
+    if (hybridEnabled) {
+      // Shared OTEL env builder — mirrors the block used by every runtime above.
+      // Given the runtime's service suffix (e.g. 'semantic_layer_query') and its
+      // static OTEL log group name, returns the common OTEL key set so the two
+      // hybrid runtimes stay byte-for-byte consistent with the existing agents.
+      const hybridOtelEnv = (
+        serviceSuffix: string,
+        logGroupName: string
+      ): Record<string, string> => ({
+        AGENT_OBSERVABILITY_ENABLED: 'true',
+        OTEL_PYTHON_DISTRO: 'aws_distro',
+        OTEL_PYTHON_CONFIGURATOR: 'aws_configurator',
+        OTEL_RESOURCE_ATTRIBUTES: [
+          `service.name=${serviceSuffix}.DEFAULT`,
+          `aws.log.group.names=${logGroupName}`,
+        ].join(','),
+        OTEL_EXPORTER_OTLP_LOGS_HEADERS: [
+          `x-aws-log-group=${logGroupName}`,
+          'x-aws-log-stream=runtime-logs',
+          'x-aws-metric-namespace=bedrock-agentcore',
+        ].join(','),
+        OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf',
+        OTEL_TRACES_EXPORTER: 'otlp',
+        OTEL_METRICS_EXPORTER: 'none',
+        OTEL_LOGS_EXPORTER: 'otlp',
+        OTEL_TRACES_SAMPLER: 'always_on',
+        OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: 'botocore,requests,urllib3',
+        OTEL_SEMCONV_STABILITY_OPT_IN: 'gen_ai_tool_definitions',
+        OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT: '4096',
+      });
+
+      // ── QUERY agent IAM role (chat path) ──────────────────────────────────
+      this.semanticLayerQueryAgentRole = new iam.Role(this, 'SemanticLayerQueryAgentRole', {
+        assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
+        description: 'Role for Hybrid semantic-layer query agent (chat path)',
+      });
+      grantLessonsPerms(this.semanticLayerQueryAgentRole);
+
+      // Bedrock model invocation — derived from agents/semantic_layer_query_agent/models.json
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+          resources: bedrockInvokeModelResources(
+            'semantic_layer_query_agent',
+            this.region,
+            this.account
+          ),
+        })
+      );
+
+      // Bedrock KB retrieve — recalls the RAG-style slice for the Hybrid layer.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['bedrock:Retrieve'],
+          resources: [
+            `arn:aws:bedrock:${this.region}:${this.account}:knowledge-base/${props.bedrockKbStack.semanticRagKbId}`,
+          ],
+        })
+      );
+
+      // Athena query execution + data-catalog metadata (mirrors metadataQueryAgentRole).
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:StartQueryExecution',
+            'athena:GetQueryExecution',
+            'athena:GetQueryResults',
+            'athena:StopQueryExecution',
+          ],
+          resources: [
+            `arn:aws:athena:${this.region}:${this.account}:workgroup/${props.athenaStack.workgroup.name}`,
+          ],
+        })
+      );
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:GetDataCatalog',
+            'athena:GetDatabase',
+            'athena:GetTableMetadata',
+            'athena:ListDataCatalogs',
+            'athena:ListDatabases',
+            'athena:ListTableMetadata',
+          ],
+          resources: [`arn:aws:athena:${this.region}:${this.account}:datacatalog/*`],
+        })
+      );
+
+      // Glue catalog access — matches metadataQueryAgentRole (incl. S3 Tables federated catalog).
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'glue:GetCatalog',
+            'glue:GetDatabase',
+            'glue:GetDatabases',
+            'glue:GetTable',
+            'glue:GetTables',
+            'glue:GetPartitions',
+          ],
+          resources: [
+            `arn:aws:glue:${this.region}:${this.account}:catalog`,
+            `arn:aws:glue:${this.region}:${this.account}:database/*`,
+            `arn:aws:glue:${this.region}:${this.account}:table/*`,
+            `arn:aws:glue:${this.region}:${this.account}:catalog/s3tablescatalog`,
+            `arn:aws:glue:${this.region}:${this.account}:catalog/s3tablescatalog/*`,
+            `arn:aws:glue:${this.region}:${this.account}:database/s3tablescatalog/*/*`,
+            `arn:aws:glue:${this.region}:${this.account}:table/s3tablescatalog/*/*/*`,
+          ],
+        })
+      );
+
+      // S3 Tables permissions for analytics queries — matches metadataQueryAgentRole.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            's3tables:GetTable',
+            's3tables:GetNamespace',
+            's3tables:ListNamespaces',
+            's3tables:ListTables',
+            's3tables:GetTableData',
+          ],
+          resources: [
+            props.dataLakeStack.tableBucketArn,
+            `${props.dataLakeStack.tableBucketArn}/*`,
+          ],
+        })
+      );
+
+      // Athena DDB connector Lambda invoke + spill bucket/KMS (federated catalog reads).
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lambda:InvokeFunction'],
+          resources: [
+            `arn:aws:lambda:${this.region}:${this.account}:function:${props.projectName}-ddb-connector`,
+          ],
+        })
+      );
+      props.athenaStack.spillBucket.grantReadWrite(this.semanticLayerQueryAgentRole);
+      props.athenaStack.spillEncryptionKey.grantEncryptDecrypt(this.semanticLayerQueryAgentRole);
+
+      // S3 permissions for Athena results.
+      props.dataLakeStack.athenaResultsBucket.grantReadWrite(this.semanticLayerQueryAgentRole);
+
+      // Read-only on the artifacts bucket: the Phase-1 topic-router KNN index is
+      // hydrated on cold start from this layer's KB markdown corpus (the creation
+      // agent WRITES it there). Read is sufficient — the query path never mutates
+      // the corpus.
+      props.dataLakeStack.artifactsBucket.grantRead(this.semanticLayerQueryAgentRole);
+
+      // DynamoDB reads: metadata (layer config), metrics (Tier-1 lookup),
+      // chat-sessions (prior-turn fetch + persistence), feedback (thumbs).
+      props.dynamodbStack.metadataTable.grantReadData(this.semanticLayerQueryAgentRole);
+      props.dynamodbStack.metricsTable.grantReadData(this.semanticLayerQueryAgentRole);
+      // chat persistence runs inside the runtime — read prior turns + write turns.
+      props.dynamodbStack.chatSessionsTable.grantReadWriteData(this.semanticLayerQueryAgentRole);
+      props.dynamodbStack.feedbackTable.grantReadData(this.semanticLayerQueryAgentRole);
+      // SQL firewall — see the note on the ontology-query role's grant.
+      props.dynamodbStack.grantsTable.grantReadData(this.semanticLayerQueryAgentRole);
+
+      // SSM Parameter Store — Athena results bucket.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ssm:GetParameter', 'ssm:GetParameters'],
+          resources: [
+            `arn:aws:ssm:${this.region}:${this.account}:parameter/${props.projectName}/athena/query-results-bucket`,
+          ],
+        })
+      );
+
+      // ECR pull + auth.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'ecr:BatchGetImage',
+            'ecr:GetDownloadUrlForLayer',
+            'ecr:BatchCheckLayerAvailability',
+          ],
+          resources: ['*'],
+        })
+      );
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ecr:GetAuthorizationToken'],
+          resources: ['*'],
+        })
+      );
+
+      // CloudWatch Logs.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
+          resources: [
+            `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/bedrock-agentcore/runtimes/*`,
+            `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/bedrock-agentcore/runtimes/*:*`,
+          ],
+        })
+      );
+
+      // AgentCore workload token.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'bedrock-agentcore:GetWorkloadAccessToken',
+            'bedrock-agentcore:GetWorkloadAccessTokenForJWT',
+          ],
+          resources: [
+            `arn:aws:bedrock-agentcore:${this.region}:${this.account}:workload-identity-directory/default/*`,
+          ],
+        })
+      );
+
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lakeformation:GetDataAccess'],
+          resources: ['*'],
+        })
+      );
+
+      // EC2 VPC permissions — AgentCore attaches container ENIs to VPC subnets.
+      this.semanticLayerQueryAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'ec2:CreateNetworkInterface',
+            'ec2:DescribeNetworkInterfaces',
+            'ec2:DeleteNetworkInterface',
+            'ec2:AssignPrivateIpAddresses',
+            'ec2:UnassignPrivateIpAddresses',
+          ],
+          resources: ['*'],
+        })
+      );
+
+      // Neptune/Ontop gateway INVOKE (M2M) — Task 4a query-time structural fetch.
+      // Only present when the ontology (Neptune) path is enabled; the gateway is
+      // created there. When ontology is off the grant is skipped (fail-loud at
+      // runtime is expected — see agents/.../neptune_fetch.py).
+      if (ontologyEnabled && this.neptuneGateway) {
+        this.semanticLayerQueryAgentRole.addToPolicy(
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['bedrock-agentcore:InvokeGateway'],
+            resources: [this.neptuneGateway.gatewayArn],
+          })
+        );
+      }
+
+      // ── CREATION agent IAM role (REST/M2M build path) ─────────────────────
+      this.semanticLayerCreationAgentRole = new iam.Role(this, 'SemanticLayerCreationAgentRole', {
+        assumedBy: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
+        description: 'Role for Hybrid semantic-layer creation agent (REST/M2M build path)',
+      });
+      grantLessonsPerms(this.semanticLayerCreationAgentRole);
+
+      // Bedrock model invocation — derived from agents/semantic_layer_creation_agent/models.json
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+          resources: bedrockInvokeModelResources(
+            'semantic_layer_creation_agent',
+            this.region,
+            this.account
+          ),
+        })
+      );
+
+      // Bedrock KB ingestion — creation agent writes docs to S3 then triggers re-ingestion.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'bedrock:StartIngestionJob',
+            'bedrock:GetIngestionJob',
+            'bedrock:ListIngestionJobs',
+          ],
+          resources: [
+            `arn:aws:bedrock:${this.region}:${this.account}:knowledge-base/${props.bedrockKbStack.semanticRagKbId}`,
+          ],
+        })
+      );
+
+      // Athena probe (athena_probe.py) — enum-shape / sample data during build.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:StartQueryExecution',
+            'athena:GetQueryExecution',
+            'athena:GetQueryResults',
+            'athena:StopQueryExecution',
+          ],
+          resources: [
+            `arn:aws:athena:${this.region}:${this.account}:workgroup/${props.athenaStack.workgroup.name}`,
+          ],
+        })
+      );
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'glue:GetCatalog',
+            'glue:GetDatabase',
+            'glue:GetDatabases',
+            'glue:GetTable',
+            'glue:GetTables',
+            'glue:GetPartitions',
+          ],
+          resources: [
+            `arn:aws:glue:${this.region}:${this.account}:catalog`,
+            `arn:aws:glue:${this.region}:${this.account}:database/*`,
+            `arn:aws:glue:${this.region}:${this.account}:table/*`,
+            `arn:aws:glue:${this.region}:${this.account}:catalog/s3tablescatalog`,
+            `arn:aws:glue:${this.region}:${this.account}:catalog/s3tablescatalog/*`,
+            `arn:aws:glue:${this.region}:${this.account}:database/s3tablescatalog/*/*`,
+            `arn:aws:glue:${this.region}:${this.account}:table/s3tablescatalog/*/*/*`,
+          ],
+        })
+      );
+
+      // S3 Tables permissions — the thin-VKG phase reads every table's REAL column
+      // list from Glue, and S3 Tables tables resolve through the federated
+      // s3tablescatalog. Mirrors semanticLayerQueryAgentRole.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            's3tables:GetTable',
+            's3tables:GetNamespace',
+            's3tables:ListNamespaces',
+            's3tables:ListTables',
+            's3tables:GetTableData',
+            // Athena resolves the federated catalog via GetTableBucket; without it
+            // the value-probe queries fail CATALOG_NOT_FOUND (a resolution error,
+            // NOT AccessDenied — so it is easy to misdiagnose).
+            's3tables:GetTableBucket',
+          ],
+          resources: [
+            props.dataLakeStack.tableBucketArn,
+            `${props.dataLakeStack.tableBucketArn}/*`,
+          ],
+        })
+      );
+
+      // Lake Formation data access — S3 Tables reads are LF-gated and
+      // GetDataAccess does not support resource-level scoping (mirrors
+      // semanticLayerQueryAgentRole). Without it glue:GetTable on a federated
+      // table fails "Unable to retrieve credentials from Lake Formation", which
+      // the VKG phase treats as fatal (a column-less VKG cannot ground SQL).
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lakeformation:GetDataAccess'],
+          resources: ['*'],
+        })
+      );
+
+      // S3 write — thin VKG N-Quads + rich KB docs staged to the artifacts bucket.
+      props.dataLakeStack.artifactsBucket.grantReadWrite(this.semanticLayerCreationAgentRole);
+      props.dataLakeStack.athenaResultsBucket.grantReadWrite(this.semanticLayerCreationAgentRole);
+
+      // DynamoDB metadata — ProgressWriter reports build status.
+      props.dynamodbStack.metadataTable.grantReadWriteData(this.semanticLayerCreationAgentRole);
+
+      // SSM Parameter Store — Athena results bucket.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ssm:GetParameter', 'ssm:GetParameters'],
+          resources: [
+            `arn:aws:ssm:${this.region}:${this.account}:parameter/${props.projectName}/athena/query-results-bucket`,
+          ],
+        })
+      );
+
+      // ECR pull + auth.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'ecr:BatchGetImage',
+            'ecr:GetDownloadUrlForLayer',
+            'ecr:BatchCheckLayerAvailability',
+          ],
+          resources: ['*'],
+        })
+      );
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['ecr:GetAuthorizationToken'],
+          resources: ['*'],
+        })
+      );
+
+      // CloudWatch Logs.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
+          resources: [
+            `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/bedrock-agentcore/runtimes/*`,
+            `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/bedrock-agentcore/runtimes/*:*`,
+          ],
+        })
+      );
+
+      // AgentCore workload token.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'bedrock-agentcore:GetWorkloadAccessToken',
+            'bedrock-agentcore:GetWorkloadAccessTokenForJWT',
+          ],
+          resources: [
+            `arn:aws:bedrock-agentcore:${this.region}:${this.account}:workload-identity-directory/default/*`,
+          ],
+        })
+      );
+
+      // EC2 VPC permissions.
+      this.semanticLayerCreationAgentRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'ec2:CreateNetworkInterface',
+            'ec2:DescribeNetworkInterfaces',
+            'ec2:DeleteNetworkInterface',
+            'ec2:AssignPrivateIpAddresses',
+            'ec2:UnassignPrivateIpAddresses',
+          ],
+          resources: ['*'],
+        })
+      );
+
+      // Neptune/Ontop gateway INVOKE (M2M) — thin VKG load into Neptune at build time.
+      if (ontologyEnabled && this.neptuneGateway) {
+        this.semanticLayerCreationAgentRole.addToPolicy(
+          new iam.PolicyStatement({
+            effect: iam.Effect.ALLOW,
+            actions: ['bedrock-agentcore:InvokeGateway'],
+            resources: [this.neptuneGateway.gatewayArn],
+          })
+        );
+      }
+
+      // ── Lake Formation grants for the hybrid roles ─────────────────────────
+      // The IAM lakeformation:GetDataAccess action above is necessary but NOT
+      // sufficient: LF also needs an explicit per-principal grant on each
+      // database/table, or LF hides tables as TABLE_OR_VIEW_NOT_FOUND instead of
+      // returning ACCESS_DENIED. Every sibling agent role gets these above; the
+      // hybrid roles are created after those blocks, so they are granted here
+      // against the same resources.
+      const hybridLfRoles = [
+        ['SemanticLayerQuery', this.semanticLayerQueryAgentRole],
+        ['SemanticLayerCreation', this.semanticLayerCreationAgentRole],
+      ] as const;
+
+      // DynamoDB federated database — parity with the Ontology / SemanticQuery /
+      // Metadata / MetadataQuery roles. Without it a hybrid build or query over a
+      // DynamoDB-backed data source fails GetTable with "Insufficient Lake
+      // Formation permission(s): Required Describe on <table>" (2026-08-14).
+      for (const [label, role] of hybridLfRoles) {
+        new lakeformation.CfnPermissions(this, `${label}LFDynamoDBDatabasePermissions`, {
+          dataLakePrincipal: { dataLakePrincipalIdentifier: role.roleArn },
+          resource: {
+            databaseResource: { name: props.glueCatalogStack.dynamodbDatabase.ref },
+          },
+          permissions: ['DESCRIBE'],
+        });
+
+        new lakeformation.CfnPermissions(this, `${label}LFDynamoDBTablePermissions`, {
+          dataLakePrincipal: { dataLakePrincipalIdentifier: role.roleArn },
+          resource: {
+            tableResource: {
+              databaseName: props.glueCatalogStack.dynamodbDatabase.ref,
+              tableWildcard: {},
+            },
+          },
+          permissions: ['SELECT', 'DESCRIBE'],
+        });
+      }
+
+      // 'normalized' S3 Tables namespace — granted against the namespace CR so the
+      // grant cannot race namespace creation.
+      if (props.normalizedViewsEnabled && ensureNormalizedNsRef) {
+        for (const [label, role] of hybridLfRoles) {
+          const lfDb = new lakeformation.CfnPermissions(this, `${label}LFNormalizedDbPermissions`, {
+            dataLakePrincipal: { dataLakePrincipalIdentifier: role.roleArn },
+            resource: {
+              databaseResource: { catalogId: icebergCatalogId, name: 'normalized' },
+            },
+            permissions: ['DESCRIBE'],
+          });
+          lfDb.node.addDependency(ensureNormalizedNsRef);
+
+          const lfTables = new lakeformation.CfnPermissions(
+            this,
+            `${label}LFNormalizedTablePermissions`,
+            {
+              dataLakePrincipal: { dataLakePrincipalIdentifier: role.roleArn },
+              resource: {
+                tableResource: {
+                  catalogId: icebergCatalogId,
+                  databaseName: 'normalized',
+                  tableWildcard: {},
+                },
+              },
+              permissions: ['SELECT', 'DESCRIBE'],
+            }
+          );
+          lfTables.node.addDependency(ensureNormalizedNsRef);
+        }
+      }
+
+      // ── Log groups + streams ──────────────────────────────────────────────
+      const slQueryLogGroup = new logs.LogGroup(this, 'SemanticLayerQueryAgentLogGroup', {
+        logGroupName: `/aws/bedrock-agentcore/runtimes/${pn}_semantic_layer_query`,
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      });
+      new logs.CfnLogStream(this, 'SemanticLayerQueryAgentRuntimeLogsStream', {
+        logGroupName: slQueryLogGroup.logGroupName,
+        logStreamName: 'runtime-logs',
+      });
+      const slCreationLogGroup = new logs.LogGroup(this, 'SemanticLayerCreationAgentLogGroup', {
+        logGroupName: `/aws/bedrock-agentcore/runtimes/${pn}_semantic_layer_creation`,
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      });
+      new logs.CfnLogStream(this, 'SemanticLayerCreationAgentRuntimeLogsStream', {
+        logGroupName: slCreationLogGroup.logGroupName,
+        logStreamName: 'runtime-logs',
+      });
+
+      // ── ECR grants + ARM64 builds ─────────────────────────────────────────
+      this.agentRepository.grantPull(this.semanticLayerQueryAgentRole);
+      this.agentRepository.grantPull(this.semanticLayerCreationAgentRole);
+
+      const slQueryBuild = new ArmBuildConstruct(this, 'SemanticLayerQueryAgentBuild', {
+        sourcePath: '../agents',
+        region: this.region,
+        namePrefix: `${props.projectName}-semantic-layer-query`,
+        buildTimeoutMinutes: 20,
+        dockerfileName: 'Dockerfile.slquery',
+      });
+      const slCreationBuild = new ArmBuildConstruct(this, 'SemanticLayerCreationAgentBuild', {
+        sourcePath: '../agents',
+        region: this.region,
+        namePrefix: `${props.projectName}-semantic-layer-creation`,
+        buildTimeoutMinutes: 20,
+        dockerfileName: 'Dockerfile.slcreation',
+      });
+      semanticLayerQueryImageTag = slQueryBuild.imageTag;
+      semanticLayerCreationImageTag = slCreationBuild.imageTag;
+
+      const slQueryArtifact = agentcore.AgentRuntimeArtifact.fromEcrRepository(
+        slQueryBuild.repository,
+        slQueryBuild.imageTag
+      );
+      const slCreationArtifact = agentcore.AgentRuntimeArtifact.fromEcrRepository(
+        slCreationBuild.repository,
+        slCreationBuild.imageTag
+      );
+      slQueryBuild.repository.grantPull(this.semanticLayerQueryAgentRole);
+      slCreationBuild.repository.grantPull(this.semanticLayerCreationAgentRole);
+
+      // ── QUERY runtime (chat path) ─────────────────────────────────────────
+      semanticLayerQueryRuntimeEnv = {
+        ...lessonsEnv,
+        ...grantsEnv,
+        AWS_REGION: this.region,
+        ONTOLOGY_METADATA_TABLE: props.dynamodbStack.metadataTable.tableName,
+        CHAT_SESSIONS_TABLE: props.dynamodbStack.chatSessionsTable.tableName,
+        METRICS_TABLE: props.dynamodbStack.metricsTable.tableName,
+        FEEDBACK_TABLE: props.dynamodbStack.feedbackTable.tableName,
+        SEMANTIC_RAG_KB_ID: props.bedrockKbStack.semanticRagKbId ?? '',
+        ATHENA_WORKGROUP: props.athenaStack.workgroup.name,
+        PROJECT_NAME: props.projectName,
+        // Holds the KB markdown corpus the Phase-1 topic-router index is
+        // hydrated from on cold start (written by the creation agent).
+        ARTIFACTS_BUCKET: props.dataLakeStack.artifactsBucket.bucketName,
+        // Query-time Neptune structural fetch reaches Neptune only via the gateway.
+        NEPTUNE_GATEWAY_URL: this.neptuneGateway?.gatewayUrl ?? '',
+        // Governed-rule tier, same flag and same semantics as the ontology-query
+        // runtime above: read by main.py's _rule_tier_answer, and when 'false'
+        // the block short-circuits before any Neptune, embedding or KNN call.
+        // A hybrid layer's thin VKG carries the OBDA mappings Ontop reformulates
+        // through, which is what makes the tier applicable here at all.
+        GOVERNED_RULES_ENABLED: String(props.enableGovernedRules === true),
+        // Live AG-UI streaming — see comment on ontologyQueryRuntimeEnv.
+        ENABLE_LIVE_STREAMING: 'true',
+        ...hybridOtelEnv(`${pn}_semantic_layer_query`, slQueryLogGroup.logGroupName),
+      };
+      // Chat-query runtime: SPA user token (gateway JWT passthrough) + M2M, with
+      // Authorization header allowlisted so the agent can decode the Cognito sub.
+      const slQueryAuthorizer =
+        props.userPool && chatRuntimeClients.length > 0
+          ? agentcore.RuntimeAuthorizerConfiguration.usingCognito(
+              props.userPool,
+              chatRuntimeClients
+            )
+          : agentcore.RuntimeAuthorizerConfiguration.usingIAM();
+      const slQueryHeaders =
+        props.userPool && chatRuntimeClients.length > 0
+          ? { allowlistedHeaders: ['Authorization'] }
+          : undefined;
+
+      this.semanticLayerQueryRuntime = new agentcore.Runtime(this, 'SemanticLayerQueryRuntime', {
+        runtimeName: `${pn}_semantic_layer_query`,
+        agentRuntimeArtifact: slQueryArtifact,
+        executionRole: this.semanticLayerQueryAgentRole,
+        description: 'AgentCore Runtime for Hybrid Semantic-Layer Query Agent (chat path)',
+        authorizerConfiguration: slQueryAuthorizer,
+        requestHeaderConfiguration: slQueryHeaders,
+        networkConfiguration: agentcoreNetworkConfig,
+        lifecycleConfiguration: {
+          idleRuntimeSessionTimeout: cdk.Duration.minutes(15),
+          maxLifetime: cdk.Duration.hours(8),
+        },
+        environmentVariables: semanticLayerQueryRuntimeEnv,
+      });
+
+      // ── CREATION runtime (REST/M2M build path) ────────────────────────────
+      semanticLayerCreationRuntimeEnv = {
+        ...lessonsEnv,
+        AWS_REGION: this.region,
+        ONTOLOGY_METADATA_TABLE: props.dynamodbStack.metadataTable.tableName,
+        SEMANTIC_RAG_KB_ID: props.bedrockKbStack.semanticRagKbId ?? '',
+        SEMANTIC_RAG_DATA_SOURCE_ID: ragDataSourceId ?? '',
+        ATHENA_WORKGROUP: props.athenaStack.workgroup.name,
+        PROJECT_NAME: props.projectName,
+        ARTIFACTS_BUCKET: props.dataLakeStack.artifactsBucket.bucketName,
+        // Thin VKG load reaches Neptune only via the gateway.
+        NEPTUNE_GATEWAY_URL: this.neptuneGateway?.gatewayUrl ?? '',
+        ...hybridOtelEnv(`${pn}_semantic_layer_creation`, slCreationLogGroup.logGroupName),
+      };
+      this.semanticLayerCreationRuntime = new agentcore.Runtime(
+        this,
+        'SemanticLayerCreationRuntime',
+        {
+          runtimeName: `${pn}_semantic_layer_creation`,
+          agentRuntimeArtifact: slCreationArtifact,
+          executionRole: this.semanticLayerCreationAgentRole,
+          description:
+            'AgentCore Runtime for Hybrid Semantic-Layer Creation Agent (REST/M2M build path)',
+          authorizerConfiguration: backendRuntimeAuthorizer,
+          networkConfiguration: agentcoreNetworkConfig,
+          lifecycleConfiguration: {
+            idleRuntimeSessionTimeout: cdk.Duration.minutes(15),
+            maxLifetime: cdk.Duration.hours(8),
+          },
+          environmentVariables: semanticLayerCreationRuntimeEnv,
+        }
+      );
+
+      // Runtimes created after their builds; depend on the SG ENI drainer CR
+      // so on delete they tear down before the shared SG (see ontology block).
+      this.semanticLayerQueryRuntime.node.addDependency(slQueryBuild.buildCompletion);
+      this.semanticLayerCreationRuntime.node.addDependency(slCreationBuild.buildCompletion);
+      this.semanticLayerQueryRuntime.node.addDependency(sgEniDrainerCustomResource);
+      this.semanticLayerCreationRuntime.node.addDependency(sgEniDrainerCustomResource);
+
+      this.semanticLayerQueryRuntimeArn = this.semanticLayerQueryRuntime.agentRuntimeArn;
+      this.semanticLayerCreationRuntimeArn = this.semanticLayerCreationRuntime.agentRuntimeArn;
+    } // end if (hybridEnabled) — hybrid roles, builds, runtimes
+
     // ── Native log delivery (APPLICATION_LOGS + USAGE_LOGS) ─────────────────
     // Configures AgentCore Runtime → CloudWatch Logs delivery so that:
     //   1. The AgentCore console shows "Log delivery: N"
     //   2. APPLICATION_LOGS session data flows to the log group used by online eval
     //   3. USAGE_LOGS token/CPU/memory metrics populate the GenAI Observability
     //      "Resource consumption" dashboard section
-    const pn = props.projectName.replace(/-/g, '_');
 
     const runtimeDeliveries: { id: string; runtimeArn: string; runtimeName: string }[] = [];
     if (semanticRagEnabled) {
@@ -2489,6 +3410,30 @@ export class AgentCoreStack extends cdk.Stack {
         runtimeName: `${pn}_ontology_query`,
       });
     }
+    if (hybridEnabled) {
+      runtimeDeliveries.push(
+        {
+          id: 'SemanticLayerQuery',
+          runtimeArn: this.semanticLayerQueryRuntimeArn!,
+          runtimeName: `${pn}_semantic_layer_query`,
+        },
+        {
+          id: 'SemanticLayerCreation',
+          runtimeArn: this.semanticLayerCreationRuntimeArn!,
+          runtimeName: `${pn}_semantic_layer_creation`,
+        }
+      );
+    }
+
+    // CloudWatch Logs caps AWS::Logs::ResourcePolicy at 10 per region per account.
+    // Calling `usageLogGroup.addToResourcePolicy` once per runtime would emit one
+    // ResourcePolicy PER log group (7 with hybrid enabled) and, combined with
+    // policies from other stacks/projects in the account, blow past the limit
+    // ("ServiceLimitExceeded" → whole-stack rollback, observed 2026-07-29). Instead
+    // we collect every usage log-stream ARN and emit a SINGLE consolidated resource
+    // policy after the loop — one policy statement can authorize the delivery
+    // service on all usage log groups at once. Net: 7 policies → 1.
+    const usageLogStreamArns: string[] = [];
 
     for (const { id, runtimeArn, runtimeName } of runtimeDeliveries) {
       const baseName = runtimeName.replace(/_/g, '-');
@@ -2500,18 +3445,8 @@ export class AgentCoreStack extends cdk.Stack {
         retention: logs.RetentionDays.ONE_MONTH,
         removalPolicy: cdk.RemovalPolicy.DESTROY,
       });
-      usageLogGroup.addToResourcePolicy(
-        new iam.PolicyStatement({
-          sid: `AllowUsageDelivery${id}`,
-          principals: [new iam.ServicePrincipal('delivery.logs.amazonaws.com')],
-          actions: ['logs:CreateLogStream', 'logs:PutLogEvents'],
-          resources: [`${usageLogGroup.logGroupArn}:log-stream:*`],
-          conditions: {
-            StringEquals: { 'aws:SourceAccount': this.account },
-            ArnLike: { 'aws:SourceArn': `arn:aws:logs:${this.region}:${this.account}:*` },
-          },
-        })
-      );
+      // Accumulate this log group's stream ARN for the consolidated policy below.
+      usageLogStreamArns.push(`${usageLogGroup.logGroupArn}:log-stream:*`);
 
       const usageLogsSrc = new logs.CfnDeliverySource(this, `${id}UsageLogsSrc`, {
         name: `${baseName}-usage-src`,
@@ -2525,6 +3460,33 @@ export class AgentCoreStack extends cdk.Stack {
       new logs.CfnDelivery(this, `${id}UsageLogsDelivery`, {
         deliverySourceName: usageLogsSrc.ref,
         deliveryDestinationArn: usageLogsDest.attrArn,
+      });
+    }
+
+    // Single consolidated resource policy authorizing the CloudWatch Logs delivery
+    // service to write to ALL usage log groups — one AWS::Logs::ResourcePolicy
+    // instead of one-per-runtime. Uses the L1 CfnResourcePolicy directly (rather
+    // than N × LogGroup.addToResourcePolicy) precisely so we stay well under the
+    // 10-policies-per-region CloudWatch Logs limit. See the block comment above.
+    if (usageLogStreamArns.length > 0) {
+      new logs.CfnResourcePolicy(this, 'AgentCoreUsageLogsDeliveryPolicy', {
+        policyName: `${pn}-agentcore-usage-logs-delivery`,
+        policyDocument: JSON.stringify({
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Sid: 'AllowUsageDelivery',
+              Effect: 'Allow',
+              Principal: { Service: 'delivery.logs.amazonaws.com' },
+              Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+              Resource: usageLogStreamArns,
+              Condition: {
+                StringEquals: { 'aws:SourceAccount': this.account },
+                ArnLike: { 'aws:SourceArn': `arn:aws:logs:${this.region}:${this.account}:*` },
+              },
+            },
+          ],
+        }),
       });
     }
 
@@ -2602,6 +3564,10 @@ export class AgentCoreStack extends cdk.Stack {
     if (this.suggestionsAgentRole) passRoleArns.push(this.suggestionsAgentRole.roleArn);
     if (this.ontologyAgentRole) passRoleArns.push(this.ontologyAgentRole.roleArn);
     if (this.queryAgentRole) passRoleArns.push(this.queryAgentRole.roleArn);
+    if (this.semanticLayerQueryAgentRole)
+      passRoleArns.push(this.semanticLayerQueryAgentRole.roleArn);
+    if (this.semanticLayerCreationAgentRole)
+      passRoleArns.push(this.semanticLayerCreationAgentRole.roleArn);
     if (passRoleArns.length > 0) {
       cloudResourceIdHandler.addToRolePolicy(
         new iam.PolicyStatement({
@@ -2691,6 +3657,25 @@ export class AgentCoreStack extends cdk.Stack {
         allowlistedHeaders: authorizerEnabled ? ['Authorization'] : undefined,
       });
     }
+    if (hybridEnabled) {
+      envBlocksById['SemanticLayerQuery'] = semanticLayerQueryRuntimeEnv!;
+      envBlocksById['SemanticLayerCreation'] = semanticLayerCreationRuntimeEnv!;
+      imageTagById['SemanticLayerQuery'] = semanticLayerQueryImageTag!;
+      imageTagById['SemanticLayerCreation'] = semanticLayerCreationImageTag!;
+      // QUERY: chat-query runtime — SPA user token + M2M, Authorization passthrough.
+      cloudResourceIdRuntimes.push({
+        id: 'SemanticLayerQuery',
+        runtimeArn: this.semanticLayerQueryRuntimeArn!,
+        allowedClients: chatAuthorizerClientIds,
+        allowlistedHeaders: authorizerEnabled ? ['Authorization'] : undefined,
+      });
+      // CREATION: backend (M2M-only) runtime, no header allowlist.
+      cloudResourceIdRuntimes.push({
+        id: 'SemanticLayerCreation',
+        runtimeArn: this.semanticLayerCreationRuntimeArn!,
+        allowedClients: backendAuthorizerClientIds,
+      });
+    }
     for (const { id, runtimeArn, allowedClients, allowlistedHeaders } of cloudResourceIdRuntimes) {
       // Only attach a CUSTOM_JWT authorizer when the pool/clients exist; otherwise
       // pass empty clients so the handler omits the authorizer (IAM fallback).
@@ -2732,7 +3717,216 @@ export class AgentCoreStack extends cdk.Stack {
       });
     }
 
-    // Outputs
+    // ── Benchmark-eval codeBased evaluator Lambda ─────────────────────────────
+    // A single Lambda backs THREE AgentCore codeBased evaluators (EX / R-VES /
+    // Soft-F1). AgentCore invokes it per (evaluator, trace) with the trace's OTel
+    // spans + level-filtered gold; the handler extracts the predicted SQL from the
+    // spans and the gold SQL from evaluationReferenceInputs, executes both on
+    // Athena (via the vendored agents/shared/{exec_metrics,athena_bench} copies),
+    // and returns one metric score. The Part B notebooks register the three
+    // evaluators against this ARN (create_evaluator) — CDK only deploys the Lambda
+    // and outputs its ARN (mirrors how nb4/nb5 create their evaluators).
+    const benchmarkEvalHandlerDir = path.join(__dirname, 'benchmark-eval-handler');
+    // Shared code asset for all three metric functions — bundled once.
+    const benchmarkEvalCode = lambda.Code.fromAsset(benchmarkEvalHandlerDir, {
+      bundling: {
+        image: lambda.Runtime.PYTHON_3_12.bundlingImage,
+        // Local bundling first (fast, no Docker); mirrors CloudResourceIdHandler.
+        local: {
+          tryBundle(outputDir: string): boolean {
+            try {
+              execSync(
+                // nosemgrep: detect-child-process — CDK synth-time execSync on framework outputDir + static repo paths
+                `pip install --quiet --target "${outputDir}" -r "${path.join(benchmarkEvalHandlerDir, 'requirements.txt')}"`,
+                { stdio: 'pipe' }
+              );
+              for (const f of fs.readdirSync(benchmarkEvalHandlerDir)) {
+                if (f.endsWith('.py')) {
+                  fs.copyFileSync(
+                    path.join(benchmarkEvalHandlerDir, f),
+                    // nosemgrep: detect-non-literal-fs-filename,path-join-resolve-traversal — CDK synth-time paths, not user input
+                    path.join(outputDir, f)
+                  );
+                }
+              }
+              return true;
+            } catch {
+              return false;
+            }
+          },
+        },
+        command: [
+          'bash',
+          '-c',
+          'pip install --quiet --target /asset-output -r requirements.txt && cp *.py /asset-output/',
+        ],
+      },
+    });
+
+    // AgentCore's batch-evaluation path does NOT deliver `evaluatorName` in the
+    // event, so a single shared Lambda cannot self-identify which metric it is.
+    // Deploy the SAME handler as THREE functions, each with EVAL_METRIC baked
+    // into its environment (the handler reads os.environ['EVAL_METRIC']); the
+    // Part B notebooks register one evaluator per function ARN.
+    const benchmarkEvalMetrics: { id: string; env: string; label: string }[] = [
+      { id: 'ExecutionAccuracy', env: 'ex', label: 'EX' },
+      { id: 'RewardVES', env: 'rves', label: 'R-VES' },
+      { id: 'SoftF1', env: 'soft_f1', label: 'Soft-F1' },
+    ];
+
+    // Build one metric function: identical code + IAM, differing only by the
+    // EVAL_METRIC env var. Returns the created function so the caller can emit
+    // its output. All IAM statements mirror the queryAgentRole (Athena exec +
+    // catalog metadata + Glue + S3 Tables + Lake Formation + results bucket).
+    const makeBenchmarkEvalFn = (metric: {
+      id: string;
+      env: string;
+      label: string;
+    }): lambda.Function => {
+      const fn = new lambda.Function(this, `BenchmarkEvalHandler${metric.id}`, {
+        runtime: lambda.Runtime.PYTHON_3_12,
+        handler: 'index.handler',
+        code: benchmarkEvalCode,
+        // Athena polling: run_sql polls up to 120s per query and runs gold THEN
+        // predicted, so give the Lambda headroom beyond a single query's ceiling.
+        timeout: cdk.Duration.minutes(5),
+        memorySize: 512,
+        environment: {
+          ATHENA_WORKGROUP: props.athenaStack.workgroup.name,
+          EVAL_METRIC: metric.env,
+        },
+        description: `codeBased AgentCore evaluator: scores text-to-SQL ${metric.label} on Athena`,
+      });
+
+      // Athena query execution — scoped to the project workgroup.
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:StartQueryExecution',
+            'athena:GetQueryExecution',
+            'athena:GetQueryResults',
+            'athena:StopQueryExecution',
+            'athena:GetWorkGroup',
+          ],
+          resources: [
+            `arn:aws:athena:${this.region}:${this.account}:workgroup/${props.athenaStack.workgroup.name}`,
+          ],
+        })
+      );
+
+      // Athena data-catalog metadata — required to resolve the federated S3 Tables
+      // catalog before running SQL (else athena:GetDataCatalog denies the query).
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'athena:GetDataCatalog',
+            'athena:GetDatabase',
+            'athena:GetTableMetadata',
+            'athena:ListDataCatalogs',
+            'athena:ListDatabases',
+            'athena:ListTableMetadata',
+          ],
+          resources: [`arn:aws:athena:${this.region}:${this.account}:datacatalog/*`],
+        })
+      );
+
+      // Glue Data Catalog — default + federated s3tablescatalog (mirrors queryAgentRole).
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            'glue:GetCatalog',
+            'glue:GetDatabase',
+            'glue:GetDatabases',
+            'glue:GetTable',
+            'glue:GetTables',
+            'glue:GetPartition',
+            'glue:GetPartitions',
+          ],
+          resources: [
+            `arn:aws:glue:${this.region}:${this.account}:catalog`,
+            `arn:aws:glue:${this.region}:${this.account}:database/*`,
+            `arn:aws:glue:${this.region}:${this.account}:table/*`,
+            `arn:aws:glue:${this.region}:${this.account}:catalog/s3tablescatalog`,
+            `arn:aws:glue:${this.region}:${this.account}:catalog/s3tablescatalog/*`,
+            `arn:aws:glue:${this.region}:${this.account}:database/s3tablescatalog/*/*`,
+            `arn:aws:glue:${this.region}:${this.account}:table/s3tablescatalog/*/*/*`,
+          ],
+        })
+      );
+
+      // S3 Tables (Iceberg) read — the benchmark datasets live here.
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            // GetTableBucket is REQUIRED for Athena to RESOLVE the federated
+            // s3tablescatalog catalog — without it gold/predicted queries fail
+            // `CATALOG_NOT_FOUND` (a resolution failure, not AccessDenied), so
+            // every codeBased exec-metric (EX/R-VES/Soft-F1) scored null. Confirmed
+            // fix 2026-07-24 (AWS S3-Tables-from-Athena minimum-permission docs).
+            's3tables:GetTableBucket',
+            's3tables:GetTable',
+            's3tables:GetTableMetadataLocation',
+            's3tables:GetNamespace',
+            's3tables:ListNamespaces',
+            's3tables:ListTables',
+            's3tables:GetTableData',
+          ],
+          resources: [
+            props.dataLakeStack.tableBucketArn,
+            `${props.dataLakeStack.tableBucketArn}/*`,
+          ],
+        })
+      );
+
+      // Lake Formation data access — S3 Tables reads are LF-gated; GetDataAccess
+      // does not support resource-level scoping (mirrors queryAgentRole). NOTE:
+      // this grants the IAM ACTION only — each function's execution role must
+      // ALSO be granted LF SELECT/DESCRIBE on every benchmark namespace (done by
+      // scripts/benchmarks/deploy_datasets.py --grant-roles), else gold SQL fails
+      // CATALOG_NOT_FOUND.
+      fn.addToRolePolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ['lakeformation:GetDataAccess'],
+          resources: ['*'],
+        })
+      );
+
+      // Read+write the Athena results (query-output) bucket. Athena writes each
+      // query's output to the workgroup's S3 location using the CALLING role's
+      // creds, so the handler needs s3:PutObject (not just Get/List) or
+      // StartQueryExecution lands FAILED "Access Denied writing to output
+      // location". Bucket is S3_MANAGED, so no KMS grant is needed.
+      props.dataLakeStack.athenaResultsBucket.grantReadWrite(fn);
+
+      // Allow the AgentCore evaluation service to invoke this evaluator Lambda.
+      // The SourceAccount condition scopes the grant to this account's evaluators.
+      fn.addPermission('AllowAgentCoreEvalInvoke', {
+        principal: new iam.ServicePrincipal('bedrock-agentcore.amazonaws.com'),
+        action: 'lambda:InvokeFunction',
+        sourceAccount: this.account,
+      });
+
+      return fn;
+    };
+
+    // Create the three metric functions and export each ARN. The Part B notebooks
+    // resolve these by the per-metric output keys and register one evaluator each.
+    for (const metric of benchmarkEvalMetrics) {
+      const fn = makeBenchmarkEvalFn(metric);
+      new cdk.CfnOutput(this, `BenchmarkEvalHandler${metric.id}Arn`, {
+        value: fn.functionArn,
+        description: `ARN of the codeBased ${metric.label} exec-metric evaluator Lambda`,
+        // CFN export names allow only alphanumerics/colons/hyphens — the env slug
+        // has an underscore (soft_f1), so hyphenate it for the export name.
+        exportName: `${props.projectName}-benchmark-eval-${metric.env.replace(/_/g, '-')}-arn`,
+      });
+    }
+
     new cdk.CfnOutput(this, 'AgentRepositoryUri', {
       value: this.agentRepository.repositoryUri,
       description: 'ECR repository URI for agent images',
@@ -2841,6 +4035,52 @@ export class AgentCoreStack extends cdk.Stack {
       new cdk.CfnOutput(this, 'QuerySuggestionsAgentLogGroupName', {
         value: suggestionsLogGroup!.logGroupName,
         description: 'CloudWatch log group for Query Suggestions Agent OTEL telemetry',
+      });
+    }
+
+    if (hybridEnabled) {
+      new cdk.CfnOutput(this, 'SemanticLayerQueryAgentRoleArn', {
+        value: this.semanticLayerQueryAgentRole!.roleArn,
+        description: 'IAM role for Hybrid semantic-layer query agent',
+        exportName: `${props.projectName}-semantic-layer-query-agent-role`,
+      });
+
+      new cdk.CfnOutput(this, 'SemanticLayerCreationAgentRoleArn', {
+        value: this.semanticLayerCreationAgentRole!.roleArn,
+        description: 'IAM role for Hybrid semantic-layer creation agent',
+        exportName: `${props.projectName}-semantic-layer-creation-agent-role`,
+      });
+
+      new cdk.CfnOutput(this, 'SemanticLayerQueryRuntimeArn', {
+        value: this.semanticLayerQueryRuntimeArn!,
+        description: 'AgentCore Runtime ARN for Hybrid Semantic-Layer Query Agent',
+        exportName: `${props.projectName}-semantic-layer-query-runtime-arn`,
+      });
+
+      new cdk.CfnOutput(this, 'SemanticLayerCreationRuntimeArn', {
+        value: this.semanticLayerCreationRuntimeArn!,
+        description: 'AgentCore Runtime ARN for Hybrid Semantic-Layer Creation Agent',
+        exportName: `${props.projectName}-semantic-layer-creation-runtime-arn`,
+      });
+
+      new cdk.CfnOutput(this, 'SemanticLayerQueryRuntimeEndpoint', {
+        value: cdk.Fn.join('', [
+          'https://bedrock-agentcore.',
+          this.region,
+          '.amazonaws.com/runtimes/',
+          this.semanticLayerQueryRuntimeArn!,
+        ]),
+        description: 'AgentCore Runtime endpoint for Hybrid Semantic-Layer Query Agent',
+      });
+
+      new cdk.CfnOutput(this, 'SemanticLayerCreationRuntimeEndpoint', {
+        value: cdk.Fn.join('', [
+          'https://bedrock-agentcore.',
+          this.region,
+          '.amazonaws.com/runtimes/',
+          this.semanticLayerCreationRuntimeArn!,
+        ]),
+        description: 'AgentCore Runtime endpoint for Hybrid Semantic-Layer Creation Agent',
       });
     }
 

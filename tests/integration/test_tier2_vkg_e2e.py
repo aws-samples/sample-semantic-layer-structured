@@ -74,8 +74,12 @@ def test_tier2_vkg_happy_path():
     generator = VkgQueryGenerator(agent_factory=lambda: fake_agent)
     deps = PhaseDeps(
         router=router, builder=builder, generator=generator,
-        run_execution=lambda sparql: {"columns": ["c"], "rows": [["1"]],
-                                      "answer": "1 customer", "n_quads": []},
+        # slice_text is passed by Phase 5 so the answer renderer's span carries the
+        # ontology slice for the SqlGrounded judge; accepted and ignored here.
+        run_execution=lambda sparql, slice_text=None: {
+            "columns": ["c"], "rows": [["1"]],
+            "answer": "1 customer", "n_quads": [],
+        },
     )
 
     ctx = tier2_vkg_workflow(question="who has a policy?", namespace="ns-default",

@@ -1,0 +1,23 @@
+# Extra deps for benchmark ingestion scripts (not part of the deployed agent image).
+# Reuses the agent's pinned boto3/sqlglot/requests; adds Parquet export only.
+boto3==1.43.15
+sqlglot==30.8.0
+requests==2.33.1
+pyarrow==24.0.0
+# CWD's benchmark questions ship as RDF/Turtle (acme-benchmark.ttl), parsed via
+# rdflib in ingest_cwd.extract_cwd_questions. Also already a repo dependency
+# (used by the ontology agent); pinned here to the installed version.
+rdflib==7.6.0
+
+# Direct Snowflake execution for Spider 2.0-snow (agents/shared/snowflake_bench.py).
+#
+# Deliberately HERE and not in agents/requirements.txt: the deployed agents reach
+# Snowflake through the Athena federated catalog and need no driver at all, so
+# putting it in the runtime image would add it (plus asn1crypto, pyOpenSSL,
+# sortedcontainers, pytz) to every agent container for a benchmark-only code path.
+# snowflake_bench imports the driver lazily, so the module stays importable — and
+# unit-testable — without it installed.
+#
+# Verified to resolve against this file's boto3/requests pins and the
+# cryptography==48.0.1 in agents/requirements.txt (key-pair auth); pulls no pyarrow.
+snowflake-connector-python==4.7.2

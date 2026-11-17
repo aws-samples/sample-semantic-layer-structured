@@ -14,6 +14,11 @@ import networkx as nx
 from rdflib import Graph, URIRef
 from rdflib.namespace import Namespace, OWL, RDF, RDFS
 
+try:
+    from agents.shared.candidate_retrieval import resolve_to_iri
+except ImportError:  # container path: agents/ is on PYTHONPATH
+    from shared.candidate_retrieval import resolve_to_iri  # type: ignore
+
 # SHACL namespace — used to walk shape closures so sh:in enum constraints
 # survive centrality truncation (see _truncate_by_centrality).
 SH = Namespace("http://www.w3.org/ns/shacl#")
@@ -27,7 +32,8 @@ class VkgSliceBuilder:
     def __init__(self, *, neptune,
                  judge_fn: Callable[[Dict[str, Any]], Dict[str, Any]],
                  token_counter: Callable[[str], int],
-                 budget: int, n_hops: int) -> None:
+                 budget: int, n_hops: int,
+                 ontology_json: Optional[Dict[str, Any]] = None) -> None:
         """Initialize the builder.
 
         Args:
@@ -38,12 +44,19 @@ class VkgSliceBuilder:
             token_counter: Callable approximating tokens for a TTL string.
             budget: Soft token budget for the slice serialization.
             n_hops: SPARQL CONSTRUCT hop radius around each candidate.
+            ontology_json: The FULL ontology (``{"classes": {...}, "properties":
+                {...}}``). Used to resolve judge ``missing[]`` labels back to real
+                IRIs before ``expand`` — the judge names a missing concept by
+                label when it was never in the slice, so a raw union would union a
+                non-IRI and pull nothing. Optional; when absent, ``expand`` unions
+                the raw tokens (prior behavior).
         """
         self.neptune = neptune
         self.judge = judge_fn
         self.tokens = token_counter
         self.budget = budget
         self.n_hops = n_hops
+        self._ont = ontology_json or {}
         self._candidates: List[str] = []
         # Accumulated judge token usage across is_sufficient() calls; the
         # Phase 3 node rolls this into the workflow's running total (mirrors
@@ -58,9 +71,34 @@ class VkgSliceBuilder:
         )
         return self._fit_to_budget(graph)
 
+    def _resolve_to_iri(self, token: str) -> str:
+        """Resolve a judge ``missing[]`` entry to a real ontology IRI.
+
+        Delegates to :func:`agents.shared.candidate_retrieval.resolve_to_iri`,
+        which was lifted verbatim from this method's former body, so the
+        resolution semantics are unchanged: the sufficiency judge names a
+        never-in-slice concept by a guessed label (e.g. ``"Customers"``) and this
+        maps it back to a full ontology IRI by case-insensitive match against the
+        FULL ontology's (``self._ont``) class/property local-names and ``label``s.
+
+        Args:
+            token: A ``missing[]`` entry — either already an IRI or a bare label.
+
+        Returns:
+            The resolved full IRI, or ``token`` unchanged when it is already an
+            IRI or no ontology match is found (no worse than prior behavior).
+        """
+        return resolve_to_iri(token, self._ont)
+
     def expand(self, *, slice_text: str, missing: List[str]) -> str:
-        """Re-construct around the union of prior candidates and ``missing``."""
-        self._candidates = list(set(self._candidates) | set(missing))
+        """Re-construct around the union of prior candidates and ``missing``.
+
+        Each ``missing`` entry is resolved to a real ontology IRI first (see
+        ``_resolve_to_iri``) so a judge that named a never-in-slice concept by
+        label still pulls the actual concept in on re-construct.
+        """
+        resolved = [self._resolve_to_iri(m) for m in (missing or [])]
+        self._candidates = list(set(self._candidates) | set(resolved))
         graph: Graph = self.neptune.construct(
             candidates=self._candidates, n_hops=self.n_hops, namespace="-",
         )

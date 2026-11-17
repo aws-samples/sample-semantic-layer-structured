@@ -1,0 +1,173 @@
+# SHACL shapes for governed rules — Level 1 (structural) validation.
+#
+# These shapes encode the vkgr: schema itself: what a rule must carry to be
+# reviewable at all. They deliberately duplicate some of rule_models.py's
+# pydantic constraints, because a rule can also arrive as raw RDF (imported,
+# hand-edited in Neptune, or produced by a future authoring path) and must be
+# refused at the gate rather than trusted because "the model validated it".
+#
+# Thresholds are validated via sh:node from the properties that REFERENCE them,
+# not via sh:targetClass: a dangling reference to a node whose triples were
+# deleted has no rdf:type left to target, and that dangling case is exactly
+# what must fail.
+
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix vkgr: <https://semantic-layer.aws/virtual-kg/rules#> .
+
+vkgr:ThresholdShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path vkgr:value ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:double ;
+        sh:message "threshold value is required" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:unit ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "threshold unit is required" ;
+    ] ;
+    # The structural half of "never invent a missing threshold": a bound with no
+    # quoted source span cannot be approved, so it cannot be stored.
+    sh:property [
+        sh:path vkgr:sourceSpan ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 1 ;
+        sh:message "threshold sourceSpan must quote the document" ;
+    ] .
+
+vkgr:ConditionShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path vkgr:binding ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "condition binding is required and must be an IRI" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:operator ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:message "condition operator is required" ;
+    ] ;
+    # Explicit index — clause order is a correctness requirement for the
+    # compiled SPARQL, so an unordered condition is a structural defect.
+    sh:property [
+        sh:path vkgr:conditionIndex ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message "condition conditionIndex is required for stable ordering" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:threshold ;
+        sh:maxCount 1 ;
+        sh:node vkgr:ThresholdShape ;
+        sh:message "condition threshold must resolve to a complete threshold" ;
+    ] .
+
+vkgr:ConclusionShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path vkgr:outcome ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "conclusion outcome is required and must be an IRI" ;
+    ] ;
+    # Closed set — same sh:in mechanism enum_shapes.py already emits. Keeps a
+    # correlation from ever being stored as a confirmed cause.
+    sh:property [
+        sh:path vkgr:epistemicStatus ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in (
+            vkgr:associatedWith
+            vkgr:requiresFurtherEvidence
+            vkgr:candidateContributorTo
+            vkgr:supportsHypothesis
+            vkgr:indicatesRiskOf
+            vkgr:confirmedCauseOf
+        ) ;
+        sh:message "conclusion epistemicStatus must be one of the six statuses" ;
+    ] ;
+    # Cardinality only. WHETHER an attestation is required depends on the
+    # epistemic status, which is validate_epistemic's job (level 4) — SHACL
+    # would need sh:sparql to express it, and the level-4 message is clearer.
+    sh:property [
+        sh:path vkgr:attestedBy ;
+        sh:maxCount 1 ;
+        sh:message "at most one attestedBy" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:attestationNote ;
+        sh:maxCount 1 ;
+        sh:message "at most one attestationNote" ;
+    ] .
+
+vkgr:ScopeShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path vkgr:subjectClass ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:message "scope subjectClass is required and must be an IRI" ;
+    ] .
+
+vkgr:RuleShape
+    a sh:NodeShape ;
+    sh:targetClass vkgr:Rule ;
+    sh:property [
+        sh:path vkgr:ruleId ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 1 ;
+        sh:message "ruleId is required" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:name ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:minLength 1 ;
+        sh:message "name is required" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:lifecycle ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:in ( "DRAFT" "APPROVED" "PUBLISHED" ) ;
+        sh:message "lifecycle is required and must be DRAFT, APPROVED or PUBLISHED" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:scope ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node vkgr:ScopeShape ;
+        sh:message "scope is required" ;
+    ] ;
+    sh:property [
+        sh:path vkgr:conclusion ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node vkgr:ConclusionShape ;
+        sh:message "conclusion is required" ;
+    ] ;
+    # A rule with no conditions would fire on every subject in scope.
+    sh:property [
+        sh:path vkgr:hasCondition ;
+        sh:minCount 1 ;
+        sh:node vkgr:ConditionShape ;
+        sh:message "at least one condition is required" ;
+    ] ;
+    # Catches a threshold whose node was deleted while the rule still lists it.
+    sh:property [
+        sh:path vkgr:threshold ;
+        sh:node vkgr:ThresholdShape ;
+        sh:message "every referenced threshold must be complete" ;
+    ] .

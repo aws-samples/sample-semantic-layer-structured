@@ -24,13 +24,20 @@ import {
   reviseMetadata,
   dataSourceAPI,
   getTableKBMetadata,
+  computeMetadataDelta,
 } from "../../services/api";
+import DeltaPreview from "../../components/DeltaPreview";
 import LessonsLearnedTab from "../../components/LessonsLearnedTab";
 import FeedbackTab from "../../components/FeedbackTab";
 import GovernedMetricsTab from "../../components/GovernedMetricsTab";
+import GovernedRulesTab from "../../components/GovernedRulesTab";
 import MonitoringTab from "../../components/MonitoringTab";
 import GroundTruthDataset from "./GroundTruthDataset";
 import Evaluations from "./Evaluations";
+import {
+  RULES_UNSUPPORTED_MESSAGE,
+  rulesUnsupportedFor,
+} from "../../utils/layerCapabilities";
 
 // ─── Glue catalog expandable card (Data Sources tab) ─────────────────────────
 
@@ -408,7 +415,18 @@ function KBTableCard({
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export default function ViewSemanticRAGMetadata() {
+/**
+ * Detail page for every completed layer that is NOT a VKG.
+ *
+ * `AdminDashboard.getActionButton` sends only `type === "VKG"` to
+ * `/admin/view-graph`, so a **Hybrid** layer lands here too — which is why the
+ * governance tabs below must read the layer's stored type rather than assuming
+ * Semantic RAG.
+ *
+ * @param {object} [user] Signed-in Cognito user; its identity is recorded on
+ *                        every governed-rule approval.
+ */
+export default function ViewSemanticRAGMetadata({ user }) {
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -647,6 +665,25 @@ export default function ViewSemanticRAGMetadata() {
                 id: "datasources",
                 content: (
                   <SpaceBetween size="s">
+                    <Container>
+                      <DeltaPreview
+                        totalTables={config?.dataSources?.length ?? 0}
+                        onCompute={async () => {
+                          const res = await computeMetadataDelta(id);
+                          return res.data;
+                        }}
+                        onRebuild={async (scope, plan) => {
+                          await startMetadataEnrichment(id, {
+                            scope,
+                            targetTables:
+                              scope === "delta" ? plan.rebuildSet : undefined,
+                            removedTables:
+                              scope === "delta" ? plan.removed : undefined,
+                          });
+                          loadData();
+                        }}
+                      />
+                    </Container>
                     {(config?.dataSources ?? []).length === 0 ? (
                       <Container>
                         <Box
@@ -775,7 +812,13 @@ export default function ViewSemanticRAGMetadata() {
                 label: "Governed Metrics",
                 id: "governed-metrics",
                 content: id ? (
-                  <GovernedMetricsTab ontologyId={id} layerType="SemanticRAG" />
+                  // Not hardcoded "SemanticRAG": AdminDashboard routes every
+                  // non-VKG layer here, Hybrid included, and a Hybrid layer has
+                  // an ontology graph whose classes a metric can link to.
+                  <GovernedMetricsTab
+                    ontologyId={id}
+                    layerType={config?.type ?? null}
+                  />
                 ) : (
                   <Box
                     color="text-status-inactive"
@@ -784,6 +827,41 @@ export default function ViewSemanticRAGMetadata() {
                   >
                     No semantic layer selected
                   </Box>
+                ),
+              },
+              {
+                label: "Governed Rules",
+                id: "governed-rules",
+                // The tab is always listed, and the body says which of the two
+                // cases this layer is in. Omitting the tab for Semantic RAG
+                // would leave a reviewer unable to tell "not supported here"
+                // apart from "feature not deployed".
+                //
+                // Gated on `rulesUnsupportedFor`, NOT on `!hasOntologyGraph`:
+                // until the config resolves, `config?.type` is undefined, and
+                // the negation would flash "rules do not apply to this layer"
+                // at a Hybrid reviewer whose layer they very much do.
+                content: !id ? (
+                  <Box
+                    color="text-status-inactive"
+                    padding="l"
+                    textAlign="center"
+                  >
+                    No semantic layer selected
+                  </Box>
+                ) : rulesUnsupportedFor(config?.type) ? (
+                  <Alert type="info" header="Governed rules do not apply here">
+                    {RULES_UNSUPPORTED_MESSAGE}
+                  </Alert>
+                ) : (
+                  <GovernedRulesTab
+                    ontologyId={id}
+                    layerType={config?.type ?? null}
+                    // Recorded on every threshold and rule approval. The API
+                    // rejects a blank approver with 422, so an unthreaded user
+                    // makes approval impossible rather than anonymous.
+                    currentUser={user?.email || user?.username}
+                  />
                 ),
               },
               {

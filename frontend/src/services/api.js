@@ -13,6 +13,7 @@ const CHAT_GATEWAY_URL = process.env.REACT_APP_CHAT_GATEWAY_URL || "";
 const CHAT_TARGETS = {
   "semantic-rag": "metadata-query",
   vkg: "ontology-query",
+  hybrid: "semantic-layer-query",
 };
 
 // Timeout configurations (in milliseconds)
@@ -138,15 +139,14 @@ export const ontologyAPI = {
   },
 
   // Build ontology (trigger generation)
-  buildOntology: async (id) => {
+  // options is forwarded as the POST body. When omitted it defaults to {} so the
+  // backend treats the request as a full build (missing scope => "full").
+  // Pass { scope: "delta", targetTables, removedTables } for a scoped build.
+  buildOntology: async (id, options = {}) => {
     return handleResponse(
-      apiClient.post(
-        `/ontology/build/${id}`,
-        {},
-        {
-          timeout: TIMEOUTS.LONG_RUNNING,
-        },
-      ),
+      apiClient.post(`/ontology/build/${id}`, options, {
+        timeout: TIMEOUTS.LONG_RUNNING,
+      }),
     );
   },
 
@@ -714,6 +714,129 @@ export const metricsAPI = {
 };
 
 // ============================================================================
+// GOVERNED RULES API (enableGovernedRules; VKG and Hybrid layers)
+// ============================================================================
+// A governed rule is business logic a human authored and approved — "a holding
+// unpaid after 90 days is a lapse risk". Rules are RDF in the Neptune named
+// graph `<layerId>/rules`, not DynamoDB rows, but the HTTP surface deliberately
+// mirrors metricsAPI so the admin UI patterns are identical.
+//
+// Applies to any layer type that builds an ontology graph — VKG and Hybrid, not
+// Semantic RAG, which documents tables into a Bedrock KB and mints no IRI for a
+// rule's binding to resolve against. The two surfaces differ: a VKG layer's tab
+// is on ViewKnowledgeGraph, a Hybrid layer's on ViewSemanticRAGMetadata, because
+// that is where AdminDashboard routes each type. See utils/layerCapabilities.js
+// — the applicability check lives there, not here.
+//
+// The router mounts only when BOTH `RULES_ENABLED` and `NEPTUNE_GATEWAY_URL`
+// are set on the REST API Lambda; when either is missing these calls 404 and
+// the tab surfaces an informational empty state. That means a path typo here
+// and a disabled flag look the same from the browser — hence the URL tests.
+export const rulesAPI = {
+  // List every rule (any lifecycle) for one layer.
+  list: async (ns) => {
+    return handleResponse(
+      apiClient.get(`/rules/namespaces/${encodeURIComponent(ns)}/rules`),
+    );
+  },
+
+  // Fetch one rule by rule_id.
+  get: async (ns, ruleId) => {
+    return handleResponse(
+      apiClient.get(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}`,
+      ),
+    );
+  },
+
+  // Create a rule. `rule` must carry `namespace === ns` (the backend 400s on
+  // mismatch). Always lands DRAFT — the server sets the lifecycle, so a client
+  // cannot publish by POSTing lifecycle=PUBLISHED.
+  create: async (ns, rule) => {
+    return handleResponse(
+      apiClient.post(`/rules/namespaces/${encodeURIComponent(ns)}/rules`, rule),
+    );
+  },
+
+  // Import a doc-pipeline mined-rules artefact as DRAFT rules. `key` is the
+  // pipeline's `minedRulesKey` output (`mined-rules/<documentId>.json`).
+  // Nothing arrives approved, attested or compiled — the artefact is a plain
+  // JSON file, so the server re-derives every governed field. Returns
+  // {rules: [...], count: n}; a 404 means that document mined nothing.
+  importMined: async (ns, key) => {
+    return handleResponse(
+      apiClient.post(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules:import`,
+        { key },
+      ),
+    );
+  },
+
+  // Replace a rule. Any edit resets it to DRAFT and drops the compiled SPARQL,
+  // so an edited rule can never execute previously-approved logic.
+  update: async (ns, ruleId, rule) => {
+    return handleResponse(
+      apiClient.put(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}`,
+        rule,
+      ),
+    );
+  },
+
+  // Approve ONE threshold value. This is the human-owned action the compiler
+  // requires — an unapproved threshold is refused at compile time, because a
+  // number nobody signed off on is exactly what makes a rule ungovernable.
+  approveThreshold: async (ns, ruleId, thresholdId, approver) => {
+    return handleResponse(
+      apiClient.post(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}/thresholds/${encodeURIComponent(thresholdId)}:approve`,
+        { approver },
+      ),
+    );
+  },
+
+  // Move a DRAFT rule to APPROVED, recording the reviewer identity.
+  approve: async (ns, ruleId, approver) => {
+    return handleResponse(
+      apiClient.post(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}:approve`,
+        { approver },
+      ),
+    );
+  },
+
+  // Run the four-level validation ladder without publishing. Returns
+  // {reports: [{level, passed, violations}], missing_inputs: [...]}.
+  validate: async (ns, ruleId) => {
+    return handleResponse(
+      apiClient.post(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}:validate`,
+      ),
+    );
+  },
+
+  // Publish. Server-side this validates, compiles, and SMOKE-EXECUTES the
+  // compiled SPARQL through Ontop. A 422 carries the blocking reason verbatim,
+  // so surface `error` to the reviewer rather than a generic failure message.
+  publish: async (ns, ruleId) => {
+    return handleResponse(
+      apiClient.post(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}:publish`,
+      ),
+    );
+  },
+
+  // Delete a rule and all its child nodes from the rules graph.
+  remove: async (ns, ruleId) => {
+    return handleResponse(
+      apiClient.delete(
+        `/rules/namespaces/${encodeURIComponent(ns)}/rules/${encodeURIComponent(ruleId)}`,
+      ),
+    );
+  },
+};
+
+// ============================================================================
 // METADATA APIs
 // ============================================================================
 
@@ -729,6 +852,16 @@ export const startMetadataEnrichment = async (id, options = {}) => {
     ),
   );
 };
+
+// POST /metadata/delta/{id} — compute (do not run) the Semantic-RAG delta plan.
+// Returns the diff describing which tables need rebuilding vs. can be reused.
+export const computeMetadataDelta = async (id) =>
+  handleResponse(apiClient.post(`/metadata/delta/${id}`));
+
+// POST /ontology/delta/{id} — compute (do not run) the VKG delta plan.
+// Returns the diff describing which tables need rebuilding vs. can be reused.
+export const computeOntologyDelta = async (id) =>
+  handleResponse(apiClient.post(`/ontology/delta/${id}`));
 
 // Start a versioned metadata revision — stamps the active record with revisionMode=True,
 // invokes the metadata agent on the annotation path, and returns {nextVersion}.
@@ -860,6 +993,35 @@ export const healthAPI = {
   // Get system status
   getSystemStatus: async () => {
     return handleResponse(apiClient.get("/status"));
+  },
+};
+
+// ============================================================================
+// NAMESPACES & AUTHORIZATION APIs
+// ============================================================================
+export const namespaceAPI = {
+  // List the namespaces the caller may see. The backend filters the result to
+  // the caller's grants, so this is already a permitted view — not everything.
+  list: async () => {
+    return handleResponse(apiClient.get("/namespaces"));
+  },
+
+  // The caller's own resolved roles, plus whether enforcement is switched on.
+  //
+  // Needed because a browser cannot infer its own namespace-scoped roles: the ID
+  // token carries `cognito:groups`, and a group only ever confers a PLATFORM
+  // role. Every namespace-scoped role lives in a grant row only the API can
+  // read. See useAuthz, which seeds from the token and then refines from here.
+  getMyAuthz: async () => {
+    return handleResponse(apiClient.get("/namespaces/me"));
+  },
+
+  // Grants on one namespace. Admin surface — a caller without
+  // grantPermissions gets a 403 rather than an empty list.
+  listGrants: async (namespaceId) => {
+    return handleResponse(
+      apiClient.get(`/namespaces/${encodeURIComponent(namespaceId)}/grants`),
+    );
   },
 };
 

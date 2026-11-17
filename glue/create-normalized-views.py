@@ -859,6 +859,10 @@ for mv_name, src_table, sk_filter in NORMALIZED_VIEWS:
         )
     except s3t.exceptions.NotFoundException:
         pass  # first build — nothing to delete
+    # NOTE: Spark/Iceberg DDL (USING iceberg) — NOT Athena DDL. This path writes
+    # via the Glue Spark job, so it does NOT need Athena's `WITH (table_type='ICEBERG',
+    # is_external=false)` CTAS form or unquoted-DROP handling (those apply only to
+    # Athena-driven writes, e.g. scripts/benchmarks). Deletion uses s3t.delete_table above.
     spark.sql(
         f"CREATE TABLE s3t_catalog.normalized.{mv_name} "  # nosec B608 — SQL/SPARQL built from internal schema-slice/static identifiers, not user input (grounding-gated)
         f"USING iceberg AS SELECT * FROM {tmp_view}"

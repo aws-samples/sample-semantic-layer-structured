@@ -93,6 +93,7 @@ def emit_answer_span(
     operation_label: str = "final_answer",
     conversation_history: Optional[List[Dict[str, Any]]] = None,
     retrieved_schema: Optional[str] = None,
+    executed_sql: Optional[str] = None,
 ) -> None:
     """Emit a deterministic ``invoke_agent`` span carrying the agent's real final answer.
 
@@ -242,10 +243,26 @@ def emit_answer_span(
         # is rendered into the SESSION {context}. ``start_agent_span`` attaches the
         # INPUT messages (user question + [conversation_so_far]) as the paired event;
         # ``end_agent_span`` records the OUTPUT (the answer text) from ``str(response)``.
+        # When the turn executed SQL (VKG: the Ontop-translated query), carry it on
+        # THIS exported invoke_agent span as an execute_sql_query tool attribute.
+        # The VKG agent runs SQL via a plain function (no auto-emitted tool span),
+        # and a standalone tool span from a non-agent context is not exported — so
+        # the codeBased exec-metric Lambda (which scans exported spans for
+        # gen_ai.tool.name==execute_sql_query / a {"sql":...} arg) found "no
+        # predicted SQL". Attaching it here — on the span that reliably reaches the
+        # eval harvester — lets the exec metric score the real executed SQL.
+        _custom_attrs = None
+        if executed_sql and executed_sql.strip():
+            import json as _json
+            _custom_attrs = {
+                "gen_ai.tool.name": "execute_sql_query",
+                "gen_ai.tool.input": _json.dumps({"sql": executed_sql}),
+            }
         span = tracer.start_agent_span(
             messages=input_messages,
             agent_name=f"answer:{operation_label}",
             model_id=operation_label,
+            custom_trace_attributes=_custom_attrs,
         )
         # Zero token usage — the _AnswerResult shim has no ``.metrics``, so
         # end_agent_span attaches no usage attributes (deterministic, prompt-free).

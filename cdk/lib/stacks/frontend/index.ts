@@ -45,6 +45,14 @@ export interface FrontendStackProps extends StackProps {
   readonly websiteBucket: s3.Bucket;
   readonly enableOntologyAgents?: boolean;
   readonly enableSemanticRag?: boolean;
+  /**
+   * Whether the Hybrid semantic-layer runtimes are deployed. Gates the Hybrid
+   * card in the layer-type picker so the UI cannot offer a layer type whose
+   * build/query runtimes do not exist. `app.ts` always passes this explicitly
+   * from the `enableHybrid` CDK context flag, which defaults to true; omitting
+   * it here hides the card, matching how `enableSemanticRag` behaves.
+   */
+  readonly enableHybrid?: boolean;
   /** Base URL of the AgentCore chat Gateway; streamChat posts here (bearer JWT). */
   readonly chatGatewayUrl?: string;
   /** MCP OAuth proxy URL (what Claude Code / Cursor connect to); shown on Settings. */
@@ -79,6 +87,7 @@ export class FrontendStack extends Stack {
       REACT_APP_AUTH_MODE: 'direct', // Show username/password fields directly
       REACT_APP_ENABLE_ONTOLOGY_AGENTS: String(props.enableOntologyAgents ?? true),
       REACT_APP_ENABLE_SEMANTIC_RAG: String(props.enableSemanticRag === true),
+      REACT_APP_ENABLE_HYBRID: String(props.enableHybrid === true),
     };
 
     // Create S3 asset from frontend source code (creates a zip file)

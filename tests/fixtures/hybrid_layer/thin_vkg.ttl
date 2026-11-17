@@ -1,0 +1,30 @@
+# Thin-VKG structural slice fixture for the Hybrid end-to-end integration test.
+#
+# This is a standalone .ttl slice modelled on the inline `_SLICE_TTL` fixture in
+# tests/unit/test_hybrid_graph.py, but loaded from disk by the integration test's
+# fetch stub. It holds ONLY the two kinds of triples the query-time verify path
+# reads:
+#
+#   <classIRI>    vkg:mapsToTable  "table"          (built into class_by_table)
+#   <predicate>   rdfs:domain      <classIRI>        (drives the qualified check)
+#   <predicate>   vkg:mapsToColumn "table.column"    (built into pred_by_column)
+#
+# Two classes (Address, Party) and one predicate (hasStateTc) whose rdfs:domain
+# is Address but which is mapped to a column on BOTH tables:
+#
+#   * address.state_tc — correctly domained (subject class Address is admitted
+#     by the predicate's Address domain) -> grounds cleanly.
+#   * party.state_tc   — WRONG class (subject class Party is NOT admitted by the
+#     Address domain) -> a `property:<hasStateTc> on <Party>` qualified miss.
+#
+# The vocab prefix (https://x#) matches the `mapsTo*` predicate IRIs below and is
+# what the test passes as HybridDeps.vocab.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix vkg: <https://x#> .
+
+<http://x/Address> vkg:mapsToTable "address" .
+<http://x/Party>   vkg:mapsToTable "party" .
+
+<http://x/hasStateTc> rdfs:domain <http://x/Address> .
+<http://x/hasStateTc> vkg:mapsToColumn "address.state_tc" .
+<http://x/hasStateTc> vkg:mapsToColumn "party.state_tc" .

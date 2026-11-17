@@ -1,0 +1,34 @@
+{
+  "benchmark": "cwd",
+  "ontology_runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_ontology-9p5fpw8oav",
+  "agent_id": "semantic_layer_dev_ontology-9p5fpw8oav",
+  "layer_id_convention": "vkg-<namespace> where namespace = cwd_acme (the single CWD db)",
+  "built_layer_ids": [
+    "vkg-cwd_acme"
+  ],
+  "scenario_runs": {
+    "cwd_acme": {
+      "layer_id": "vkg-cwd_acme",
+      "session_id": "cwd_acme-51949a96-9984-4915-85c2-9e83c6afebdc",
+      "status": "completed",
+      "num_tables": 13,
+      "tables": [
+        "Agreement_Party_Role",
+        "Catastrophe",
+        "Claim",
+        "Claim_Amount",
+        "Claim_Coverage",
+        "Expense_Payment",
+        "Expense_Reserve",
+        "Loss_Payment",
+        "Loss_Reserve",
+        "Policy",
+        "Policy_Amount",
+        "Policy_Coverage_Detail",
+        "Premium"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 1359.3
+    }
+  }
+}

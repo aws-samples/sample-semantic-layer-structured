@@ -25,6 +25,12 @@ import {
   StatusIndicator,
   Table,
 } from "@cloudscape-design/components";
+import {
+  csvStringFromColumnsRows,
+  downloadCsvFromColumnsRows,
+  downloadJson,
+  downloadText,
+} from "../../utils/downloadHelpers";
 
 // Format an epoch-ms tool timestamp as a local wall-clock time with
 // millisecond precision (e.g. "6:11:50.123 PM"). The millis matter here:
@@ -46,65 +52,6 @@ function formatClockTime(epochMs) {
   const m = base.match(/^(.*\d{2})(\s*[AaPp][Mm])?$/);
   if (m) return `${m[1]}.${millis}${m[2] || ""}`;
   return `${base}.${millis}`;
-}
-
-// ----------------------------------------------------------------------
-// Download helpers — rendered next to the SQL/KB tool cards so the user can
-// pull the same data the agent saw without scrolling to a separate panel.
-// ----------------------------------------------------------------------
-
-// Build a CSV string from columns/rows (shared by the download + copy controls).
-function csvStringFromColumnsRows(columns, rows) {
-  const escape = (v) => {
-    if (v == null) return "";
-    const s = typeof v === "string" ? v : JSON.stringify(v);
-    if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-    return s;
-  };
-  const header = columns.join(",");
-  const body = rows.map((r) => r.map(escape).join(",")).join("\n");
-  return `${header}\n${body}`;
-}
-
-function downloadCsvFromColumnsRows(columns, rows, filename) {
-  const csv = csvStringFromColumnsRows(columns, rows);
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function downloadJson(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: "application/json;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// Plain-text download — used for the VKG ontology slice, which is Turtle/RDF
-// (a .ttl text document), not JSON.
-function downloadText(text, filename, mime = "text/turtle;charset=utf-8") {
-  const blob = new Blob([text], { type: mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 // ----------------------------------------------------------------------

@@ -162,11 +162,19 @@ def test_run_athena_sql_s3tables_catalog_in_context(monkeypatch):
 
 
 def test_run_athena_sql_failed_returns_reason_no_raise(monkeypatch):
-    """FAILED -> dict with state_change_reason, rows=[], columns=[]; no raise."""
+    """FAILED -> dict with state_change_reason, rows=[], columns=[]; no raise.
+
+    The SQL is deliberately well-formed even though the fake reports a syntax
+    error: the SQL firewall now runs ahead of submission and denies anything
+    sqlglot cannot parse (it cannot prove an unparseable statement is
+    read-only), so a malformed statement here would never reach Athena. The
+    Athena-side reason is what this test is about — see
+    ``tests/unit/test_firewall_wiring.py`` for the denial path.
+    """
     fake = _FakeAthena(state="FAILED", columns=[], rows=[],
                        reason="SYNTAX_ERROR: line 1:1 near 'FRM'")
     monkeypatch.setattr(main, "get_boto_session", lambda: fake.session())
-    out = main._run_athena_sql(sql="SELECT 1 FRM x", database_name="db",
+    out = main._run_athena_sql(sql="SELECT 1 n FROM x", database_name="db",
                                catalog_id="AwsDataCatalog")
     assert out["columns"] == []
     assert out["rows"] == []

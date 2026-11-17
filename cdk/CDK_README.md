@@ -6,13 +6,19 @@ AWS CDK infrastructure for deploying a complete semantic layer with insurance da
 
 This CDK application deploys **up to 21 stacks** (17 always-on + 4 conditional on the
 `enableRealtimeReplication`, `enableBatchReplication`, and `enableOntologyAgents` feature flags).
+Other flags — including `enableHybrid` (default `true`), which adds the two Hybrid runtimes,
+`enableSnowflakeConnector` (default `true`), which adds the Athena Snowflake connector, and
+`enableGovernedRules` (default `true`), which arms the `/rules` API (`RULES_ENABLED` on the REST
+Lambda) and the query-time rule tier (`GOVERNED_RULES_ENABLED` on the ontology-query **and**
+semantic-layer-query runtimes), and `enableAuthz` (default `false`), which arms Cedar enforcement
+in the REST API — toggle resources _inside_ always-deployed stacks rather than adding stacks.
 See the **root [`README.md`](../README.md)** for the authoritative stack list, dependency graph,
 deployment modes, and capability matrix — this file documents CDK-specific operational detail.
 
 ### Always-on stacks
 
 1. **Networking** - VPC with public/private/isolated subnets for Neptune
-2. **DynamoDB** - 12 insurance tables + metadata / chat-sessions / feedback / metrics tables
+2. **DynamoDB** - 12 insurance tables + metadata / chat-sessions / feedback / metrics / namespaces / grants tables
 3. **Glue Catalog** - DynamoDB + Iceberg databases, crawlers
 4. **Data Lake** - S3 Tables (Iceberg) bucket, artifacts / Athena-results / KB / logging buckets, Lake Formation grants
 5. **Bedrock Knowledge Base** - two KBs (S3 Vectors): ontology-patterns + semantic-rag
@@ -21,9 +27,9 @@ deployment modes, and capability matrix — this file documents CDK-specific ope
 8. **Guardrails** - Bedrock Guardrails (content filters + PII)
 9. **CloudFront Storage** - CloudFront distribution + S3 website bucket + OAC
 10. **Auth** - Cognito User Pool / Identity Pool / OAuth 2.0 (SPA + MCP + M2M clients)
-11. **AgentCore** - up to 5 AgentCore Runtimes + ECR + Neptune/Ontop Gateway
+11. **AgentCore** - up to 7 AgentCore Runtimes + ECR + Neptune/Ontop Gateway
 12. **AgentCore Eval** - online evaluation configs for the query runtimes
-13. **Doc Pipeline** - staged Lambda ingestion (chunk → NER → embed → link → index)
+13. **Doc Pipeline** - staged Lambda ingestion (chunk → NER → embed → link → ruleminer → index)
 14. **Lambda REST API** - FastAPI container on Lambda + HTTP API (JWT)
 15. **MCP Server** - MCP Gateway (CUSTOM_JWT) + mcp-tools Lambda + Chat Gateway
 16. **MCP Proxy** - MCP OAuth 2.0 proxy (HTTP API + Lambda)
@@ -173,6 +179,16 @@ Creates:
   - 3 Global Secondary Indexes
   - DynamoDB Streams enabled
 - **Ontology Metadata Table** - Tracks ontology versions
+- **Namespaces Table** (`${projectName}-namespaces`) - namespace records
+  (`NS#<uuid>` / `METADATA`) and name reservations (`NS_NAME#<name>` /
+  `RESERVATION`). TTL on `ttl` so a crashed creation cannot hold a name
+  forever; GSI `NameByIndex` on `name` for the uniqueness pre-flight and
+  name → id resolution
+- **Grants Table** (`${projectName}-grants`) - role grants keyed
+  `Namespace::<nsId>#User::<sanitized>` (or `…#Group::<name>`) / `ROLE#<role>`,
+  carrying the optional data restrictions `tableAllowlist`, `columnDenylist`
+  and `allowedMetrics`. GSI `PrincipalIndex` on `principalKey` — this is what
+  both the REST API's PDP and the agent-side SQL firewall read
 
 **Access Patterns:**
 
@@ -249,11 +265,12 @@ Creates:
 
 Creates:
 
-- **Up to 5 AgentCore Runtimes** - `ontology` + `query` (VKG), `metadata` + `metadata-query` (Semantic RAG), `query-suggestions`. VKG runtimes are conditional on `enableOntologyAgents`.
+- **Up to 7 AgentCore Runtimes** - `ontology` + `query` (VKG), `metadata` + `metadata-query` (Semantic RAG), `query-suggestions`, plus `semantic-layer-query` + `semantic-layer-creation` (Hybrid). VKG runtimes are conditional on `enableOntologyAgents`; the two Hybrid runtimes on `enableHybrid` (default `true`, so 7 runtimes is the default deploy).
 - **Neptune/Ontop Gateway** - HTTP gateway + Ontop SPARQL→SQL translate Lambda (Java 21) for VKG Phase 5
 - **JWT-inbound runtimes** - accept Cognito JWT (no SigV4) so the MCP/chat gateways and browser can invoke them
 - **Shared ECR repo + CodeBuild (ARM64)** per agent
-- **IAM Roles** (least-privilege per agent) + Lake Formation grants for Iceberg access
+- **Benchmark-eval codeBased evaluator Lambda** (`benchmark-eval-handler/`) - one Python 3.12 Lambda backing three AgentCore codeBased evaluators (EX / R-VES / Soft-F1); executes predicted vs. gold SQL on Athena per trace and returns one metric score (ARN is a stack output; the benchmark-eval notebooks register the evaluators against it)
+- **IAM Roles** (least-privilege per agent) + Lake Formation grants for Iceberg access. The grant set is uniform across the six agent roles — DB `DESCRIBE` + table-wildcard `SELECT`/`DESCRIBE` on the `normalized` namespace and on the DynamoDB federated database — including both Hybrid roles. The IAM `lakeformation:GetDataAccess` action alone is **not** sufficient — the grant is a separate authorization. Keep the set uniform: a missing grant does not fail the build, it makes the schema probe log a WARN and the agent model the table from the LLM's memory instead, and at query time it surfaces as `TABLE_OR_VIEW_NOT_FOUND` rather than `ACCESS_DENIED`
 
 **Agent Capabilities:**
 
@@ -365,15 +382,24 @@ Creates serverless REST API:
   - CloudWatch access logs
   - Custom domain support
 
-**API Routes:**
+**API Routes** — there are only three, deliberately:
 
-- `GET /health` - Health check (no auth)
-- `ANY /api/{proxy+}` - All API endpoints (via CloudFront)
-- `ANY /ontology/{proxy+}` - Ontology operations (direct)
-- `ANY /datasource/{proxy+}` - Data source operations (direct)
-- `ANY /query/{proxy+}` - Query operations (direct)
-- `ANY /neptune/{proxy+}` - Neptune operations (direct)
-- `GET /status` - System status (direct)
+- `GET /health` - health check (no auth)
+- `OPTIONS /{proxy+}` - CORS preflight, **no authorizer** (a preflight carries no `Authorization`
+  header, so requiring one would break every browser call)
+- `ANY /{proxy+}` - everything else, behind the Cognito JWT authorizer
+
+There is no per-sub-app route. `ANY` on a single catch-all is a hard requirement, not a
+simplification: each route × method produces an `AWS::Lambda::Permission` statement, and Lambda's
+resource policy caps at **20 KB** (~43 statements). With this many mounted sub-apps an explicit
+per-path, per-method route set exceeds it and the deploy fails.
+
+That constraint is also why authorization is **ASGI middleware inside the app** rather than an API
+Gateway REQUEST authorizer: a REQUEST authorizer on the catch-all would mean re-implementing JWT
+validation, and a per-route authorizer set blows the same budget. Routing all paths through one
+integration means FastAPI's router is the only thing that knows the real path — so the PDP has to
+live there too. See the root README's
+[Namespaces, Authorization & the SQL Firewall](../README.md#namespaces-authorization--the-sql-firewall).
 
 **Architecture:**
 
@@ -384,6 +410,54 @@ Client → CloudFront → API Gateway → Lambda → AgentCore Runtime
 ```
 
 Lambda delegates all data operations to AgentCore Runtime agents, maintaining a clean separation of concerns.
+
+**Authorization is installed here, and armed separately.** The stack wires the Cedar
+policy-decision point into the FastAPI app and mounts `/namespaces`, both keyed off
+`NAMESPACES_TABLE`. `ENABLE_AUTHZ` (from the `enableAuthz` context flag, default `false`) is a
+_second_, independent switch that decides only whether a Deny becomes a `403`. So a normal deploy
+lands the tables, the router, the seeding and the firewall with nothing denying, and enforcement is
+armed on a follow-up deploy — see the root README's Deployment Modes.
+
+- The function's role gets read/write on the **namespaces** and **grants** tables, and
+  `athena:CreateWorkGroup` / `TagResource` / `GetWorkGroup` so `NamespaceService` can create a
+  per-namespace workgroup.
+- `requirements.txt` adds **`cedarpy`** — a Rust-backed wheel. The CodeBuild project is native
+  ARM64, so it resolves (or builds) without cross-compilation.
+
+**`AuthzBootstrap` custom resource.** A one-shot Lambda (`../authz-bootstrap/index.py`, behind a
+`cr.Provider`) that runs on every deploy and is idempotent. It seeds the `default` namespace as
+`ACTIVE` with its workgroup, writes the name reservation **with no TTL**, writes a `RES#GLOBAL`
+`platform-admin` grant for each `-c platformAdminUsers=` principal, and **backfills `namespaceId`
+onto existing ontology metadata rows**. That backfill is load-bearing: the runtime namespace
+resolver raises on a missing binding rather than defaulting, so without it every ontology-scoped
+route on a pre-existing layer would 500 once enforcement is armed.
+
+Note what the bootstrap deliberately does _not_ write: a grant it creates carries **no**
+`tableAllowlist` / `allowedMetrics` attributes at all. An absent restriction means unrestricted; an
+empty list would mean deny-all.
+
+**Athena grants — one exception to that delegation.** Everything the API does with Athena is
+metadata (the admin data-source picker listing catalogs, databases and tables), except the
+governed-rule **publish gate**, which executes the compiled rule's `LIMIT 1` smoke query itself.
+That query runs as the Lambda's own principal, so the role also carries:
+
+- `athena:StartQueryExecution` / `GetQueryExecution` / `StopQueryExecution` on
+  `${projectName}-workgroup` (`GetQueryResults` is deliberately absent — the gate waits for
+  `SUCCEEDED` and reads nothing out)
+- read/write on the **Athena results bucket**. The workgroup sets
+  `enforceWorkGroupConfiguration`, so results land in its own location no matter what the client
+  requests, written as the _calling_ principal — the bucket must therefore be the one
+  `AthenaStack` configured on the workgroup, not the artifacts bucket `main.py` falls back to
+- read/write on each connector **spill** bucket (+ `Decrypt` on the DynamoDB connector's spill
+  KMS key). A `LIMIT 1` reads records, and a connector returns records by spilling them to S3 for
+  the caller to read back — which the metadata-only picker never had to do
+- `ATHENA_WORKGROUP`, injected from the same value the grant is scoped to. `main.py` falls back
+  to the literal `primary`, so a grant on `${projectName}-workgroup` is inert if the env var is
+  missing
+
+None of this fails the deploy or the API call — it fails the _query_, and the admin sees a `422`
+naming `StartQueryExecution`, which reads like a broken rule. Each of the four is pinned by
+`__tests__/rules-publish-athena-grants.test.ts` (6 tests).
 
 **Outputs:**
 
@@ -629,6 +703,64 @@ FROM insurance_historical.claims
 WHERE year = 2024
 GROUP BY policy_id;
 ```
+
+### Query Snowflake via Athena
+
+**On by default** (`enableSnowflakeConnector: true` in `cdk.json`). The
+[AthenaSnowflakeConnector](https://docs.aws.amazon.com/athena/latest/ug/connectors-snowflake.html)
+is deployed with one catalog per Snowflake **database**, configured from `cdk/.env`
+(`SNOWFLAKE_ACCOUNT` and `SNOWFLAKE_WAREHOUSE` are required — synth fails loudly without them):
+
+```bash
+cdk deploy semantic-layer-dev-athena semantic-layer-dev-agentcore
+```
+
+Context still overrides `.env` per invocation, and `-c enableSnowflakeConnector=false` opts out:
+
+```bash
+cdk deploy semantic-layer-dev-athena semantic-layer-dev-agentcore \
+  -c snowflakeAccount=<org>-<account> \
+  -c snowflakeWarehouse=<WAREHOUSE> \
+  -c snowflakeDatabases=FHIR_DB,SNOWFLAKE_SAMPLE_DATA
+```
+
+> ⚠️ The default used to be `false`, which made every deploy destructive: the resources are
+> conditional on context rather than disabled by it, so a deploy without the flag **deleted** the
+> live connector, secret, spill bucket, role and catalog. `bin/__tests__/app-flags.test.ts` fails if
+> the default flips back — see [`README.md`](README.md#feature-flags).
+
+Then populate the key-pair credential — it is deliberately **not** in the CloudFormation
+template, since template bodies are readable via `cloudformation:GetTemplate` — and re-apply
+the identifier casing, which any connector deploy resets:
+
+```bash
+npm run sync:snowflake-secret     # from cdk/, reads cdk/.env
+npm run set:snowflake-casing      # both are chained into `npm run deploy:snowflake`
+```
+
+```sql
+-- The Athena "database" level is a Snowflake SCHEMA; the Snowflake database is the catalog.
+SHOW DATABASES IN snowflake_fhir_db;
+SELECT * FROM snowflake_fhir_db.fhir_r4.patients LIMIT 10;
+```
+
+A catalog cannot span Snowflake databases: a connector's connection string pins exactly one
+`db=`, and it lists schemas only within that database. Each entry in `snowflakeDatabases`
+therefore gets its own connector Lambda and catalog; the credential secret, the execution
+role and the spill bucket are shared (one `SpillPrefix` per database). Every agent role that
+runs Athena SQL is granted invoke plus the `athena:GetDataCatalog` family, so no agent code
+changes — without that second grant the first agent query fails `CATALOG_NOT_FOUND`, which
+reads as a missing catalog rather than a missing permission. The **REST API** Lambda role is
+in that set too, not just the agents: the governed-rule publish gate executes a `LIMIT 1`, so
+it needs the spill grant the metadata-only data-source picker did not — see [§12](#12-lambda-rest-api-stack).
+
+Snowflake object names are upper case while Athena lower-cases identifiers before handing
+them to a connector, so a table that resolves in Snowflake reports "not found" through Athena
+until the Lambda's `casing_mode` env var is `UPPER`. The SAR template has no parameter for
+it, hence the post-deploy script above.
+
+See [`cdk/README.md`](README.md) for the full setup, including the Snowflake-side bootstrap
+and why the connector runs outside the VPC.
 
 ### Query Neptune via SPARQL
 

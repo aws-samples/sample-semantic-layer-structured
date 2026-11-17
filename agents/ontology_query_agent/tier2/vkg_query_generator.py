@@ -15,6 +15,11 @@ from .sparql_validator import SparqlSyntaxError, validate_sparql
 from .grounding import detect_disconnected_subjects
 from .enum_constraints import extract_enum_constraints, inject_enum_filters
 
+try:
+    from agents.shared import ontop_envelope
+except ImportError:  # container path: agents/ is on PYTHONPATH
+    from shared import ontop_envelope  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 # NOTE: the detailed SPARQL-generation guidance now lives in the DEPLOYED
@@ -58,21 +63,6 @@ _BOOL_OBJ_RE = re.compile(
 _BOOL_FILTER_RE = re.compile(
     r"FILTER\s*\(\s*(?P<var>\?[A-Za-z_][\w]*)\s*=\s*"
     r"(?P<q>['\"]?)(?P<bool>true|false)(?P=q)\s*(?:\^\^\s*xsd:boolean)?\s*\)",
-    re.IGNORECASE,
-)
-
-
-# Matches a numeric aggregate over a BARE variable, e.g. `SUM(?marketValue)` or
-# `AVG( ?amt )` — capturing the aggregate function and the variable. Ontop maps
-# every column to VARCHAR, so SUM/AVG/MIN/MAX over a raw amount variable
-# aggregates TEXT: the translated SQL errors and the downstream LLM repair tends
-# to "fix" it by counting non-numeric rows instead of casting. We deterministically
-# wrap the variable in xsd:decimal() so the aggregate is numeric. Already-cast
-# forms (`SUM(xsd:decimal(?v))`) do NOT match — the inner token is not a bare
-# variable — so this is idempotent. COUNT is excluded: counting is correct over
-# text and casting it would be wrong.
-_NUM_AGG_RE = re.compile(
-    r"\b(?P<fn>SUM|AVG|MIN|MAX)\s*\(\s*(?P<var>\?[A-Za-z_][\w]*)\s*\)",
     re.IGNORECASE,
 )
 
@@ -146,39 +136,6 @@ def _desugar_boolean_objects(sparql: str) -> str:
             return sparql
         return (rewritten[:close] + "\n" + "\n".join(filters) + "\n"
                 + rewritten[close:])
-    except Exception:  # noqa: BLE001 — telemetry-grade safety; never break gen
-        return sparql
-
-
-def _desugar_numeric_aggregates(sparql: str) -> str:
-    """Wrap bare-variable numeric aggregates in xsd:decimal() for Ontop.
-
-    DETERMINISTIC backstop (mirrors :func:`_desugar_boolean_objects`): the prompt
-    asks the model to cast numeric values inside SUM/AVG/MIN/MAX, but it often
-    still emits a bare ``SUM(?amount)``. Ontop maps every column to VARCHAR, so a
-    bare aggregate sums TEXT — the translated Athena SQL errors and the downstream
-    LLM SQL-repair tends to rewrite it to COUNT non-numeric rows (the observed
-    ``nonNumCount`` results on gt-03/gt-08) instead of casting, silently changing
-    what the query computes. We rewrite ``SUM(?v)`` → ``SUM(xsd:decimal(?v))`` for
-    every SUM/AVG/MIN/MAX (NOT COUNT — counting text is correct). The rewrite is
-    applied everywhere the pattern appears (SELECT projection AND ORDER BY over an
-    aggregate), and is idempotent: an already-cast ``SUM(xsd:decimal(?v))`` has no
-    bare variable inside, so it does not re-match. Fail-soft: returns the input
-    unchanged on any regex surprise.
-
-    Args:
-        sparql: The generated SPARQL query text.
-
-    Returns:
-        The query with numeric aggregates cast to xsd:decimal.
-    """
-    try:
-        def _repl(m: "re.Match") -> str:
-            # Preserve the original function spelling (SUM/sum) but normalise to a
-            # cast inner expression.
-            return f"{m.group('fn')}(xsd:decimal({m.group('var')}))"
-
-        return _NUM_AGG_RE.sub(_repl, sparql)
     except Exception:  # noqa: BLE001 — telemetry-grade safety; never break gen
         return sparql
 
@@ -521,17 +478,25 @@ class VkgQueryGenerator:
             if injected:
                 logger.info("phase4.enum_filter: injected %d sh:in FILTER(s): %s",
                             len(injected), [i["value"] for i in injected])
-        except Exception:  # noqa: BLE001 — enforcement must never break generation
-            pass
-        # Deterministic Ontop backstops (every mapped column is VARCHAR): rewrite a
-        # bare `?x :flag false` to a string-tolerant FILTER, wrap bare numeric
-        # aggregates `SUM(?v)` → `SUM(xsd:decimal(?v))`, move computed GROUP BY keys
-        # to BIND, and drop tautological self-equality FILTERs. Applied before
-        # validation so the returned/validated query is the safe form.
+        except Exception as enum_exc:  # noqa: BLE001 — enforcement must never break generation
+            # Best-effort enrichment: a failure here must not abort query
+            # generation, but we log it (not a silent pass) so the failure is
+            # observable rather than masked.
+            logger.debug("phase4.enum_filter: enforcement skipped (%s)", enum_exc)
+        # Deterministic Ontop backstops: rewrite a bare `?x :flag false` to a
+        # string-tolerant FILTER, move computed GROUP BY keys to BIND, and drop
+        # tautological self-equality FILTERs. Then route the query through the
+        # shared Ontop-envelope pipeline (strip redundant numeric casts, hoist
+        # aggregate-over-aggregate arithmetic, prebind computed GROUP BY keys) so
+        # the returned/validated query stays inside the fragment Ontop can
+        # translate. ``apply`` is idempotent + fail-soft, so running it after the
+        # local desugars (which overlap it for GROUP BY) is safe. NOTE: the old
+        # inline ``_desugar_numeric_aggregates`` cast-ADD was removed — the columns
+        # are now numerically typed, so the envelope's cast-STRIP supersedes it.
         sparql = _desugar_boolean_objects(sparql)
-        sparql = _desugar_numeric_aggregates(sparql)
         sparql = _desugar_computed_groupby(sparql)
         sparql = _strip_tautological_filters(sparql)
+        sparql = ontop_envelope.apply(sparql)
         try:
             validate_sparql(sparql)
             return sparql
@@ -542,9 +507,9 @@ class VkgQueryGenerator:
             repaired = self._ask(agent2, slice_text, question, repair=str(e),
                                  grounding_feedback=grounding_feedback)
             repaired = _desugar_boolean_objects(repaired)
-            repaired = _desugar_numeric_aggregates(repaired)
             repaired = _desugar_computed_groupby(repaired)
             repaired = _strip_tautological_filters(repaired)
+            repaired = ontop_envelope.apply(repaired)
             try:
                 validate_sparql(repaired)
             except SparqlSyntaxError as e2:

@@ -112,9 +112,11 @@ def _inject_session(athena_mock: MagicMock, monkeypatch) -> None:
         return athena_mock
 
     session.client.side_effect = _client_factory
-    # Import here so the module is fully loaded before patching
+    # Import here so the module is fully loaded before patching. The boto3
+    # session now lives in agents.shared.boto_session; inject via the accessor
+    # the module re-exports.
     from ontology_agent import main as m
-    monkeypatch.setattr(m, "_boto_session", session)
+    monkeypatch.setattr(m, "get_boto_session", lambda: session)
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +180,7 @@ class TestGetSingleTableSchema:
         session.client.side_effect = (
             lambda svc, **kw: glue_mock if svc == "glue" else athena_mock
         )
-        monkeypatch.setattr(m, "_boto_session", session)
+        monkeypatch.setattr(m, "get_boto_session", lambda: session)
         monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
 
         result = json.loads(m.get_single_table_schema(DB, TABLE, S3_CATALOG))
@@ -236,6 +238,35 @@ class TestGetSingleTableSchema:
         assert result["total_columns"] == 4
         assert result["source"] == "athena_describe"
 
+    # --- Partition-column dedup (delta hash parity, I2) ---
+
+    def test_partition_columns_not_double_counted(self, monkeypatch):
+        """Athena DESCRIBE lists partition columns in the main list AND repeats
+        them under '# Partition Information'. The parse must dedup by name so the
+        column SET matches what the delta planner hashes (GlueService columns +
+        partitionKeys, each once). Otherwise a partitioned table reads as
+        permanently schemaChanged and is rebuilt on every check."""
+        from ontology_agent import main as m
+
+        rows = [
+            ("col_name", "data_type", "comment"),      # result-set header
+            ("id", "string", "pk"),
+            ("amount", "double", ""),
+            ("dt", "date", "partition col"),           # partition col in main list
+            ("", "", ""),                               # blank separator row
+            ("# Partition Information", "", ""),        # section header
+            ("# col_name", "data_type", "comment"),    # section's own header
+            ("dt", "date", "partition col"),           # REPEATED partition col
+        ]
+        athena = _make_athena_mock(query_results=_describe_results(rows))
+        _inject_session(athena, monkeypatch)
+        monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
+
+        result = json.loads(m.get_single_table_schema(DB, TABLE, GLUE_CATALOG))
+        names = [c["name"] for c in result["columns"]]
+        assert names == ["id", "amount", "dt"]         # dt appears exactly once
+        assert result["total_columns"] == 3
+
     # --- Error path ---
 
     def test_athena_failure_returns_error_json(self, monkeypatch):
@@ -250,6 +281,197 @@ class TestGetSingleTableSchema:
         result = json.loads(m.get_single_table_schema(DB, TABLE, S3_CATALOG))
         assert "error" in result
         assert result["table_name"] == TABLE
+
+
+# ---------------------------------------------------------------------------
+# Federated (Lambda-backed) connector catalogs — Snowflake, DynamoDB, ...
+# ---------------------------------------------------------------------------
+
+SNOWFLAKE_CATALOG = "snowflake_fhir_db"
+SNOWFLAKE_DB = "FHIR_R4"
+SNOWFLAKE_TABLE = "PATIENTS"
+
+
+def _select_metadata_results(columns: list[tuple[str, str]]) -> dict:
+    """Build a get_query_results response for `SELECT * ... LIMIT 0`.
+
+    Distinct from `_select_results`: the schema path reads ColumnInfo's `Name`/`Type`
+    (not `Label`), and LIMIT 0 returns no rows at all — not even a header row — so
+    the column list can only come from the metadata.
+
+    Args:
+        columns: (name, athena_type) pairs in result order.
+
+    Returns:
+        A fake Athena get_query_results response with metadata and zero rows.
+    """
+    return {
+        "ResultSet": {
+            "ResultSetMetadata": {
+                "ColumnInfo": [{"Name": n, "Type": t} for n, t in columns]
+            },
+            "Rows": [],
+        }
+    }
+
+
+class TestFederatedConnectorSchemaRouting:
+    """A connector catalog must be routed by its registered Type, not by its name.
+
+    Athena rejects `DESCRIBE "db"."table"` on ANY Lambda-backed catalog at submit
+    time (`InvalidRequestException: no viable alternative at input 'DESCRIBE "..."'`).
+    Routing on the name 'dynamodb' therefore sent every other connector down the
+    DESCRIBE path, which failed and then fell through to Glue — where a federated
+    database has no entry at all — so the build silently saw no schema.
+    """
+
+    @staticmethod
+    def _clear_cache() -> None:
+        """Drop the module-level catalog-Type cache so each test looks up afresh."""
+        from ontology_agent import main as m
+        m._CATALOG_TYPE_CACHE.clear()
+
+    def _run(self, catalog_id: str, catalog_type: str, monkeypatch):
+        """Run get_single_table_schema against a catalog Athena reports as catalog_type."""
+        from ontology_agent import main as m
+        self._clear_cache()
+        athena = _make_athena_mock(
+            query_results=_select_metadata_results(
+                [("ID", "varchar"), ("GENDER", "varchar")]
+            )
+        )
+        athena.get_data_catalog.return_value = {
+            "DataCatalog": {"Name": catalog_id, "Type": catalog_type}
+        }
+        _inject_session(athena, monkeypatch)
+        monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
+        result = json.loads(
+            m.get_single_table_schema(SNOWFLAKE_DB, SNOWFLAKE_TABLE, catalog_id)
+        )
+        return result, athena
+
+    def test_snowflake_catalog_uses_select_metadata_not_describe(self, monkeypatch):
+        """A LAMBDA-type catalog must never be sent a DESCRIBE."""
+        result, athena = self._run(SNOWFLAKE_CATALOG, "LAMBDA", monkeypatch)
+        sql = athena.start_query_execution.call_args[1]["QueryString"]
+        assert sql.startswith("SELECT *"), sql
+        assert "DESCRIBE" not in sql
+        assert result["source"] == "athena_select_metadata"
+
+    def test_snowflake_catalog_in_query_execution_context(self, monkeypatch):
+        """The connector catalog has to be in the context or Athena resolves the
+        default Glue catalog and reports the table as missing."""
+        _, athena = self._run(SNOWFLAKE_CATALOG, "LAMBDA", monkeypatch)
+        ctx = athena.start_query_execution.call_args[1]["QueryExecutionContext"]
+        assert ctx == {"Database": SNOWFLAKE_DB, "Catalog": SNOWFLAKE_CATALOG}
+
+    def test_snowflake_columns_read_from_result_metadata(self, monkeypatch):
+        """LIMIT 0 returns no rows, so the columns must come from ColumnInfo."""
+        result, _ = self._run(SNOWFLAKE_CATALOG, "LAMBDA", monkeypatch)
+        assert [c["name"] for c in result["columns"]] == ["ID", "GENDER"]
+        assert result["total_columns"] == 2
+
+    def test_glue_type_catalog_still_uses_describe(self, monkeypatch):
+        """A non-Lambda catalog keeps the DESCRIBE path — this must not regress."""
+        from ontology_agent import main as m
+        self._clear_cache()
+        athena = _make_athena_mock(
+            query_results=_describe_results(
+                [("col_name", "data_type", "comment"), ("id", "string", "")]
+            )
+        )
+        athena.get_data_catalog.return_value = {
+            "DataCatalog": {"Name": "some_glue_catalog", "Type": "GLUE"}
+        }
+        _inject_session(athena, monkeypatch)
+        monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
+        result = json.loads(m.get_single_table_schema(DB, TABLE, "some_glue_catalog"))
+        sql = athena.start_query_execution.call_args[1]["QueryString"]
+        assert sql.startswith("DESCRIBE"), sql
+        assert result["source"] == "athena_describe"
+
+    def test_default_catalog_skips_the_lookup_entirely(self, monkeypatch):
+        """AWSDataCatalog is known to be Glue — don't spend a GetDataCatalog call."""
+        from ontology_agent import main as m
+        self._clear_cache()
+        athena = _make_athena_mock(
+            query_results=_describe_results(
+                [("col_name", "data_type", "comment"), ("id", "string", "")]
+            )
+        )
+        _inject_session(athena, monkeypatch)
+        monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
+        m.get_single_table_schema(DB, TABLE, GLUE_CATALOG)
+        athena.get_data_catalog.assert_not_called()
+
+    def test_dynamodb_name_still_routes_without_a_lookup(self, monkeypatch):
+        """The name heuristic survives as the fallback when GetDataCatalog is denied:
+        a 'dynamodb' catalog routes to SELECT metadata even if the lookup fails."""
+        from ontology_agent import main as m
+        self._clear_cache()
+        athena = _make_athena_mock(
+            query_results=_select_metadata_results([("pk", "varchar")])
+        )
+        athena.get_data_catalog.side_effect = RuntimeError("AccessDeniedException")
+        _inject_session(athena, monkeypatch)
+        monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
+        result = json.loads(m.get_single_table_schema("default", "tbl", "dynamodb_catalog"))
+        assert result["source"] == "athena_select_metadata"
+
+    def test_catalog_type_is_cached_across_tables(self, monkeypatch):
+        """An ontology build calls this once per table; one lookup per catalog is enough."""
+        from ontology_agent import main as m
+        self._clear_cache()
+        athena = _make_athena_mock(
+            query_results=_select_metadata_results([("ID", "varchar")])
+        )
+        athena.get_data_catalog.return_value = {
+            "DataCatalog": {"Name": SNOWFLAKE_CATALOG, "Type": "LAMBDA"}
+        }
+        _inject_session(athena, monkeypatch)
+        monkeypatch.setenv("ARTIFACTS_BUCKET", ARTIFACTS_BUCKET)
+        for table in ("PATIENTS", "ENCOUNTERS", "CONDITIONS"):
+            m.get_single_table_schema(SNOWFLAKE_DB, table, SNOWFLAKE_CATALOG)
+        assert athena.get_data_catalog.call_count == 1
+
+
+class TestIsFederatedConnectorCatalog:
+    """Glue enrichment must skip a connector catalog rather than fail the build."""
+
+    @staticmethod
+    def _patch_type(monkeypatch, catalog_type: str) -> None:
+        """Force the catalog-Type lookup to report catalog_type."""
+        from ontology_agent import main as m
+        m._CATALOG_TYPE_CACHE.clear()
+        monkeypatch.setattr(m, "_athena_catalog_type", lambda *, catalog_id: catalog_type)
+
+    def test_lambda_catalog_is_federated(self, monkeypatch):
+        from ontology_agent import main as m
+        self._patch_type(monkeypatch, "LAMBDA")
+        assert m._is_federated_connector_catalog(SNOWFLAKE_CATALOG) is True
+
+    def test_default_catalog_is_not_federated(self, monkeypatch):
+        from ontology_agent import main as m
+        self._patch_type(monkeypatch, "LAMBDA")  # must not even be consulted
+        assert m._is_federated_connector_catalog("AWSDataCatalog") is False
+        assert m._is_federated_connector_catalog("AwsDataCatalog") is False
+        assert m._is_federated_connector_catalog("") is False
+
+    def test_account_id_is_a_real_glue_catalog(self, monkeypatch):
+        """A 12-digit account id IS a Glue catalog id and must reach Glue."""
+        from ontology_agent import main as m
+        self._patch_type(monkeypatch, "LAMBDA")
+        assert m._is_federated_connector_catalog("111122223333") is False
+
+    def test_glue_type_catalog_is_not_federated(self, monkeypatch):
+        from ontology_agent import main as m
+        self._patch_type(monkeypatch, "GLUE")
+        assert m._is_federated_connector_catalog("some_glue_catalog") is False
+
+    def test_dynamodb_name_is_federated_without_a_type(self, monkeypatch):
+        from ontology_agent import main as m
+        self._patch_type(monkeypatch, "")
+        assert m._is_federated_connector_catalog("dynamodb_catalog") is True
 
 
 # ---------------------------------------------------------------------------

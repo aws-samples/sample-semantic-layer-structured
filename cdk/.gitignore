@@ -8,6 +8,13 @@ node_modules
 cdk.out
 cdk.out.*
 
+# Local deploy configuration — holds Snowflake credentials. The repo root
+# .gitignore already covers `.env`; repeated here so the cdk/ subtree is protected
+# on its own (e.g. if this directory is ever copied or vendored elsewhere).
+# `.env.example` is the committed template and must stay tracked.
+.env
+!.env.example
+
 # IDE
 .idea
 .vscode

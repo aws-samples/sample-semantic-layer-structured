@@ -68,6 +68,11 @@ class AgentCoreService:
         self.metadata_runtime_arn = os.environ.get('METADATA_RUNTIME_ARN')
         self.metadata_query_runtime_arn = os.environ.get('METADATA_QUERY_RUNTIME_ARN')
         self.suggestions_runtime_arn = os.environ.get('SUGGESTIONS_RUNTIME_ARN')
+        # Hybrid semantic-layer CREATION (build-path) runtime. Empty/unset on
+        # non-hybrid deploys — invoke_hybrid_creation_agent raises at call time.
+        self.semantic_layer_creation_runtime_arn = os.environ.get(
+            'SEMANTIC_LAYER_CREATION_RUNTIME_ARN'
+        )
 
         # OAuth (M2M client_credentials) config.
         self.oauth_token_endpoint = os.environ.get('OAUTH_TOKEN_ENDPOINT', '')
@@ -247,6 +252,69 @@ class AgentCoreService:
             # Catch all exceptions including botocore.exceptions.ClientError
             logger.warning(f"Error invoking AgentCore: {e}", exc_info=True)
             raise Exception(f"Failed to invoke AgentCore: {str(e)}")
+
+    def invoke_hybrid_creation_agent(
+        self,
+        id: str
+    ) -> Dict[str, Any]:
+        """
+        Invoke the Hybrid Semantic-Layer Creation Agent on AgentCore Runtime
+
+        Build-path only. The agent reads its Hybrid config from DynamoDB using
+        id, processes asynchronously, and updates DynamoDB with progress —
+        matching invoke_ontology_agent's shape. Hybrid QUERY dispatch is handled
+        separately via the chat gateway, not here.
+
+        Args:
+            id: Unique identifier for the Hybrid config (used as session_id)
+
+        Returns:
+            Dictionary containing the agent response
+
+        Raises:
+            ValueError: If SEMANTIC_LAYER_CREATION_RUNTIME_ARN is not configured
+            Exception: If the invocation fails
+        """
+        if not self.semantic_layer_creation_runtime_arn:
+            raise ValueError(
+                "SEMANTIC_LAYER_CREATION_RUNTIME_ARN environment variable is not configured"
+            )
+
+        try:
+            logger.info(
+                f"Invoking Hybrid creation AgentCore Runtime ARN: "
+                f"{self.semantic_layer_creation_runtime_arn}"
+            )
+            logger.info(f"Hybrid config ID: {id}")
+
+            # Use id as session_id for tracking (must be ≥33 chars).
+            session_id = id
+
+            # Invoke over HTTPS with an M2M OAuth Bearer token (the agent reads
+            # its config from DynamoDB internally).
+            response_data = self._invoke_runtime(
+                runtime_arn=self.semantic_layer_creation_runtime_arn,
+                session_id=session_id,
+                payload={"id": id},
+            )
+            logger.info("Hybrid creation AgentCore invocation successful")
+
+            response_text = (
+                response_data.get('result', '')
+                if isinstance(response_data, dict)
+                else str(response_data)
+            )
+            return {
+                'success': True,
+                'data': response_data,
+                'sessionId': session_id,
+                'output': response_data.get('result', response_text)
+            }
+
+        except Exception as e:
+            # Catch all exceptions including botocore.exceptions.ClientError
+            logger.warning(f"Error invoking Hybrid creation AgentCore: {e}", exc_info=True)
+            raise Exception(f"Failed to invoke Hybrid creation AgentCore: {str(e)}")
 
     def invoke_metadata_agent(self, id: str) -> Dict[str, Any]:
         """

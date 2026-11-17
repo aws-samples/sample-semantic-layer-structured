@@ -110,7 +110,7 @@ def test_3_token_counting():
     """Test 3: Token counting functionality"""
     print("\n=== Integration Test 3: Token Counting ===")
     try:
-        from ontology_agent.token_manager import count_tokens, get_token_status
+        from shared.token_manager import count_tokens, get_token_status
 
         test_text = "This is a test of the token counting functionality. " * 10
         print(f"Test text length: {len(test_text)} characters")

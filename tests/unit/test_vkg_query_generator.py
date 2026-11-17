@@ -202,19 +202,25 @@ def test_generate_preserves_genuine_string_equality():
     assert "LCASE(STR(?status))" not in out
 
 
-def test_generate_casts_numeric_aggregates():
-    """gt-03/gt-08 fix: Ontop maps numeric columns to VARCHAR, so a bare
-    SUM(?amount) aggregates TEXT — the SQL errors and the LLM repair rewrites it
-    to count non-numeric rows. The generator must deterministically wrap the
-    aggregated variable in xsd:decimal() (SUM/AVG/MIN/MAX, never COUNT)."""
+def test_generate_strips_redundant_numeric_casts():
+    """Post gt-08 numeric-typing fix: the VKG relational columns are numerically
+    typed now, so an xsd:decimal() cast wrapping a bare aggregated variable is dead
+    weight that can defeat Ontop reformulation. The generator routes the final
+    SPARQL through the shared ``ontop_envelope`` pipeline, whose cast-STRIP pass
+    supersedes the old inline cast-ADD backstop: a bare ``SUM(?v)`` stays bare (no
+    cast is added), and an already-cast ``SUM(xsd:decimal(?v))`` is stripped back to
+    ``SUM(?v)`` — in BOTH the SELECT projection and the ORDER BY."""
     from agents.ontology_query_agent.tier2.sparql_validator import validate_sparql
     ns = "http://ex/o/"
+    # Model emits an already-cast aggregate in both the projection and ORDER BY —
+    # the envelope must strip both casts so Ontop can reformulate against the now
+    # numerically-typed columns.
     sparql = (
-        "SELECT ?partyId (SUM(?marketValue) AS ?total) WHERE {\n"
+        "SELECT ?partyId (SUM(xsd:decimal(?marketValue)) AS ?total) WHERE {\n"
         f"  ?h a <{ns}Holding> ; <{ns}market_value> ?marketValue ; "
         f"<{ns}party_id> ?partyId .\n"
         "}\n"
-        "GROUP BY ?partyId ORDER BY DESC(SUM(?marketValue))"
+        "GROUP BY ?partyId ORDER BY DESC(SUM(xsd:decimal(?marketValue)))"
     )
     fake_agent = MagicMock()
     result = MagicMock()
@@ -224,10 +230,9 @@ def test_generate_casts_numeric_aggregates():
     g = VkgQueryGenerator(agent_factory=lambda: fake_agent)
     out = g.generate(slice_text="@prefix ex: <...>",
                      question="top parties by total market value")
-    # Both the SELECT aggregate AND the ORDER BY aggregate are cast.
-    assert "SUM(xsd:decimal(?marketValue))" in out
-    assert "SUM(?marketValue)" not in out
-    assert out.count("xsd:decimal") == 2
+    # No cast survives — both the SELECT and ORDER BY aggregates are bare now.
+    assert "xsd:decimal" not in out
+    assert out.count("SUM(?marketValue)") == 2
     validate_sparql(out)
 
 

@@ -659,6 +659,28 @@ export class AgentCoreNeptuneGateway extends Construct {
     });
 
     // ============================================================
+    // Ordering: targets must wait for the gateway role's invoke permission
+    // ============================================================
+    // AgentCore validates, at CfnGatewayTarget CREATE time, that the gateway
+    // execution role can already invoke the target Lambda — otherwise it rejects
+    // the target ("Gateway execution role lacks permission to invoke Lambda ...").
+    // grantInvoke(this.gatewayRole) above adds that permission to the role's
+    // DEFAULT (inline) policy, but nothing tells CloudFormation to create that
+    // policy before the targets, so on a cold deploy the targets can race ahead
+    // and fail. Make every gateway target explicitly depend on the role's
+    // default policy so the invoke grant is in place first.
+    const gatewayRoleDefaultPolicy = this.gatewayRole.node.tryFindChild(
+      'DefaultPolicy',
+    ) as iam.Policy | undefined;
+    if (gatewayRoleDefaultPolicy) {
+      for (const child of this.node.children) {
+        if (child instanceof agentcore.CfnGatewayTarget) {
+          child.node.addDependency(gatewayRoleDefaultPolicy);
+        }
+      }
+    }
+
+    // ============================================================
     // Parameter Store - Gateway Configuration
     // ============================================================
 

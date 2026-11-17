@@ -1,0 +1,797 @@
+{
+  "source": "snowflake_federated",
+  "catalog": "snowflake_fhir_db",
+  "schema": "FHIR_R4",
+  "layer_id": "vkg-snowflake_fhir_r4",
+  "agent": "ontology_query_agent",
+  "agent_id": "semantic_layer_dev_ontology_query-CjvzJ6Ct1b",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology_query-CjvzJ6Ct1b",
+  "batch_evaluation_id": "snowflake_vkg_qa_609ad62b-fcd3578d05",
+  "batch_evaluation_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:batch-evaluate/snowflake_vkg_qa_609ad62b-fcd3578d05",
+  "status": "COMPLETED",
+  "evaluator_ids": [
+    "GoalSuccess_9c3e2e81-gkSvV0FUcJ",
+    "FinalAnswerFaithfulness_9c3e2e81-xBwxUR4sTk",
+    "SqlGrounded_9c3e2e81-KNTffiBpZs"
+  ],
+  "llm_judges": {
+    "GoalSuccess": "GoalSuccess_9c3e2e81-gkSvV0FUcJ",
+    "FinalAnswerFaithfulness": "FinalAnswerFaithfulness_9c3e2e81-xBwxUR4sTk",
+    "SqlGrounded": "SqlGrounded_9c3e2e81-KNTffiBpZs"
+  },
+  "llm_judge_aggregates": {
+    "GoalSuccess": 1.0,
+    "FinalAnswerFaithfulness": 1.0,
+    "SqlGrounded": 1.0
+  },
+  "local_execution_accuracy": 1.0,
+  "local_execution_accuracy_by_difficulty": {
+    "simple": 1.0,
+    "moderate": 1.0,
+    "challenging": 1.0
+  },
+  "exec_metrics_note": "EX computed in-notebook by executing each gold query on Athena and comparing result sets (order-insensitive within and across rows). The BenchmarkEvalHandler codeBased evaluators are NOT used: their role cannot invoke the Snowflake connector Lambda.",
+  "aggregate_summaries": [
+    {
+      "Evaluator": "SqlGrounded",
+      "AvgScore": "1.000",
+      "Evaluated": 8,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "GoalSuccess",
+      "AvgScore": "1.000",
+      "Evaluated": 8,
+      "Failed": 0
+    },
+    {
+      "Evaluator": "FinalAnswerFaithfulness",
+      "AvgScore": "1.000",
+      "Evaluated": 8,
+      "Failed": 0
+    }
+  ],
+  "per_question_events": [
+    {
+      "scenario_id": "gt-row-04",
+      "id": "sf-q5",
+      "difficulty": "moderate",
+      "question": "Which three cities have the most patients?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only a SliceSufficiency tool call and the final answer are shown. Per instructions, when there is no executed SQL surfaced in the context, the agent is considered to have degraded rather than run ungrounded SQL, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "id": "sf-q5",
+      "difficulty": "moderate",
+      "question": "Which three cities have the most patients?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states Boston (1,023), Worcester (292), and Springfield (270) as the three cities with the most patients, matching exactly the expected assertion values for CITY and patient_count. This is a substantive, factually correct answer with no clarification needed."
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "id": "sf-q5",
+      "difficulty": "moderate",
+      "question": "Which three cities have the most patients?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final answer states Boston (1023), Worcester (292), Springfield (270), which exactly matches the expected answer's cities and counts."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "id": "sf-q1",
+      "difficulty": "simple",
+      "question": "How many patients are in the dataset?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response states 'There are 10,969 patients in the dataset.' This matches the expected answer of 10969 exactly, derived from the query result row [\"10969\"]. The answer is substantive and consistent with the assertion."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "id": "sf-q1",
+      "difficulty": "simple",
+      "question": "How many patients are in the dataset?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states there are 10,969 patients in the dataset, which matches the expected answer of 10969 exactly."
+    },
+    {
+      "scenario_id": "gt-row-00",
+      "id": "sf-q1",
+      "difficulty": "simple",
+      "question": "How many patients are in the dataset?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the retrieved ontology context and the final result (10969 patients) are shown, with no Phase 5 SQL surfaced. Per the instructions, absence of executed SQL indicates a degraded run where the agent could not ground SQL, which upholds the grounding invariant by default. However, the result strongly implies a COUNT(*) FROM PATIENTS query was run, and PATIENTS/id maps cleanly to the ontology's Patient class. Since no SQL is explicitly shown to inspect, treat this as the 'no SQL executed (degraded)' case per instructions, which passes."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "id": "sf-q4",
+      "difficulty": "moderate",
+      "question": "What are the five most common condition names, and how many times does each occur?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer lists exactly the five condition names and counts specified in the expected answer: Medication review due (78310), Stress (30445), Gingivitis (28972), Full-time employment (28231), Part-time employment (17762). All values match the ground truth exactly."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "id": "sf-q4",
+      "difficulty": "moderate",
+      "question": "What are the five most common condition names, and how many times does each occur?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response reports the top 5 condition names with exact counts matching the expected assertion: Medication review due (situation)=78310, Stress (finding)=30445, Gingivitis (disorder)=28972, Full-time employment (finding)=28231, Part-time employment (finding)=17762. This matches the expected answer exactly, both in entities and counts. No clarification was needed and none was requested inappropriately. The response is substantive and correctly derived from the executed query results."
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "id": "sf-q4",
+      "difficulty": "moderate",
+      "question": "What are the five most common condition names, and how many times does each occur?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the ontology schema and the tool call SliceSufficiency (which just validates the ontology slice) are shown, along with the final result table. Since there is no Phase 5 SQL surfaced in the conversation, the agent's grounding cannot be checked against a query, meaning either the SQL was not exposed or the run was degraded. Per instructions, absence of executed SQL means the grounding invariant is upheld by default, scoring as pass."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "id": "sf-q6",
+      "difficulty": "moderate",
+      "question": "How many encounters are there of each encounter class?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response reports AMB=605,519, EMER=24,082, IMP=12,455, VR=1,577, and HH=5,313, which exactly matches all five expected counts per encounter class in the assertions. The numbers align correctly with the corresponding encounter classes, satisfying the required factual match."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "id": "sf-q6",
+      "difficulty": "moderate",
+      "question": "How many encounters are there of each encounter class?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer reports AMB=605,519, EMER=24,082, IMP=12,455, VR=1,577, HH=5,313, which matches all five expected counts exactly for each encounter class. The total sum is also correct but not contradicted by the assertion. All key numbers and entities align with the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "id": "sf-q6",
+      "difficulty": "moderate",
+      "question": "How many encounters are there of each encounter class?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the tool_execution_history shows a SliceSufficiency validation, and the result columns/rows appear to have been supplied directly rather than showing an actual SQL query. Since there is no SQL surfaced in Phase 5 output for inspection, the agent either ran SQL grounded to ENCOUNTERS.encounter_class (which maps validly to the ontology) or degraded. The result column name 'ENCOUNTER_CLASS1m13' strongly suggests it derives from ENCOUNTERS.encounter_class, which is present in the ontology (Encounter/encounter_class -> ENCOUNTERS.encounter_class). No hallucinated table/column is evident, and no executed SQL text contradicts the ontology. Given the absence of explicit ungrounded SQL and the alignment of the result with a valid ontology property, the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "id": "sf-q3",
+      "difficulty": "simple",
+      "question": "How many conditions have a clinical status of active?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result row contains 100925, matching the expected answer. The agent's final response states 100,925 conditions with active clinical status, which matches exactly."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "id": "sf-q3",
+      "difficulty": "simple",
+      "question": "How many conditions have a clinical status of active?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the ontology schema, question, and a pre-computed result (100925) are shown. There is no Phase 5 SQL query or tool call revealing the actual SQL executed on Athena. Per the instructions, when no executed SQL is present in the context, the agent is considered to have degraded rather than run ungrounded SQL, so the grounding invariant is upheld."
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "id": "sf-q3",
+      "difficulty": "simple",
+      "question": "How many conditions have a clinical status of active?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states 100,925 conditions with clinical status 'active', matching the expected answer of 100925 exactly. This is the only turn, and the response is a clear, substantive natural-language answer consistent with the assertion."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "id": "sf-q8",
+      "difficulty": "challenging",
+      "question": "How many encounters belong to female patients?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The final answer states 340,847 encounters belong to female patients, which matches the expected answer of 340847 exactly."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "id": "sf-q8",
+      "difficulty": "challenging",
+      "question": "How many encounters belong to female patients?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query result returned 340847, and the agent's final response states 'There are 340,847 encounters belonging to female patients,' matching the expected answer exactly. No clarification was needed, and the answer is substantive and correct."
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "id": "sf-q8",
+      "difficulty": "challenging",
+      "question": "How many encounters belong to female patients?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "No executed SQL is present in the context; only the retrieved ontology context and a final query result (result columns ['v3'], one row) are shown, with no Phase 5 SQL surfaced in the conversation. Per instructions, when there is no executed SQL visible in the context, the grounding invariant is considered upheld since the agent did not run ungrounded SQL that we can inspect. Thus this is treated as a degraded/no-visible-SQL case and passes by default."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "id": "sf-q2",
+      "difficulty": "simple",
+      "question": "How many patients are there of each gender?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The query results returned female=5539 and male=5430, matching the expected assertion exactly. The agent's final response states 'There are 5,539 female patients and 5,430 male patients, totaling 10,969 patients,' which correctly reports both counts matching the expected values. No clarification was needed and the answer is substantive and correct."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "id": "sf-q2",
+      "difficulty": "simple",
+      "question": "How many patients are there of each gender?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The result rows show female=5539 and male=5430, matching the expected answer exactly. The agent's final answer states 'There are 5,539 female patients and 5,430 male patients', which correctly reflects these values. The added total (10,969) is a correct sum but not part of the expected assertion; it doesn't contradict the core answer. The key numbers and entities match the expected answer."
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "id": "sf-q2",
+      "difficulty": "simple",
+      "question": "How many patients are there of each gender?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The context includes the retrieved ontology slice (Patient class with gender, id, etc. mapped to PATIENTS table) but does not surface any executed SQL text, sqlQuery, or Phase 5 SQL output in the conversation or tool_execution_history. Only a SliceSufficiency tool call/result is shown, and the result rows are presented directly without the underlying SQL. Per the evaluation instructions, when no executed SQL is present in the context, the grounding invariant is considered upheld (the agent did not surface any potentially ungrounded SQL for review), so this counts as a pass by default rule (no SQL executed/visible - degraded case)."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "id": "sf-q7",
+      "difficulty": "moderate",
+      "question": "How many medication prescriptions are there per status?",
+      "evaluator": "FinalAnswerFaithfulness",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final answer states 525,241 completed and 28,181 active prescriptions, matching the expected answer exactly (completed=525241, active=28181)."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "id": "sf-q7",
+      "difficulty": "moderate",
+      "question": "How many medication prescriptions are there per status?",
+      "evaluator": "GoalSuccess",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The agent's final response reports 525,241 completed and 28,181 active medication prescriptions, matching the expected answer (STATUS=completed, count=525241; STATUS=active, count=28181). The numbers align exactly with the tool result and the assertion."
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "id": "sf-q7",
+      "difficulty": "moderate",
+      "question": "How many medication prescriptions are there per status?",
+      "evaluator": "SqlGrounded",
+      "score": 1.0,
+      "label": "pass",
+      "explanation": "The conversation shows only the result columns/rows from the executed query (['STATUS1m39','v1'] with values 'active'/'completed') but no literal executed SQL text (no reasoning.sqlQuery or explicit SELECT statement) appears in the context. Per the grading rule, when no executed SQL is visible, the grounding invariant is treated as upheld. Additionally, the returned status values ('active','completed') are exactly the enum values documented for MEDICATIONS.status in the ontology (Medication/status property, mapsToColumn 'MEDICATIONS.status'), so nothing in the observable output suggests any hallucinated table or column. There is no evidence of any identifier absent from the ontology slice."
+    }
+  ],
+  "per_question_execution": [
+    {
+      "id": "sf-q1",
+      "difficulty": "simple",
+      "question": "How many patients are in the dataset?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 1,
+      "gold_rows": 1,
+      "agent_sql": "SELECT (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> .\n}",
+      "gold_answer": "10969",
+      "agent_answer": "There are 10,969 patients in the dataset."
+    },
+    {
+      "id": "sf-q2",
+      "difficulty": "simple",
+      "question": "How many patients are there of each gender?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 2,
+      "gold_rows": 2,
+      "agent_sql": "SELECT ?gender (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/gender> ?gender .\n}\nGROUP BY ?gender",
+      "gold_answer": "GENDER=female, patient_count=5539; GENDER=male, patient_count=5430",
+      "agent_answer": "There are 5,539 female patients and 5,430 male patients, totaling 10,969 patients."
+    },
+    {
+      "id": "sf-q3",
+      "difficulty": "simple",
+      "question": "How many conditions have a clinical status of active?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 1,
+      "gold_rows": 1,
+      "agent_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?c a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition/clinical_status> \"active\" .\n}",
+      "gold_answer": "100925",
+      "agent_answer": "There are 100,925 conditions with a clinical status of \"active\"."
+    },
+    {
+      "id": "sf-q4",
+      "difficulty": "moderate",
+      "question": "What are the five most common condition names, and how many times does each occur?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 5,
+      "gold_rows": 5,
+      "agent_sql": "SELECT ?condition_name (COUNT(?c) AS ?n)\nWHERE {\n  ?c a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition/condition_name> ?condition_name .\n}\nGROUP BY ?condition_name\nORDER BY DESC(?n)\nLIMIT 5",
+      "gold_answer": "CONDITION_NAME=Medication review due (situation), condition_count=78310; CONDITION_NAME=Stress (finding), condition_count=30445; CONDITION_NAME=Gingivitis (disorder), condition_count=28972; CONDITION_NAME=Full-time employment (finding), condition_count=28231; CONDITION_NAME=Part-time employment (finding), condition_count=17762",
+      "agent_answer": "The most common condition is \"Medication review due (situation)\" with 78,310 occurrences, followed by \"Stress (finding)\" (30,445), \"Gingivitis (disorder)\" (28,972), \"Full-time employment (finding)\" (28,231), and \"Part-time employment (finding)\" (17,762)."
+    },
+    {
+      "id": "sf-q5",
+      "difficulty": "moderate",
+      "question": "Which three cities have the most patients?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 3,
+      "gold_rows": 3,
+      "agent_sql": "SELECT ?city (COUNT(?p) AS ?patientCount) WHERE {\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/city> ?city .\n}\nGROUP BY ?city\nORDER BY DESC(?patientCount)\nLIMIT 3",
+      "gold_answer": "CITY=Boston, patient_count=1023; CITY=Worcester, patient_count=292; CITY=Springfield, patient_count=270",
+      "agent_answer": "The three cities with the most patients are Boston (1,023), Worcester (292), and Springfield (270)."
+    },
+    {
+      "id": "sf-q6",
+      "difficulty": "moderate",
+      "question": "How many encounters are there of each encounter class?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 5,
+      "gold_rows": 5,
+      "agent_sql": "SELECT ?encounter_class (COUNT(?encounter) AS ?n)\nWHERE {\n  ?encounter a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter> ;\n             <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter/encounter_class> ?encounter_class .\n}\nGROUP BY ?encounter_class",
+      "gold_answer": "ENCOUNTER_CLASS=AMB, encounter_count=605519; ENCOUNTER_CLASS=EMER, encounter_count=24082; ENCOUNTER_CLASS=IMP, encounter_count=12455; ENCOUNTER_CLASS=HH, encounter_count=5313; ENCOUNTER_CLASS=VR, encounter_count=1577",
+      "agent_answer": "Ambulatory (AMB) encounters dominate with 605,519, followed by emergency (EMER) at 24,082, inpatient (IMP) at 12,455, virtual (VR) at 1,577, and home health (HH) at 5,313 \u2014 648,946 encounters total across the 5 classes."
+    },
+    {
+      "id": "sf-q7",
+      "difficulty": "moderate",
+      "question": "How many medication prescriptions are there per status?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 2,
+      "gold_rows": 2,
+      "agent_sql": "SELECT ?status (COUNT(?m) AS ?n)\nWHERE {\n  ?m a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Medication> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Medication/status> ?status .\n}\nGROUP BY ?status",
+      "gold_answer": "STATUS=completed, prescription_count=525241; STATUS=active, prescription_count=28181",
+      "agent_answer": "Medication prescriptions break down into two statuses: 525,241 are \"completed\" and 28,181 are \"active.\""
+    },
+    {
+      "id": "sf-q8",
+      "difficulty": "challenging",
+      "question": "How many encounters belong to female patients?",
+      "match": 1,
+      "reason": "exact result-set match",
+      "agent_rows": 1,
+      "gold_rows": 1,
+      "agent_sql": "SELECT (COUNT(?e) AS ?n) WHERE {\n  ?e a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter/patient_ref> ?pref .\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/id> ?pid ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/gender> ?gender .\n  FILTER(?gender = \"female\")\n  BIND(CONCAT(\"urn:uuid:\", ?pid) AS ?uref)\n  FILTER(?pref = ?uref)\n}",
+      "gold_answer": "340847",
+      "agent_answer": "There are 340,847 encounters belonging to female patients."
+    }
+  ],
+  "agent_detail": [
+    {
+      "scenario_id": "gt-row-00",
+      "question": "How many patients are in the dataset?",
+      "agent_sql": "SELECT (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> .\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v0\"\nFROM (SELECT DISTINCT R1.ID AS \"ID1m52\"\nFROM \"FHIR_R4\".\"PATIENTS\" R1\nWHERE R1.ID IS NOT NULL\n) R3\n",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Condition",
+          "class:Encounter",
+          "class:FhirResource",
+          "class:Medication",
+          "class:Observation",
+          "class:Patient",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:partition",
+          "class:patient_ref",
+          "class:snomed_code",
+          "class:patient_ref",
+          "class:id",
+          "class:patient_ref",
+          "class:patient_ref",
+          "class:resource"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 1,
+      "wall_clock_s": 38.25,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-02",
+      "question": "How many conditions have a clinical status of active?",
+      "agent_sql": "SELECT (COUNT(*) AS ?n)\nWHERE {\n  ?c a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition/clinical_status> \"active\" .\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v0\"\nFROM (SELECT DISTINCT R1.ID AS \"ID1m1\"\nFROM \"FHIR_R4\".\"CONDITIONS\" R1\nWHERE (R1.ID IS NOT NULL AND 'active' = R1.CLINICAL_STATUS)\n) R3\n",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Condition",
+          "class:Encounter",
+          "class:FhirResource",
+          "class:Observation",
+          "class:Patient",
+          "class:Medication",
+          "class:clinical_status",
+          "class:status",
+          "class:abatement_date",
+          "class:resource",
+          "class:resource",
+          "class:last_updated",
+          "class:partition",
+          "class:patient_ref",
+          "class:hasPatients",
+          "class:id",
+          "class:last_updated",
+          "class:partition"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 1,
+      "wall_clock_s": 39.16,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-01",
+      "question": "How many patients are there of each gender?",
+      "agent_sql": "SELECT ?gender (COUNT(?p) AS ?n)\nWHERE {\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/gender> ?gender .\n}\nGROUP BY ?gender",
+      "executed_sql": "SELECT R3.\"GENDER1m56\" AS \"GENDER1m56\", COUNT(*) AS \"v1\"\nFROM (SELECT DISTINCT R1.GENDER AS \"GENDER1m56\", R1.ID AS \"ID1m52\"\nFROM \"FHIR_R4\".\"PATIENTS\" R1\nWHERE (R1.GENDER IS NOT NULL AND R1.ID IS NOT NULL)\n) R3\nGROUP BY R3.\"GENDER1m56\"\n",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Condition",
+          "class:Encounter",
+          "class:FhirResource",
+          "class:Medication",
+          "class:Observation",
+          "class:Patient",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:gender",
+          "class:patient_ref",
+          "class:snomed_code",
+          "class:patient_ref",
+          "class:id",
+          "class:patient_ref",
+          "class:patient_ref",
+          "class:state"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 2,
+      "wall_clock_s": 50.61,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-04",
+      "question": "Which three cities have the most patients?",
+      "agent_sql": "SELECT ?city (COUNT(?p) AS ?patientCount) WHERE {\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/city> ?city .\n}\nGROUP BY ?city\nORDER BY DESC(?patientCount)\nLIMIT 3",
+      "executed_sql": "SELECT R3.\"CITY1m54\" AS \"CITY1m54\", COUNT(*) AS \"v1\"\nFROM (SELECT DISTINCT R1.CITY AS \"CITY1m54\", R1.ID AS \"ID1m52\"\nFROM \"FHIR_R4\".\"PATIENTS\" R1\nWHERE (R1.CITY IS NOT NULL AND R1.ID IS NOT NULL)\n) R3\nGROUP BY R3.\"CITY1m54\"\nORDER BY COUNT(*) DESC NULLS LAST\nLIMIT 3",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Condition",
+          "class:Encounter",
+          "class:FhirResource",
+          "class:Medication",
+          "class:Observation",
+          "class:Patient",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:patient_ref",
+          "class:snomed_code",
+          "class:patient_ref",
+          "class:id",
+          "class:patient_ref",
+          "class:patient_ref",
+          "class:city",
+          "class:state"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 3,
+      "wall_clock_s": 33.61,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-03",
+      "question": "What are the five most common condition names, and how many times does each occur?",
+      "agent_sql": "SELECT ?condition_name (COUNT(?c) AS ?n)\nWHERE {\n  ?c a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Condition/condition_name> ?condition_name .\n}\nGROUP BY ?condition_name\nORDER BY DESC(?n)\nLIMIT 5",
+      "executed_sql": "SELECT R3.\"CONDITION_NAME1m4\" AS \"CONDITION_NAME1m4\", COUNT(*) AS \"v1\"\nFROM (SELECT DISTINCT R1.CONDITION_NAME AS \"CONDITION_NAME1m4\", R1.ID AS \"ID1m1\"\nFROM \"FHIR_R4\".\"CONDITIONS\" R1\nWHERE (R1.CONDITION_NAME IS NOT NULL AND R1.ID IS NOT NULL)\n) R3\nGROUP BY R3.\"CONDITION_NAME1m4\"\nORDER BY COUNT(*) DESC NULLS LAST\nLIMIT 5",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Condition",
+          "class:FhirResource",
+          "class:Patient",
+          "class:Encounter",
+          "class:Medication",
+          "class:Observation",
+          "class:condition_name",
+          "class:abatement_date",
+          "class:onset_date",
+          "class:clinical_status",
+          "class:id",
+          "class:last_updated",
+          "class:patient_ref",
+          "class:resource",
+          "class:snomed_code",
+          "class:hasPatients",
+          "class:id",
+          "class:last_updated"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 5,
+      "wall_clock_s": 38.54,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-05",
+      "question": "How many encounters are there of each encounter class?",
+      "agent_sql": "SELECT ?encounter_class (COUNT(?encounter) AS ?n)\nWHERE {\n  ?encounter a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter> ;\n             <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter/encounter_class> ?encounter_class .\n}\nGROUP BY ?encounter_class",
+      "executed_sql": "SELECT R3.\"ENCOUNTER_CLASS1m13\" AS \"ENCOUNTER_CLASS1m13\", COUNT(*) AS \"v1\"\nFROM (SELECT DISTINCT R1.ENCOUNTER_CLASS AS \"ENCOUNTER_CLASS1m13\", R1.ID AS \"ID1m12\"\nFROM \"FHIR_R4\".\"ENCOUNTERS\" R1\nWHERE (R1.ENCOUNTER_CLASS IS NOT NULL AND R1.ID IS NOT NULL)\n) R3\nGROUP BY R3.\"ENCOUNTER_CLASS1m13\"\n",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Encounter",
+          "class:Patient",
+          "class:FhirResource",
+          "class:Observation",
+          "class:Condition",
+          "class:Medication",
+          "class:encounter_class",
+          "class:hasEncounters",
+          "class:encounter_ref",
+          "class:encounter_type",
+          "class:patient_ref",
+          "class:hasPatients",
+          "class:id",
+          "class:resource",
+          "class:id",
+          "class:resource",
+          "class:id",
+          "class:period_end"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 5,
+      "wall_clock_s": 37.49,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-06",
+      "question": "How many medication prescriptions are there per status?",
+      "agent_sql": "SELECT ?status (COUNT(?m) AS ?n)\nWHERE {\n  ?m a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Medication> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Medication/status> ?status .\n}\nGROUP BY ?status",
+      "executed_sql": "SELECT R3.\"STATUS1m39\" AS \"STATUS1m39\", COUNT(*) AS \"v1\"\nFROM (SELECT DISTINCT R1.ID AS \"ID1m30\", R1.STATUS AS \"STATUS1m39\"\nFROM \"FHIR_R4\".\"MEDICATIONS\" R1\nWHERE (R1.STATUS IS NOT NULL AND R1.ID IS NOT NULL)\n) R3\nGROUP BY R3.\"STATUS1m39\"\n",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Medication",
+          "class:Condition",
+          "class:FhirResource",
+          "class:Patient",
+          "class:Encounter",
+          "class:Observation",
+          "class:status",
+          "class:clinical_status",
+          "class:medication_name",
+          "class:abatement_date",
+          "class:resource",
+          "class:id",
+          "class:resource",
+          "class:id",
+          "class:resource",
+          "class:resource_type",
+          "class:authored_on",
+          "class:id"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 2,
+      "wall_clock_s": 35.15,
+      "error": null
+    },
+    {
+      "scenario_id": "gt-row-07",
+      "question": "How many encounters belong to female patients?",
+      "agent_sql": "SELECT (COUNT(?e) AS ?n) WHERE {\n  ?e a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Encounter/patient_ref> ?pref .\n  ?p a <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient> ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/id> ?pid ;\n     <http://snowflake-fhir_r4-ontology-20260813-030435/ontology/vkg-snowflake_fhir_r4/Patient/gender> ?gender .\n  FILTER(?gender = \"female\")\n  BIND(CONCAT(\"urn:uuid:\", ?pid) AS ?uref)\n  FILTER(?pref = ?uref)\n}",
+      "executed_sql": "SELECT COUNT(*) AS \"v3\"\nFROM (SELECT DISTINCT R2.GENDER AS \"GENDER1m56\", R1.ID AS \"ID1m12\", R2.ID AS \"ID1m52\", R1.PATIENT_REF AS \"PATIENT_REF1m18\"\nFROM \"FHIR_R4\".\"ENCOUNTERS\" R1, \"FHIR_R4\".\"PATIENTS\" R2\nWHERE ((R1.PATIENT_REF = ('urn:uuid:' || R2.ID)) AND (R2.GENDER = 'female') AND R1.PATIENT_REF IS NOT NULL AND R2.GENDER IS NOT NULL AND R1.ID IS NOT NULL AND R2.ID IS NOT NULL)\n) R4\n",
+      "provenance": {
+        "tier": "vkg",
+        "grounded": true,
+        "sources": [
+          "class:Encounter",
+          "class:Patient",
+          "class:Condition",
+          "class:FhirResource",
+          "class:Medication",
+          "class:Observation",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasPatients",
+          "class:hasEncounters",
+          "class:hasPatients",
+          "class:patient_ref",
+          "class:patient_ref",
+          "class:id",
+          "class:snomed_code",
+          "class:patient_ref",
+          "class:resource",
+          "class:encounter_ref"
+        ],
+        "degraded": null
+      },
+      "degraded": null,
+      "row_count": 1,
+      "wall_clock_s": 58.3,
+      "error": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "sf-q1",
+      "difficulty": "simple",
+      "tables": [
+        "PATIENTS"
+      ],
+      "question": "How many patients are in the dataset?",
+      "gold_sql": "SELECT count(*) AS patient_count FROM PATIENTS",
+      "gold_columns": [
+        "patient_count"
+      ],
+      "gold_answer": "10969",
+      "scenario_id": "gt-row-00"
+    },
+    {
+      "id": "sf-q2",
+      "difficulty": "simple",
+      "tables": [
+        "PATIENTS"
+      ],
+      "question": "How many patients are there of each gender?",
+      "gold_sql": "SELECT GENDER, count(*) AS patient_count FROM PATIENTS GROUP BY GENDER ORDER BY patient_count DESC",
+      "gold_columns": [
+        "GENDER",
+        "patient_count"
+      ],
+      "gold_answer": "GENDER=female, patient_count=5539; GENDER=male, patient_count=5430",
+      "scenario_id": "gt-row-01"
+    },
+    {
+      "id": "sf-q3",
+      "difficulty": "simple",
+      "tables": [
+        "CONDITIONS"
+      ],
+      "question": "How many conditions have a clinical status of active?",
+      "gold_sql": "SELECT count(*) AS active_conditions FROM CONDITIONS WHERE CLINICAL_STATUS = 'active'",
+      "gold_columns": [
+        "active_conditions"
+      ],
+      "gold_answer": "100925",
+      "scenario_id": "gt-row-02"
+    },
+    {
+      "id": "sf-q4",
+      "difficulty": "moderate",
+      "tables": [
+        "CONDITIONS"
+      ],
+      "question": "What are the five most common condition names, and how many times does each occur?",
+      "gold_sql": "SELECT CONDITION_NAME, count(*) AS condition_count FROM CONDITIONS GROUP BY CONDITION_NAME ORDER BY condition_count DESC, CONDITION_NAME ASC LIMIT 5",
+      "gold_columns": [
+        "CONDITION_NAME",
+        "condition_count"
+      ],
+      "gold_answer": "CONDITION_NAME=Medication review due (situation), condition_count=78310; CONDITION_NAME=Stress (finding), condition_count=30445; CONDITION_NAME=Gingivitis (disorder), condition_count=28972; CONDITION_NAME=Full-time employment (finding), condition_count=28231; CONDITION_NAME=Part-time employment (finding), condition_count=17762",
+      "scenario_id": "gt-row-03"
+    },
+    {
+      "id": "sf-q5",
+      "difficulty": "moderate",
+      "tables": [
+        "PATIENTS"
+      ],
+      "question": "Which three cities have the most patients?",
+      "gold_sql": "SELECT CITY, count(*) AS patient_count FROM PATIENTS GROUP BY CITY ORDER BY patient_count DESC, CITY ASC LIMIT 3",
+      "gold_columns": [
+        "CITY",
+        "patient_count"
+      ],
+      "gold_answer": "CITY=Boston, patient_count=1023; CITY=Worcester, patient_count=292; CITY=Springfield, patient_count=270",
+      "scenario_id": "gt-row-04"
+    },
+    {
+      "id": "sf-q6",
+      "difficulty": "moderate",
+      "tables": [
+        "ENCOUNTERS"
+      ],
+      "question": "How many encounters are there of each encounter class?",
+      "gold_sql": "SELECT ENCOUNTER_CLASS, count(*) AS encounter_count FROM ENCOUNTERS GROUP BY ENCOUNTER_CLASS ORDER BY encounter_count DESC, ENCOUNTER_CLASS ASC",
+      "gold_columns": [
+        "ENCOUNTER_CLASS",
+        "encounter_count"
+      ],
+      "gold_answer": "ENCOUNTER_CLASS=AMB, encounter_count=605519; ENCOUNTER_CLASS=EMER, encounter_count=24082; ENCOUNTER_CLASS=IMP, encounter_count=12455; ENCOUNTER_CLASS=HH, encounter_count=5313; ENCOUNTER_CLASS=VR, encounter_count=1577",
+      "scenario_id": "gt-row-05"
+    },
+    {
+      "id": "sf-q7",
+      "difficulty": "moderate",
+      "tables": [
+        "MEDICATIONS"
+      ],
+      "question": "How many medication prescriptions are there per status?",
+      "gold_sql": "SELECT STATUS, count(*) AS prescription_count FROM MEDICATIONS GROUP BY STATUS ORDER BY prescription_count DESC, STATUS ASC",
+      "gold_columns": [
+        "STATUS",
+        "prescription_count"
+      ],
+      "gold_answer": "STATUS=completed, prescription_count=525241; STATUS=active, prescription_count=28181",
+      "scenario_id": "gt-row-06"
+    },
+    {
+      "id": "sf-q8",
+      "difficulty": "challenging",
+      "tables": [
+        "ENCOUNTERS",
+        "PATIENTS"
+      ],
+      "question": "How many encounters belong to female patients?",
+      "gold_sql": "SELECT count(*) AS encounter_count FROM ENCOUNTERS e JOIN PATIENTS p ON e.PATIENT_REF = 'urn:uuid:' || p.ID WHERE p.GENDER = 'female'",
+      "gold_columns": [
+        "encounter_count"
+      ],
+      "gold_answer": "340847",
+      "scenario_id": "gt-row-07"
+    }
+  ],
+  "n_questions": 8
+}

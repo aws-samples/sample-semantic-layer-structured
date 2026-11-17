@@ -1,0 +1,132 @@
+[
+  {
+    "layer_id": "vkg-bird_card_games",
+    "namespace": "bird_card_games",
+    "status": "completed",
+    "seconds": 1380.2,
+    "tables": 6,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 6,
+      "mapped": 6,
+      "with_key": 6
+    }
+  },
+  {
+    "layer_id": "vkg-bird_codebase_community",
+    "namespace": "bird_codebase_community",
+    "status": "completed",
+    "seconds": 1170.5,
+    "tables": 8,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 8,
+      "mapped": 8,
+      "with_key": 8
+    }
+  },
+  {
+    "layer_id": "vkg-bird_debit_card_specializing",
+    "namespace": "bird_debit_card_specializing",
+    "status": "completed",
+    "seconds": 510.1,
+    "tables": 5,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 5,
+      "mapped": 5,
+      "with_key": 5
+    }
+  },
+  {
+    "layer_id": "vkg-bird_european_football_2",
+    "namespace": "bird_european_football_2",
+    "status": "completed",
+    "seconds": 2070.3,
+    "tables": 7,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 7,
+      "mapped": 7,
+      "with_key": 7
+    }
+  },
+  {
+    "layer_id": "vkg-bird_financial",
+    "namespace": "bird_financial",
+    "status": "completed",
+    "seconds": 870.2,
+    "tables": 8,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 8,
+      "mapped": 8,
+      "with_key": 8
+    }
+  },
+  {
+    "layer_id": "vkg-bird_formula_1",
+    "namespace": "bird_formula_1",
+    "status": "completed",
+    "seconds": 1560.3,
+    "tables": 13,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 13,
+      "mapped": 13,
+      "with_key": 11
+    }
+  },
+  {
+    "layer_id": "vkg-bird_student_club",
+    "namespace": "bird_student_club",
+    "status": "completed",
+    "seconds": 930.2,
+    "tables": 8,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 8,
+      "mapped": 8,
+      "with_key": 8
+    }
+  },
+  {
+    "layer_id": "vkg-bird_superhero",
+    "namespace": "bird_superhero",
+    "status": "completed",
+    "seconds": 810.2,
+    "tables": 10,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 10,
+      "mapped": 10,
+      "with_key": 10
+    }
+  },
+  {
+    "layer_id": "vkg-bird_thrombosis_prediction",
+    "namespace": "bird_thrombosis_prediction",
+    "status": "completed",
+    "seconds": 810.3,
+    "tables": 3,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 3,
+      "mapped": 3,
+      "with_key": 2
+    }
+  },
+  {
+    "layer_id": "vkg-bird_toxicology",
+    "namespace": "bird_toxicology",
+    "status": "completed",
+    "seconds": 390.1,
+    "tables": 4,
+    "summary": "status=completed",
+    "keys": {
+      "classes": 4,
+      "mapped": 4,
+      "with_key": 4
+    }
+  }
+]

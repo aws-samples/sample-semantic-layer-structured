@@ -385,8 +385,15 @@ def stream_agent_run(
         'provenance': provenance,
         # Executed-vs-generated distinction for the eval harness (mirrors the
         # metadata chat path): ``executedSql`` is "" on a degraded/gate-rejected
-        # run; ``degraded`` names the terminal reason.
-        'executedSql': (result.get('executed_sql', '') if isinstance(result, dict) else ''),
+        # run; ``degraded`` names the terminal reason. The metadata (RAG) path
+        # sets a top-level ``executed_sql``; the VKG path instead surfaces the
+        # executed Athena SQL under ``reasoning.sqlQuery`` (Task 11), so fall back
+        # to it — otherwise VKG turns report an empty executed_sql to the eval
+        # notebooks (and the codeBased exec-metric evaluator finds no predicted SQL).
+        'executedSql': (
+            (result.get('executed_sql', '') if isinstance(result, dict) else '')
+            or (reasoning.get('sqlQuery', '') if isinstance(reasoning, dict) else '')
+        ),
         'degraded': (result.get('degraded') if isinstance(result, dict) else None),
     }
     # Carry the pending-clarification record (the standalone question + offered

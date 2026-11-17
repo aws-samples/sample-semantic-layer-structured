@@ -41,6 +41,11 @@ export class DynamoDBStack extends cdk.Stack {
   // admin tab can list/delete per ontology.
   public readonly feedbackTable: dynamodb.Table;
 
+  // Namespaces as a real primitive: the registry that makes a namespace exist,
+  // and the grants that make it authorizable.
+  public readonly namespacesTable: dynamodb.Table;
+  public readonly grantsTable: dynamodb.Table;
+
   constructor(scope: Construct, id: string, props: DynamoDBStackProps) {
     super(scope, id, props);
 
@@ -159,7 +164,13 @@ export class DynamoDBStack extends cdk.Stack {
       partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      // DESTROY (aligned with the sibling metadata/chat-sessions/feedback tables):
+      // RETAIN made this table survive `cdk destroy` and then collide with the
+      // next from-scratch create ("Table already exists"), stranding the whole
+      // deploy at the dynamodb stack (observed 2026-07-28). Metrics are ephemeral
+      // eval telemetry; DESTROY only removes the table on stack DELETE (never on
+      // updates), so repeatable from-scratch destroy/deploy cycles work cleanly.
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
       pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       encryption: dynamodb.TableEncryption.AWS_MANAGED,
     });
@@ -206,6 +217,58 @@ export class DynamoDBStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // Namespace registry (services/namespace_service.py).
+    //   NS#<id>          / METADATA    — the namespace record.
+    //   NS_NAME#<name>   / RESERVATION — the name claim.
+    // Name uniqueness is a conditional write on the reservation item rather than
+    // a GSI: a GSI is eventually consistent, so two concurrent creates could
+    // both read "name free" and both succeed. The reservation carries a `ttl` so
+    // a create that dies between claiming the name and writing the metadata row
+    // releases the name instead of stranding it forever — the successful path
+    // REMOVEs the attribute to make the claim permanent.
+    this.namespacesTable = new dynamodb.Table(this, 'NamespacesTable', {
+      tableName: `${props.projectName}-namespaces`,
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      // DESTROY, matching every sibling table. RETAIN is tempting for
+      // authorization state, but it is what made the metrics table survive a
+      // `cdk destroy` and then collide with the next create (see its comment
+      // above) — and the contents here are re-seeded by the authz bootstrap
+      // custom resource on every deploy, so a from-scratch rebuild recovers the
+      // `default` namespace and the platform-admin grants. Only stack DELETE
+      // removes the table; updates never do.
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      timeToLiveAttribute: 'ttl',
+    });
+
+    // Grants (authz/role_resolver.py + agents/shared/grant_profile.py).
+    //   RES#<resourceId> / <principalKey>#<role>
+    // The base table answers "who has access to this namespace" with one Query;
+    // the PrincipalIndex GSI answers "what can this principal do", which is the
+    // query every authorized request runs. Projection ALL because that read
+    // needs the restriction attributes (tableAllowlist / columnDenylist /
+    // allowedMetrics) too — a KEYS_ONLY index would turn one Query into a Query
+    // plus N BatchGetItems on the hot path of every request.
+    this.grantsTable = new dynamodb.Table(this, 'GrantsTable', {
+      tableName: `${props.projectName}-grants`,
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+      // DESTROY for the same reason as the namespaces table — see above.
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    this.grantsTable.addGlobalSecondaryIndex({
+      indexName: 'PrincipalIndex',
+      partitionKey: { name: 'principalKey', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // Create IAM role for Athena DynamoDB connector
     const athenaConnectorRole = new iam.Role(this, 'AthenaDynamoDBConnectorRole', {
       assumedBy: new iam.ServicePrincipal('athena.amazonaws.com'),
@@ -247,6 +310,8 @@ export class DynamoDBStack extends cdk.Stack {
       { name: 'TypeCodes', table: this.typeCodesTable },
       { name: 'Metadata', table: this.metadataTable },
       { name: 'ChatSessions', table: this.chatSessionsTable },
+      { name: 'Namespaces', table: this.namespacesTable },
+      { name: 'Grants', table: this.grantsTable },
     ];
 
     outputTables.forEach(({ name, table }) => {

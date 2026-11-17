@@ -35,16 +35,16 @@ def test_tier1_round_trip(fake_ddb_table, fake_knn, fake_athena):
     )
 
     with patch.object(metric_lookup, "embed_text", return_value=[0.1] * 1024):
-        out = metric_lookup.lookup(
+        match = metric_lookup.lookup(
             question="show me monthly revenue", namespace="ns-default",
             ddb_table=fake_ddb_table, knn=fake_knn,
             knn_endpoint="https://x", knn_index="metrics", threshold=0.85,
         )
-    assert out is not None
-    assert out.metric_id == "monthly_revenue"
+    assert match.matched is not None
+    assert match.matched.metric_id == "monthly_revenue"
 
     rows = metric_executor.execute_metric(
-        metric=out, filters={}, athena=fake_athena,
+        metric=match.matched, filters={}, athena=fake_athena,
         workgroup="wg", output_loc="s3://bkt/",
     )
     assert rows["rows"] == [{"x": "1"}]
@@ -54,7 +54,7 @@ def test_tier1_round_trip(fake_ddb_table, fake_knn, fake_athena):
 def test_tier1_below_threshold_falls_through(
     fake_ddb_table, fake_knn,
 ):
-    """Below-threshold KNN hit must return None so caller falls through."""
+    """Below-threshold KNN hit must not match, so the caller falls through."""
     fake_knn.index(
         doc_id="monthly_revenue", score=0.50,
         metadata={"namespace": "ns-default"},
@@ -66,7 +66,7 @@ def test_tier1_below_threshold_falls_through(
             ddb_table=fake_ddb_table, knn=fake_knn,
             knn_endpoint="https://x", knn_index="metrics", threshold=0.85,
         )
-    assert out is None
+    assert out.matched is None
 
 
 def test_tier1_namespace_isolation(fake_ddb_table, fake_knn):
@@ -81,4 +81,4 @@ def test_tier1_namespace_isolation(fake_ddb_table, fake_knn):
             ddb_table=fake_ddb_table, knn=fake_knn,
             knn_endpoint="https://x", knn_index="metrics", threshold=0.85,
         )
-    assert out is None
+    assert out.matched is None

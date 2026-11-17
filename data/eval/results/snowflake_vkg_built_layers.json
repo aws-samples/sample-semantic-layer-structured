@@ -1,0 +1,37 @@
+{
+  "source": "snowflake_federated",
+  "catalog": "snowflake_fhir_db",
+  "schema": "FHIR_R4",
+  "ontology_runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********4087:runtime/semantic_layer_dev_ontology-lysryf3ij6",
+  "agent_id": "semantic_layer_dev_ontology-lysryf3ij6",
+  "layer_id_convention": "vkg-snowflake_<schema lower-cased>",
+  "built_layer_ids": [
+    "vkg-snowflake_fhir_r4"
+  ],
+  "tables": [
+    "CONDITIONS",
+    "ENCOUNTERS",
+    "FHIR_RESOURCES",
+    "MEDICATIONS",
+    "OBSERVATIONS",
+    "PATIENTS"
+  ],
+  "scenario_runs": {
+    "snowflake_fhir_db.FHIR_R4": {
+      "layer_id": "vkg-snowflake_fhir_r4",
+      "session_id": "snowflake_fhir_db.FHIR_R4-5d2a3bcd-94bd-4614-8890-ee64e6508f84",
+      "status": "completed",
+      "num_tables": 6,
+      "tables": [
+        "CONDITIONS",
+        "ENCOUNTERS",
+        "FHIR_RESOURCES",
+        "MEDICATIONS",
+        "OBSERVATIONS",
+        "PATIENTS"
+      ],
+      "summary": "status=completed",
+      "build_seconds": 2148.9
+    }
+  }
+}

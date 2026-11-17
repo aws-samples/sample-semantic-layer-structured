@@ -3,7 +3,7 @@
 This document describes the Ontology Query Agent (VKG / Virtual Knowledge Graph
 mode). It is the SPARQL/Ontop sibling of the
 [`metadata_query_agent`](../metadata_query_agent/README.md) (Semantic-RAG mode):
-same two-tier shape and shared graph primitives, but Tier 2 assembles an
+same three-tier shape and shared graph primitives, but Tier 2 assembles an
 **ontology slice**, generates **SPARQL**, and Phase 5 translates that SPARQL to
 **SQL** (via Ontop) and runs it on **Athena**.
 
@@ -41,7 +41,14 @@ flowchart TD
     T1 -->|hit| T1X["execute pre-compiled SQL → Athena"]
     T1X --> R
 
-    T1 -->|miss / error| T2START["Tier 2 — deterministic Strands graph<br/>(tier2_resolve · open MCP session · fetch ontology once)"]
+    T1 -->|miss / error| RT{"Governed-rule tier<br/>(_rule_tier_answer · GOVERNED_RULES_ENABLED)<br/>KNN ≥ 0.85 over PUBLISHED rules"}
+
+    RT -->|"hit · fully mapped + thresholds approved"| RTX["execute compiled SPARQL → Ontop → Athena<br/>(provenance.tier = governed_rule)"]
+    RTX --> R
+    RT -->|"hit · missing input / unapproved threshold"| RADV["🤖 Advisory + knowledge_gap<br/>(names what is missing · never guesses a bound)"]
+    RADV --> R
+
+    RT -->|"flag off / miss / error"| T2START["Tier 2 — deterministic Strands graph<br/>(tier2_resolve · open MCP session · fetch ontology once)"]
 
     subgraph TIER2 ["TIER 2  (deterministic Strands graph — Phase 1→5, VKG)"]
         direction TB
@@ -91,22 +98,25 @@ orphans into a separate trace).
 
 ## Where the flow lives in code
 
-| Step                                 | Entry point                                                  | Module                                                                                                                    |
-| ------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| Orchestration                        | `_run_query` → `_run_query_core`                             | [`main.py`](main.py)                                                                                                      |
-| Clarification resolution             | `load_pending_clarification` + `resolve_clarification_reply` | [`../shared/clarification.py`](../shared/clarification.py)                                                                |
-| Follow-up contextualization          | `contextualize_question`                                     | [`../shared/followup.py`](../shared/followup.py)                                                                          |
-| Intent router + advisory answer      | `classify_intent` · `build_advisory_answer`                  | [`../shared/advisory.py`](../shared/advisory.py) · [`main.py`](main.py)                                                   |
-| Tier 1 lookup / execute              | KNN governed-metric lookup + Athena execute                  | [`../shared/metric_lookup.py`](../shared/metric_lookup.py) · [`main.py`](main.py)                                         |
-| Tier 2 entry + phase deps            | `tier2_resolve` → `_build_phase_deps`                        | [`main.py`](main.py) · [`tier2/workflow.py`](tier2/workflow.py)                                                           |
-| Graph + shared primitives            | `PhaseDeps` · `WorkflowContext` · `run_tier2_graph`          | [`tier2/workflow.py`](tier2/workflow.py) · [`../shared/tier2_graph.py`](../shared/tier2_graph.py)                         |
-| Phase 1 topic router                 | `_GatewayTopicRouter` · `VkgTopicRouter`                     | [`tier2/vkg_topic_router.py`](tier2/vkg_topic_router.py)                                                                  |
-| Phase 2 disambiguation               | `analyze_terms` (shared)                                     | [`../shared/disambiguation_common.py`](../shared/disambiguation_common.py)                                                |
-| Phase 3 slice builder + judge        | `VkgSliceBuilder` · `build_slice_judge`                      | [`tier2/vkg_slice_builder.py`](tier2/vkg_slice_builder.py) · [`tier2/slice_judge.py`](tier2/slice_judge.py)               |
-| Phase 3 CONSTRUCT / gateway          | `NeptuneConstruct` · typed MCP wrappers                      | [`tier2/neptune_construct.py`](tier2/neptune_construct.py) · [`tier2/gateway_client.py`](tier2/gateway_client.py)         |
-| Phase 3b slice disambiguation        | `find_slice_ambiguities`                                     | [`tier2/slice_disambiguation.py`](tier2/slice_disambiguation.py)                                                          |
-| Phase 4 SPARQL generate/validate     | `VkgQueryGenerator.generate` · `validate_sparql`             | [`tier2/vkg_query_generator.py`](tier2/vkg_query_generator.py) · [`tier2/sparql_validator.py`](tier2/sparql_validator.py) |
-| Phase 5 grounding / translate / exec | `check_grounding` · `_run_execution` · `_repair_sql`         | [`tier2/grounding.py`](tier2/grounding.py) · [`main.py`](main.py)                                                         |
+| Step                                 | Entry point                                                      | Module                                                                                                                                                                                   |
+| ------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Orchestration                        | `_run_query` → `_run_query_core`                                 | [`main.py`](main.py)                                                                                                                                                                     |
+| Clarification resolution             | `load_pending_clarification` + `resolve_clarification_reply`     | [`../shared/clarification.py`](../shared/clarification.py)                                                                                                                               |
+| Follow-up contextualization          | `contextualize_question`                                         | [`../shared/followup.py`](../shared/followup.py)                                                                                                                                         |
+| Intent router + advisory answer      | `classify_intent` · `build_advisory_answer`                      | [`../shared/advisory.py`](../shared/advisory.py) · [`main.py`](main.py)                                                                                                                  |
+| Tier 1 lookup / execute              | KNN governed-metric lookup + Athena execute                      | [`../shared/metric_lookup.py`](../shared/metric_lookup.py) · [`main.py`](main.py)                                                                                                        |
+| Governed-rule tier (flag-gated)      | `_rule_tier_answer` → `rule_lookup` · `execute_rule`             | [`main.py`](main.py) · [`../shared/rule_lookup.py`](../shared/rule_lookup.py) · [`../shared/rule_executor.py`](../shared/rule_executor.py)                                               |
+| Tier 2 entry + phase deps            | `tier2_resolve` → `_build_phase_deps`                            | [`main.py`](main.py) · [`tier2/workflow.py`](tier2/workflow.py)                                                                                                                          |
+| Graph + shared primitives            | `PhaseDeps` · `WorkflowContext` · `run_tier2_graph`              | [`tier2/workflow.py`](tier2/workflow.py) · [`../shared/tier2_graph.py`](../shared/tier2_graph.py)                                                                                        |
+| Phase 1 topic router                 | `_GatewayTopicRouter` · `VkgTopicRouter`                         | [`tier2/vkg_topic_router.py`](tier2/vkg_topic_router.py)                                                                                                                                 |
+| Phase 2 disambiguation               | `analyze_terms` (shared)                                         | [`../shared/disambiguation_common.py`](../shared/disambiguation_common.py)                                                                                                               |
+| Phase 3 slice builder + judge        | `VkgSliceBuilder` · `build_slice_judge`                          | [`tier2/vkg_slice_builder.py`](tier2/vkg_slice_builder.py) · [`tier2/slice_judge.py`](tier2/slice_judge.py)                                                                              |
+| Phase 3 CONSTRUCT / gateway          | `NeptuneConstruct` · typed MCP wrappers                          | [`tier2/neptune_construct.py`](tier2/neptune_construct.py) · [`tier2/gateway_client.py`](tier2/gateway_client.py)                                                                        |
+| Phase 3b slice disambiguation        | `find_slice_ambiguities`                                         | [`tier2/slice_disambiguation.py`](tier2/slice_disambiguation.py)                                                                                                                         |
+| Phase 4 SPARQL generate/validate     | `VkgQueryGenerator.generate` · `validate_sparql`                 | [`tier2/vkg_query_generator.py`](tier2/vkg_query_generator.py) · [`tier2/sparql_validator.py`](tier2/sparql_validator.py)                                                                |
+| Phase 5 grounding / translate / exec | `check_grounding` · `_run_execution` · `_repair_sql`             | [`tier2/grounding.py`](tier2/grounding.py) · [`main.py`](main.py)                                                                                                                        |
+| Tier 3 fallback (degrade only)       | `_run_tier3_supervisor` → `run_supervisor_loop` · `WorkerBudget` | [`main.py`](main.py) · [`tier3/supervisor.py`](tier3/supervisor.py) · [`tier3/budget.py`](tier3/budget.py)                                                                               |
+| SQL firewall (all tiers)             | `bind_from_context` · `enforce_for_caller` · `resolve_profile`   | [`../shared/firewall_context.py`](../shared/firewall_context.py) · [`../shared/sql_firewall.py`](../shared/sql_firewall.py) · [`../shared/grant_profile.py`](../shared/grant_profile.py) |
 
 The deterministic phases (1, 2, 3b, the grounding + Ontop-translate + Athena
 halves of 5) are **not** LLM agents — they are plain Python functions wrapped by
@@ -128,6 +138,72 @@ the **intent router** and **advisory synthesis** (`../shared/advisory.py`).
 - **Returns:** on success `{answer, sql_query (the SPARQL lineage), results
 (rows), n_quads, reasoning, metadata}`; on clarification `{needs_clarification:
 true, options, clarification}`; on degrade a plain error answer (never a 5xx).
+
+## SQL firewall (before any tier runs)
+
+([`../shared/sql_firewall.py`](../shared/sql_firewall.py) ·
+[`../shared/firewall_context.py`](../shared/firewall_context.py) ·
+[`../shared/grant_profile.py`](../shared/grant_profile.py))
+
+There are exactly two serve-time routes to `start_query_execution`, and both call
+`enforce_for_caller` immediately before it:
+
+- `_run_athena_sql` ([`main.py`](main.py)) — the ungated Athena core behind Tier 2's
+  Ontop-translated SQL, the LLM repair round, and the Tier 3 tools. The firewall runs
+  **before any AWS client is built**, so a denied statement costs nothing.
+- `execute_metric` ([`../shared/metric_executor.py`](../shared/metric_executor.py)) —
+  the Tier 1 path. It firewalls the **final** statement, after the caller's filters are
+  merged in, and parses in the metric's own dialect (parsing a non-Athena statement as
+  `athena` would fail, which inside a restrictive profile means denied). Separately and
+  first, `check_metric_allowed` applies `allowedMetrics` — a metric is authorized by
+  identity, not by the shape of its SQL, so there is no point parsing SQL the caller
+  may not run at all.
+
+Build-side Athena helpers (`delta_fingerprint.py`, `athena_bench.py`) are not on a
+caller's serve path and are not gated.
+
+Two halves, and the distinction matters:
+
+- **Always on, structural.** SELECT-only at the root, plus a **deep AST scan** for
+  data-modifying nodes anywhere in the tree — so `WITH d AS (DELETE … RETURNING *)
+SELECT * FROM d` is refused even though it begins with `WITH`. Comments are stripped
+  before a pre-parse regex runs, and a dangerous-function denylist applies. Parsing is
+  sqlglot's `athena` dialect. None of this depends on the caller having a grant.
+- **Per-caller, opt-in.** `tableAllowlist`, `columnDenylist` and `allowedMetrics` come
+  from the caller's merged grants. The merge is **deny-wins**: denylists union, and an
+  allowlist is the union of only the grants that _declare_ one, so a permissive grant
+  cannot erase a restrictive grant's PII denylist. `None` (no grant declares one)
+  means unconstrained and is deliberately **not** the same as `[]`, which denies
+  everything.
+
+The caller profile is bound once per invocation via a `ContextVar`, in `invoke()`
+before any tool or phase runs — `execute_sql_query` reads the binding rather than
+taking it as a parameter, because its signature _is_ the model's tool schema and the
+model must not be able to supply its own permissions. The namespace is resolved from
+the ontology's DynamoDB config row, **never from the payload**. A failure to read the
+grants fails the turn: restrictions we cannot read are not the same as no restrictions.
+
+Where the identity comes from is worth being precise about, because the two halves differ.
+Groups — which is what resolves a role — are read **only** from the forwarded Bearer JWT's
+`cognito:groups` claim; no payload field can add one. The subject is
+`_user_id_from_context`, which prefers the JWT `sub` and falls back to `payload['userId']`,
+then to `anonymous`. `bind_from_context` deliberately takes that subject as a parameter
+rather than decoding it itself, so the precedence is decided in one place per agent and
+cannot be silently re-made with different rules further down.
+
+A denial raises `UnsafeSQLError`, which propagates as a turn failure rather than being
+retried or degraded around — Phase 5's SQL is deterministic Ontop output, so unlike the
+RAG agent's model-written SQL there is nothing to usefully rewrite. (The RAG agent
+returns its denial instead: a Strands `@tool` that raises is retried by the model
+forever.)
+
+The agent-side firewall does **not** read `ENABLE_AUTHZ`; it is independent of whether
+the REST API's policy-decision point is enforcing. The structural half runs
+unconditionally — there is no switch that turns SELECT-only off. Only the per-caller half
+needs configuration: with `GRANTS_TABLE` unset the resolver logs
+`grant_profile_no_table` and returns identity only, which means no restrictions to apply
+(unconstrained), **not** deny-all. See the root README's
+[Namespaces, Authorization & the SQL Firewall](../../README.md#namespaces-authorization--the-sql-firewall).
 
 ## Follow-up contextualization & clarification resolution (before Tier 1/2)
 
@@ -156,10 +232,42 @@ mode (KNN unavailable, below threshold, DDB drift, execution error) is logged an
 **falls through to Tier 2** — a governed-metric problem must never block the more
 general path.
 
+## Governed-rule tier — between Tier 1 and Tier 2
+
+`_rule_tier_answer`, flag-gated on `GOVERNED_RULES_ENABLED` (unset = off, and the
+block returns before making any Neptune, embedding, or KNN call). **Ordering:
+metrics first, then rules** — a governed metric is both more specific and cheaper
+than a rule, so a question a metric answers must never pay for rule lookup.
+
+Matching mirrors Tier 1: embed the question, KNN over the namespace's PUBLISHED
+rules (hydrated from the `<ontologyId>/rules` Neptune graph, not DynamoDB), accept
+the top hit only at cosine ≥ **0.85**. Two outcomes on a hit:
+
+- **Evaluable** — every binding resolves to a column and every applied threshold
+  is approved: execute the rule's `compiled_sparql` through Ontop → Athena and
+  return with `provenance.tier = "governed_rule"`. The answer states the
+  epistemic status in words, names the threshold and its approver, and cites the
+  source document.
+- **Knowledge gap** — any `missing_inputs` or unapproved threshold: **do not
+  execute**. Return an advisory answer carrying a `knowledge_gap` that names
+  exactly what is missing (`rule_id`, `missing_inputs`, `unapproved_thresholds`).
+  Provenance is `advisory` with `sources = ["rule:<id>"]`, so the Monitoring tab
+  shows which rule stalled without counting it as an answered rule. The bound is
+  never guessed.
+
+The evaluable/gap predicate is `unapproved_threshold_ids` **imported from
+`rule_executor`**, not re-derived here: a caller that disagreed with the executor
+would either advise forever or be refused and fall to Tier 2 forever, both
+silently. Fail-soft like Tier 1 — every error path returns `None` and Tier 2 runs.
+
+> Known gap (shared with Tier 1): neither no-graph tier calls
+> `emit_answer_span`, so a rule-answered turn exports no final-answer span and
+> the SESSION eval judges score it as missing rather than wrong.
+
 ## Tier 2 — Deterministic Strands graph (VKG)
 
-Reached **only when Tier 1 misses**. `tier2_resolve` opens an MCP session to the
-Neptune gateway, **fetches the ontology once**, builds a `PhaseDeps`, and runs
+Reached **only when Tier 1 and the governed-rule tier both miss**. `tier2_resolve`
+opens an MCP session to the Neptune gateway, **fetches the ontology once**, builds a `PhaseDeps`, and runs
 the graph. Routing flags on the shared `WorkflowContext` (`degraded` /
 `needs_clarification` / `grounding_missing`) steer the conditional edges.
 
@@ -287,6 +395,29 @@ Phase 5 runs in three halves:
    `n_quads` for the citation panel, and summarized into prose deterministically
    (`_summarize_select`).
 
+## Tier 3 — Supervisor-loop agentic fallback
+
+([`tier3/supervisor.py`](tier3/supervisor.py) · [`tier3/budget.py`](tier3/budget.py))
+
+Reached **only when Tier 2 degrades** (`wf.degraded` set) — never on a
+clarification or a success. A bounded **worker → judge → retry** loop reasons
+freely over the ontology to recover an answer the structured SPARQL path missed.
+It never fabricates: on exhaustion the honest Tier 2 degraded answer is kept.
+
+Three bounds, because the round ceiling alone is not enough:
+
+| Bound                    | Default | Catches                                                   |
+| ------------------------ | ------- | --------------------------------------------------------- |
+| `DEFAULT_MAX_ROUNDS`     | `3`     | worker rounds (`supervisor.py`)                           |
+| `DEFAULT_MAX_TOOL_CALLS` | `40`    | **fast-spin** — hundreds of cheap calls burning the clock |
+| `DEFAULT_ROUND_SECONDS`  | `240.0` | **slow-spin** — few calls, each very slow                 |
+
+The two per-round bounds exist because a Strands ReAct loop has no iteration cap
+of its own, and a plain `Exception` raised inside a `@tool` is handed back to the
+model as a tool _result_ — so the model retries forever. `WorkerBudgetExceeded`
+therefore derives from **`BaseException`** so it unwinds the agent call rather
+than being swallowed as a tool result.
+
 ## Result shaping & terminals
 
 After the graph completes, `_run_query` reads the populated `WorkflowContext`:
@@ -379,7 +510,7 @@ shadow the real one.
   Phase 4 SPARQL generator, Phase 5 SQL-repair (see `QUERY_MODEL_ID` /
   `JUDGE_MODEL_ID` in [`query_prompts.py`](query_prompts.py)).
 - **Titan Text Embeddings v2** (`amazon.titan-embed-text-v2:0`) — Tier 1
-  governed-metric KNN and topic-router KNN.
+  governed-metric KNN, the governed-rule tier's KNN, and topic-router KNN.
 
 Both appear in [`models.json`](models.json); every model-id literal under this
 directory must be listed there (CDK derives `bedrock:InvokeModel` IAM grants from

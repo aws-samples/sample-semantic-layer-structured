@@ -14,42 +14,56 @@ tests/
 │   ├── test_metadata_agent*.py                    # Semantic-RAG metadata enrichment agent
 │   ├── test_metadata_query_*.py                   # Semantic-RAG query agent + Tier 2 cascade
 │   ├── test_rag_*.py / test_vkg_*.py / test_tier2_*.py  # shared Tier 2 graph phases (router, slice, grounding, validators)
+│   ├── test_tier3_*.py                            # Tier 3 supervisor loop + per-round WorkerBudget
+│   ├── test_hybrid_*.py                           # Hybrid agents (incl. test_hybrid_isolation.py — the zero-import guard)
+│   ├── test_nquads_literal_escapes.py / test_neptune_tools_*.py  # N-Quads literal grammar (all 4 parsers) + graph-IRI resolution
+│   ├── test_key_probe.py / test_key_stamp.py / test_ontology_key_stamp_wiring.py  # Athena-MEASURED key uniqueness, end to end
+│   ├── test_build_clears_previous_results.py      # a starting build clears the prior run's error + progress
+│   ├── test_snowflake_*.py / test_bootstrap_connector.py / test_glue_service_connector_catalogs.py  # Athena Snowflake connector
 │   ├── test_metric_*.py / test_metrics_router.py  # Tier 1 governed-metric lookup + CRUD
+│   ├── test_rule_*.py / test_ruleminer.py / test_rules_router.py  # governed rules: models, RDF graph,
+│   │                                               #   4-level validators, compiler, 5 test cases, publish gate,
+│   │                                               #   query-time lookup/executor, mining, import, REST router
+│   ├── test_rule_read_hardening.py                 # strict reads name the rule + field; one corrupt rule
+│   │                                               #   does not 500 the list; RuleReadError is NOT a ValueError
+│   ├── test_query_agent_rule_tier.py / test_advisory_knowledge_gap.py  # the rule tier inside the cascade
+│   │                                               #   (metrics first) + the never-guess knowledge-gap answer
+│   ├── test_knn_hydration_rules.py / test_neptune_service_rules.py / test_neptune_resolve_graph_uri_excludes_rules.py
+│   │                                               #   rules KNN hydration + the /rules graph exclusion
 │   ├── test_mcp_*.py                              # mcp-tools / mcp-proxy Lambdas + user-agent
 │   ├── test_shared_*.py                           # shared building blocks (chat sessions, embedding, guardrails, knn)
 │   ├── test_streaming_runner.py / test_query_*_chat_stream.py  # AG-UI streaming chat
 │   ├── test_obo_middleware.py / test_identity_service.py  # gated OBO identity exchange
+│   ├── test_authz_*.py / test_action_map.py        # Cedar policies, the ASGI PDP, the bootstrap
+│   │                                               #   custom resource, and the route-mapping guard
+│   │                                               #   (an unmapped route fails the build)
+│   ├── test_namespace_service.py / test_namespaces_router.py / test_ontology_namespace_binding.py
+│   │                                               #   namespace creation saga, lifecycle, REST surface
+│   ├── test_sql_firewall.py / test_grant_profile.py / test_firewall_wiring.py  # SELECT-only enforcement
+│   │                                               #   (deep AST scan), deny-wins grant merge, runtime binding
 │   ├── test_eval_judges.py                         # custom SESSION LLM-as-Judge factory (GoalSuccess / FAF / SqlGrounded)
+│   ├── test_exec_metrics.py / test_benchmark_*.py  # execution metrics (EX/R-VES/Soft-F1) + benchmark adapter/scorer + codeBased evaluator handler
+│   ├── test_athena_bench.py / test_ingest_*.py / test_deploy_datasets.py  # benchmark ingestion CLIs (BIRD/CWD/Spider2), deploy driver + Athena run-and-fetch
 │   └── …                                          # REST API services, memory hooks, eval, NER, etc.
 │
 └── integration/
     ├── conftest.py
     ├── test_ontology_agent_integration.py         # Real Athena + Neptune/S3 (6 tests)
-    ├── test_query_agent_integration.py            # Real Athena + mock ontology (5 tests)
+    ├── test_query_agent_integration.py            # Real Athena + mock ontology (1 test)
     ├── test_tier1_e2e.py                          # Tier 1 governed-metric path (3 tests)
     ├── test_tier2_rag_e2e.py                      # Tier 2 Semantic-RAG path (1 test)
-    └── test_tier2_vkg_e2e.py                      # Tier 2 VKG path (1 test)
-
-tests/eval/                                        # Adversarial red-team suite (separate .venv-eval)
-├── factories.py                                   # Zero-arg agent factories (metadata + VKG)
-├── tools.py                                       # Representative SELECT-only tools
-├── requirements.txt                               # Eval-only deps (strands-agents-evals, sqlglot)
-├── RED_TEAM_IMPLEMENTATION.md                     # Full design + run docs
-└── red_team/
-    ├── config.py                                  # Risk categories, thresholds
-    ├── custom_cases.py                            # 10 hand-authored FSI attacks
-    ├── run_red_team.py                            # Async runner (entry point)
-    ├── report_handler.py                          # Breach analysis + JSON export
-    ├── test_tools_guard.py                        # SQL guard behavior tests
-    ├── _weakened_agent.py                          # Vulnerable agent (breach-evidence only)
-    ├── reports/                                   # Breach JSON output (git-ignored)
-    └── samples/                                   # Captured PASS + breach evidence
+    ├── test_tier2_vkg_e2e.py                      # Tier 2 VKG path (1 test)
+    ├── test_hybrid_end_to_end.py                  # Hybrid build + query path (3 tests)
+    └── test_governed_rules_e2e.py                 # governed rules: Ontop smoke + graph round-trip
+                                                   #   (5 tests, env-gated on GOVERNED_RULES_E2E_*)
 ```
 
 **Test Counts** (Python, this directory):
 
-- Unit tests: ~824 tests across 110 files (`tests/unit/`)
-- Integration tests: 16 tests across 5 files (`tests/integration/`)
+- Unit tests: 2710 tests across 234 files (`tests/unit/`) — including 524 authorization /
+  namespace / SQL-firewall (10 files), 317 governed-rules (26 files), 288 Hybrid
+  (`test_hybrid_*.py`) and 50 Tier 3 tests
+- Integration tests: 20 tests across 7 files (`tests/integration/`)
 
 > The frontend (`frontend/src/**/__tests__`, Jest) and CDK (`cdk/**/*.test.ts`, Jest) suites
 > live alongside their own code, not under `tests/`.
@@ -99,8 +113,8 @@ mkdir -p data/ontology-docs
 pytest tests/unit/ --cov --cov-report=term-missing --cov-fail-under=66
 ```
 
-Current measured coverage is **~67%** (floor enforced at 66 and ratcheting toward
-80 — see `docs/plans/2026-06-19-test-coverage-improvements.md`).
+Current measured coverage is **71%** (2708 passed / 2 skipped; floor enforced at 66
+and ratcheting toward 80 — see `docs/plans/2026-06-19-test-coverage-improvements.md`).
 
 **Individual test files via pytest:**
 
@@ -156,6 +170,22 @@ python tests/unit/test_metadata_query_agent.py
 - ✅ `build_revision_prompt` contains S3 paths and N-Quads reference
 - ✅ `_run_revision_mode` uploads context files and invokes revision agent
 - ✅ `invoke` routes to revision mode when `revisionMode=True`
+
+**`test_nquads_literal_escapes.py`** — 31 tests
+
+The N-Quads literal grammar is re-implemented in four places (producer, pre-flight,
+gateway, frontend viewer), none importing the others — the Hybrid isolation guard
+forbids it. So these tests pin the copies to **one another** rather than testing any
+single one alone: a grammar that is narrower on one hop silently drops the line and
+renders a grey em-dash, never an error.
+
+- ✅ Gateway and pre-flight both accept every legal object form — escaped quote, backslash, `\n`, `\t`, typed literal, `@en` / `@en-GB` — parametrized over one shared corpus
+- ✅ Both reject the same malformed lines, and the pre-flight regex is asserted to be _literally_ the gateway's
+- ✅ The greedy trap: `"a \" b"` parses as ONE literal instead of ending at the escape
+- ✅ A real harvested description with embedded quotes survives the round trip (this one broke a live rebuild at 95%)
+- ✅ A multi-line description stays one physical line — a raw newline would split the quad
+- ✅ `tool_persist_to_neptune` refuses the **whole** payload when any line is malformed (no silent partial load), and reports an empty payload rather than writing nothing quietly
+- ✅ `OntologyEditor.jsx`'s parser is grepped for the same escape-aware literal alternative
 
 #### Ontology Query Agent
 
@@ -222,11 +252,48 @@ dedicated `test_tier2_*` / `test_rag_*` files):
 - `test_agentcore_service.py` — 5 tests: AgentCoreService + annotations
 - `test_ontology_service_versioning.py` — 7 tests: ontology versioning & retrieval
 - `test_ontology_assembly_path.py` — 1 test: S3 metadata path storage
+- `test_build_clears_previous_results.py` — 5 tests: a starting build clears the previous run's `error` and progress fields (both the metadata and the Hybrid entrypoint), so a running build never polls as "in progress, and here is the last failure"
 
-> The unit suite has grown well beyond the agent-level files itemized above (~824 tests across
-> 110 files). The Tier 1/Tier 2 cascade, MCP Lambdas, streaming chat, shared building blocks, and
-> the remaining REST API services each have their own `test_*.py` — run `pytest tests/unit/ -v`
-> for the full list.
+#### Namespaces, Authorization & the SQL Firewall
+
+524 tests across 10 files. The density is deliberate: in this subsystem a missing test does
+not fail loudly — it silently permits.
+
+- `test_authz_policies.py` — 97 tests: the Cedar policy set, one case per (role, action)
+  pair for all six roles, plus the `denyAll` fallthrough
+- `test_authz_middleware.py` — 36 tests: the ASGI policy-decision point — that it wraps
+  every mounted sub-app, that an unresolvable namespace returns **403 and not 404** so the
+  API cannot be used to enumerate namespaces, and that a route absent from `action_map.py`
+  denies rather than defaulting to allow
+- `test_action_map.py` — 157 tests: the structural guarantee, and the reason coverage here is
+  not a matter of discipline. `test_every_live_route_is_mapped` is parametrized over the live
+  FastAPI route table, so adding an endpoint without an action breaks the build instead of
+  shipping an unguarded path; `test_unknown_routes_map_to_deny_all` pins the fallthrough, and
+  `test_unbound_ontology_raises_rather_than_falling_back` pins that an ontology with no
+  namespace binding raises instead of guessing one
+- `test_sql_firewall.py` — 41 tests: SELECT-only enforcement, including the deep AST scan
+  that catches a data-modifying statement nested in a CTE (`WITH d AS (DELETE … RETURNING *)
+SELECT * FROM d`), which the pre-parse regex alone would miss
+- `test_grant_profile.py` — 20 tests: the deny-wins merge. The load-bearing distinction is
+  `allowlist is None` (unconstrained) versus `[]` (deny-all) — several tests exist only to
+  pin that a permissive grant cannot erase a restrictive grant's `columnDenylist`
+- `test_namespace_service.py` — 54 tests: the creation saga (name pre-flight → conditional-put
+  reservation with a TTL → per-namespace Athena workgroup → finalize) and the
+  `ACTIVE|ARCHIVED|DELETING|DELETED|DELETE_FAILED` lifecycle, including partial-failure paths
+- `test_namespaces_router.py` — 29 tests: the `/namespaces` REST surface
+- `test_authz_bootstrap.py` — 48 tests: the `AuthzBootstrap` custom resource's idempotency,
+  and that it writes **no** `tableAllowlist`/`allowedMetrics` attributes — absent means
+  unrestricted, so writing `[]` would lock every seeded principal out
+- `test_firewall_wiring.py` — 34 tests: that the agent runtimes actually bind a caller
+  profile per invocation, since the firewall is only as good as its context
+- `test_ontology_namespace_binding.py` — 8 tests: the `namespaceId` binding on ontology
+  records that the bootstrap backfills
+
+> The unit suite has grown well beyond the agent-level files itemized above
+> (2710 tests across 234 files). The Tier 1/Tier 2/Tier 3 cascade, the
+> governed-rule tier, the Hybrid agents, MCP Lambdas, streaming chat, shared building blocks,
+> benchmark ingestion CLIs, the codeBased evaluator handler, and the remaining REST API services
+> each have their own `test_*.py` — run `pytest tests/unit/ -v` for the full list.
 >
 > **Note:** `get_ontology_from_neptune` (ontology query agent) and `retrieve_kb_context` KB calls are MCP Gateway / Bedrock tools only available at runtime — they are not tested in unit tests.
 
@@ -307,37 +374,6 @@ python tests/integration/test_ontology_agent_integration.py
 
 ---
 
-## Evaluation — Adversarial Red Team
-
-**Location:** `tests/eval/`
-
-An adversarial red-team suite that probes the two query agents (Semantic-RAG
-metadata + VKG ontology) with multi-turn jailbreak attacks via the
-[Strands Evals](https://strandsagents.com/docs/user-guide/evals-sdk/red-teaming/)
-Red Teaming SDK (`CrescendoStrategy`), across 5 OWASP-LLM-aligned risk
-categories (`guideline_bypass`, `system_prompt_leak`, `harmful_content`,
-`data_exfiltration`, `excessive_agency`). Attacks hit representative
-SELECT-only tools so application-layer risks surface through the tool surface.
-
-Unlike the unit/integration suites, this one:
-
-- runs in a **dedicated `.venv-eval`** (not the unit-test env) — it needs the
-  newer `strands-agents` the eval SDK requires (see `tests/eval/requirements.txt`);
-- needs **AWS Bedrock access** (real model + LLM judge calls);
-- is **run manually / on-demand today** — it is not wired into any CI pipeline.
-
-```bash
-python -m venv .venv-eval && source .venv-eval/bin/activate
-pip install -r tests/eval/requirements.txt
-python -m tests.eval.red_team.run_red_team      # or ./scripts/red-team-ci.sh
-```
-
-See **[`tests/eval/RED_TEAM_IMPLEMENTATION.md`](eval/RED_TEAM_IMPLEMENTATION.md)**
-for the full design, the exit-code contract, environment overrides, and the
-captured PASS/breach evidence in `tests/eval/red_team/samples/`.
-
----
-
 ## Environment Variables
 
 ### Unit Tests (no env vars required)
@@ -346,16 +382,20 @@ All unit tests run without any AWS environment variables.
 
 ### Integration Tests
 
-| Variable                | Required For        | Description                                    |
-| ----------------------- | ------------------- | ---------------------------------------------- |
-| `AWS_REGION`            | All                 | AWS region (default: `us-east-1`)              |
-| `TEST_DATABASE`         | All                 | Athena/Glue database name (default: `default`) |
-| `TEST_TABLE`            | Athena/schema tests | Table name within `TEST_DATABASE`              |
-| `TEST_CATALOG_ID`       | Athena/schema tests | Catalog ID (default: `AWSDataCatalog`)         |
-| `NEPTUNE_GATEWAY_URL`   | Neptune persistence | AgentCore Gateway URL                          |
-| `ARTIFACTS_BUCKET`      | S3 persistence      | S3 bucket for ontology storage                 |
-| `KNOWLEDGE_BASE_ID`     | RAG patterns        | Bedrock Knowledge Base ID                      |
-| `ATHENA_RESULTS_BUCKET` | Athena queries      | S3 bucket for Athena query results             |
+| Variable                                                       | Required For                            | Description                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AWS_REGION`                                                   | All                                     | AWS region (default: `us-east-1`)                                                                                                                                                                                                                                                      |
+| `TEST_DATABASE`                                                | All                                     | Athena/Glue database name (default: `default`)                                                                                                                                                                                                                                         |
+| `TEST_TABLE`                                                   | Athena/schema tests                     | Table name within `TEST_DATABASE`                                                                                                                                                                                                                                                      |
+| `TEST_CATALOG_ID`                                              | Athena/schema tests                     | Catalog ID (default: `AWSDataCatalog`)                                                                                                                                                                                                                                                 |
+| `NEPTUNE_GATEWAY_URL`                                          | Neptune persistence, governed-rules e2e | AgentCore Gateway URL                                                                                                                                                                                                                                                                  |
+| `ARTIFACTS_BUCKET`                                             | S3 persistence                          | S3 bucket for ontology storage                                                                                                                                                                                                                                                         |
+| `KNOWLEDGE_BASE_ID`                                            | RAG patterns                            | Bedrock Knowledge Base ID                                                                                                                                                                                                                                                              |
+| `ATHENA_RESULTS_BUCKET`                                        | Athena queries                          | S3 bucket for Athena query results                                                                                                                                                                                                                                                     |
+| `RUN_GOVERNED_RULES_E2E`                                       | governed-rules e2e                      | Set to `1` to arm `test_governed_rules_e2e.py`; without it every test in the file skips with a printed reason                                                                                                                                                                          |
+| `GOVERNED_RULES_E2E_ONTOLOGY_ID`                               | governed-rules e2e                      | A **deployed** VKG layer's ontology id (the rules graph is its `/rules` sibling)                                                                                                                                                                                                       |
+| `GOVERNED_RULES_E2E_SUBJECT_CLASS` / `…_BINDING` / `…_OUTCOME` | governed-rules e2e                      | Real IRIs from that layer — a mapped subject class, a `vkg:mapsToColumn` property to bind, and a declared outcome class. Wrong IRIs make the rule publish as _advisory_ with empty `compiled_sparql`, which skips Ontop entirely and passes vacuously                                  |
+| `ATHENA_WORKGROUP`                                             | governed-rules e2e                      | The deployed workgroup (`<projectName>-workgroup`). The publish fixture executes the smoke query with **your** credentials, and `_run_athena_sql` falls back to the literal `primary` — so leaving this unset turns an IAM failure into what looks like an Ontop reformulation finding |
 
 ### AWS Credentials
 
@@ -412,7 +452,22 @@ export TEST_DATABASE=... TEST_TABLE=... TEST_CATALOG_ID=...
 export NEPTUNE_GATEWAY_URL=... ARTIFACTS_BUCKET=...
 python tests/integration/test_query_agent_integration.py
 python tests/integration/test_ontology_agent_integration.py
+
+# Governed rules — needs a deployed VKG layer plus real IRIs from it.
+# Full run instructions: assets/guides/GOVERNED_RULES.md §9. A PublishBlocked here is a
+# finding about Ontop's coverage of rule-shaped SPARQL — report it verbatim.
+export RUN_GOVERNED_RULES_E2E=1 GOVERNED_RULES_E2E_ONTOLOGY_ID=...
+export GOVERNED_RULES_E2E_SUBJECT_CLASS=... GOVERNED_RULES_E2E_BINDING=... GOVERNED_RULES_E2E_OUTCOME=...
+# The publish fixture runs the smoke query as YOU, via _run_athena_sql, which
+# defaults to the literal 'primary' workgroup. Point it at the deployed one or the
+# publish fails on IAM and the failure is indistinguishable from an Ontop finding.
+export ATHENA_WORKGROUP=<projectName>-workgroup
+pytest tests/integration/test_governed_rules_e2e.py -v
 ```
+
+> `test_governed_rules_e2e.py` has **not been run yet** — until it does, the set of
+> rule shapes Ontop cannot reformulate is unknown and the publish gate is the only
+> thing between that gap and a query-time failure.
 
 ---
 

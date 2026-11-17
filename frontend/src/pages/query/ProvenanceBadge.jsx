@@ -4,12 +4,26 @@
  *
  * The trust contract differs per tier, so the badge is visually distinct:
  *   governed_metric → green  ("the system stands behind this number")
+ *   governed_rule   → green  (an approved rule fired — a human signed off on the
+ *                             rule AND on every numeric bound in it, so it
+ *                             shares the governed green; the label distinguishes
+ *                             a fired rule from a computed metric)
  *   semantic_sql    → blue   (grounded in executed SQL over the schema slice)
  *   vkg             → blue   (also a semantic-layer SQL path — SPARQL→SQL→Athena —
  *                             so it shares the blue "grounded in executed SQL" cue
  *                             with semantic_sql for visual consistency; the LABEL
  *                             distinguishes the two paths)
+ *   agentic         → orange (Tier 3 supervisor loop rescued the turn; Cloudscape
+ *                             has no "orange", so this is "severity-medium")
  *   advisory        → grey   ("describes the layer's metadata, not a computed result")
+ *   document        → blue   (grounded in a cited passage of an uploaded file, so it
+ *                             shares the "grounded" blue; the LABEL says the source
+ *                             is documents rather than the data)
+ *
+ * Every tier in agents/shared/provenance.py:VALID_TIERS must appear in TIER_META.
+ * An unmapped tier falls back to a grey badge showing the RAW tier string, which
+ * does not crash but does surface a lowercase identifier to the user as if it
+ * were a label — so the fallback is a safety net, not a substitute for an entry.
  *
  * Reads m.totals.provenance (see agents/shared/provenance.py). Renders nothing
  * when provenance is absent so legacy persisted turns (pre-provenance) don't
@@ -25,6 +39,13 @@ const TIER_META = {
     label: "Governed Metric",
     copy: "Answered from a governed metric.",
   },
+  governed_rule: {
+    // Green like governed_metric: both carry an explicit human approval. The
+    // label is what tells the user a RULE fired rather than a metric computed.
+    color: "green",
+    label: "Governed Rule",
+    copy: "An approved rule fired; its thresholds were signed off by a human.",
+  },
   semantic_sql: {
     color: "blue",
     label: "Semantic Layer (SQL)",
@@ -38,10 +59,27 @@ const TIER_META = {
     label: "Knowledge Graph",
     copy: "SPARQL→SQL trace in reasoning.",
   },
+  agentic: {
+    // Orange, not blue: the Tier 3 supervisor loop only runs after Tier 2
+    // degraded, so the answer IS grounded but the path was a rescue. Colouring
+    // it like semantic_sql would hide that the clean path failed.
+    color: "severity-medium",
+    label: "Agentic (Tier 3)",
+    copy: "Tier 2 degraded; the supervisor loop recovered this answer.",
+  },
   advisory: {
     color: "grey",
     label: "Advisory",
     copy: "Describes the layer's metadata & governed metrics; not a data query.",
+  },
+  document: {
+    // Blue, like the SQL paths: a document answer IS grounded — every claim is
+    // tied to a cited passage of an uploaded file, and an answer that couldn't be
+    // tied to one is never returned. What differs is the SOURCE (prose the user
+    // uploaded, not the data), which is what the label says.
+    color: "blue",
+    label: "Uploaded Documents",
+    copy: "Answered from this layer's uploaded documents; sources cite file and page.",
   },
 };
 

@@ -1,21 +1,21 @@
 {
-  "agent_id": "semantic_layer_dev_ontology-iddx7A6C74",
-  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:381492284087:runtime/semantic_layer_dev_ontology-iddx7A6C74",
-  "service_name": "semantic_layer_dev_ontology-iddx7A6C74.DEFAULT",
+  "agent_id": "semantic_layer_dev_ontology-9p5fpw8oav",
+  "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:********1429:runtime/semantic_layer_dev_ontology-9p5fpw8oav",
+  "service_name": "semantic_layer_dev_ontology-9p5fpw8oav.DEFAULT",
   "log_groups": [
     "aws/spans",
-    "/aws/bedrock-agentcore/runtimes/semantic_layer_dev_ontology-iddx7A6C74-DEFAULT"
+    "/aws/bedrock-agentcore/runtimes/semantic_layer_dev_ontology-9p5fpw8oav-DEFAULT"
   ],
   "evaluator_ids": [
     "Builtin.GoalSuccessRate",
-    "OntologyQuality_981b192b-uExXolALwc"
+    "OntologyQuality_4ec23147-NH48n163FN"
   ],
   "sessions": [
     {
-      "sessionId": "ontology_curated_layer-dac12838-2b9b-4c99-b7eb-61f16fd5e8b5",
+      "sessionId": "ontology_curated_layer-e13c500b-30b6-4da4-9656-b2dd8adae2c7",
       "testScenarioId": "ontology_curated_layer",
-      "startTime": "2026-06-27T20:48:09.312797+00:00",
-      "endTime": "2026-06-27T22:28:23.805848+00:00",
+      "startTime": "2026-10-02T18:06:10.231682+00:00",
+      "endTime": "2026-10-02T20:09:54.475552+00:00",
       "groundTruth": {
         "assertions": [
           {
@@ -51,9 +51,9 @@
   ],
   "scenario_runs": {
     "ontology_curated_layer": {
-      "case_id": "vkg-ontology_curated_layer-204b1478",
-      "session_id": "ontology_curated_layer-dac12838-2b9b-4c99-b7eb-61f16fd5e8b5",
-      "status": "processing",
+      "case_id": "vkg-ontology_curated_layer-3d1b9153",
+      "session_id": "ontology_curated_layer-e13c500b-30b6-4da4-9656-b2dd8adae2c7",
+      "status": "completed",
       "num_tables": 40,
       "tables": [
         "address",
@@ -97,8 +97,8 @@
         "substandard_rating",
         "type_codes"
       ],
-      "summary": "status=processing",
-      "build_seconds": null
+      "summary": "status=completed",
+      "build_seconds": 7399.8
     }
   }
 }

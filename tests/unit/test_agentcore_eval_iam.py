@@ -17,7 +17,7 @@ import pytest
 # is present. See pyproject.toml [tool.pytest.ini_options] markers.
 pytestmark = pytest.mark.requires_node
 
-_TEMPLATE = '/tmp/cdk-eval-synth/semantic-layer-dev-agentcore-eval.template.json'  # nosemgrep: hardcoded-tmp-path — CDK -o output dir; not user-controlled input
+_TEMPLATE = '/tmp/cdk-eval-synth/semantic-layer-dev-agentcore-eval.template.json'  # nosec B108  # nosemgrep: hardcoded-tmp-path — CDK -o output dir; not user-controlled input
 
 
 def _synth() -> dict:
@@ -35,7 +35,7 @@ def _synth() -> dict:
             'semantic-layer-dev-agentcore-eval',
             '--quiet',
             '-o',
-            '/tmp/cdk-eval-synth',  # nosemgrep: hardcoded-tmp-path — CDK synth output dir passed as CLI arg; not user-controlled input
+            '/tmp/cdk-eval-synth',  # nosec B108  # nosemgrep: hardcoded-tmp-path — CDK synth output dir passed as CLI arg; not user-controlled input
         ],
         cwd=cdk,
         capture_output=True,

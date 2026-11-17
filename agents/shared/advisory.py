@@ -193,9 +193,84 @@ def _parse_kb_context(raw: Any) -> List[Dict[str, Any]]:
     return ctx if isinstance(ctx, list) else []
 
 
+def _render_knowledge_gap(*, knowledge_gap: Dict[str, Any]) -> str:
+    """Render the missing-input register as a prompt block.
+
+    Used when a governed rule matched the question but could not be evaluated.
+    The block names the rule and each missing input or unapproved threshold, and
+    instructs the model not to guess — the "never invent a missing input"
+    principle, made visible to the user instead of silently degrading.
+
+    :param knowledge_gap: ``{rule_id, rule_name, missing_inputs,
+        unapproved_thresholds}``.
+    :returns: A prompt fragment, or ``""`` when there is no gap to report.
+    """
+    missing = list(knowledge_gap.get("missing_inputs", []))
+    unapproved = list(knowledge_gap.get("unapproved_thresholds", []))
+    if not missing and not unapproved:
+        # Nothing is actually missing. Emitting the header anyway would tell the
+        # user a rule failed when it did not.
+        return ""
+    lines = [
+        "GOVERNED RULE MATCHED BUT NOT EVALUABLE:",
+        f"- rule: {knowledge_gap.get('rule_name', '')} "
+        f"({knowledge_gap.get('rule_id', '')})",
+    ]
+    if missing:
+        lines.append(
+            "- inputs with no mapped data column: " + ", ".join(missing)
+        )
+    if unapproved:
+        lines.append(
+            "- thresholds awaiting human approval: " + ", ".join(unapproved)
+        )
+    lines.append(
+        "You MUST explain that this question maps to a known rule that cannot "
+        "yet be evaluated, and name exactly what is missing. Do not guess the "
+        "missing value, do not substitute a typical or industry-standard bound, "
+        "and do not state a conclusion as if the rule had been evaluated."
+    )
+    return "\n".join(lines)
+
+
+def _gap_fallback_answer(*, knowledge_gap: Dict[str, Any]) -> str:
+    """Deterministic answer naming the gap, for when the model returns nothing.
+
+    The generic empty-KB fallback ("no schema content and no governed metrics")
+    is true but useless in this case: a rule DID match and we know precisely what
+    it is waiting on. Returns ``""`` when nothing is actually missing so the
+    caller keeps its existing generic text.
+
+    :param knowledge_gap: Same shape as :func:`_render_knowledge_gap`.
+    :returns: An honest sentence naming the rule and what it needs, or ``""``.
+    """
+    missing = list(knowledge_gap.get("missing_inputs", []))
+    unapproved = list(knowledge_gap.get("unapproved_thresholds", []))
+    if not missing and not unapproved:
+        return ""
+    name = knowledge_gap.get("rule_name") or knowledge_gap.get("rule_id", "")
+    needs: List[str] = []
+    if missing:
+        needs.append(
+            f"{len(missing)} input(s) that aren't mapped to a data column "
+            f"({', '.join(missing)})"
+        )
+    if unapproved:
+        needs.append(
+            f"{len(unapproved)} threshold(s) awaiting human approval "
+            f"({', '.join(unapproved)})"
+        )
+    return (
+        f"This question maps to the governed rule \"{name}\", but that rule "
+        f"cannot be evaluated yet: it needs {' and '.join(needs)}. "
+        "I won't guess the missing value, so there is no result to report."
+    )
+
+
 def _build_prompt(*, question: str, layer_name: str,
                   metrics: List[Dict[str, str]],
-                  kb_chunks: List[Dict[str, Any]]) -> str:
+                  kb_chunks: List[Dict[str, Any]],
+                  knowledge_gap: Optional[Dict[str, Any]] = None) -> str:
     """Compose the synthesis prompt from the question + grounded metadata.
 
     The prompt instructs the model to answer ONLY about what is computable and
@@ -206,8 +281,13 @@ def _build_prompt(*, question: str, layer_name: str,
     :param layer_name: Human-readable layer name for context.
     :param metrics: Governed metric definitions (from ``list_governed_metrics``).
     :param kb_chunks: KB context chunks (from ``_parse_kb_context``).
+    :param knowledge_gap: Optional matched-but-unevaluable rule (see
+        :func:`_render_knowledge_gap`). None for every non-rule advisory answer.
     :returns: The full prompt string.
     """
+    gap_text = (
+        _render_knowledge_gap(knowledge_gap=knowledge_gap) if knowledge_gap else ""
+    )
     metric_lines = (
         "\n".join(
             f"- {m['name']} ({m['metric_id']}): {m['description']}"
@@ -234,7 +314,10 @@ def _build_prompt(*, question: str, layer_name: str,
         "- Be concise and use business language, not column names.\n\n"
         f"GOVERNED METRICS:\n{metric_lines}\n\n"
         f"SCHEMA CONTEXT:\n{schema_text}\n\n"
-        f"USER QUESTION: {question}\n\n"
+        # Placed immediately before the question so the gap is the last
+        # instruction the model reads before answering it.
+        + (f"{gap_text}\n\n" if gap_text else "")
+        + f"USER QUESTION: {question}\n\n"
         "Advisory answer:"
     )
 
@@ -247,6 +330,7 @@ def build_advisory_answer(
     metrics_table: Any,
     synthesize: SynthesizeFn,
     layer_name: Optional[str] = None,
+    knowledge_gap: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Build a grounded advisory answer about a layer. Never executes SQL.
 
@@ -261,8 +345,12 @@ def build_advisory_answer(
     :param metrics_table: boto3 DynamoDB Table resource for the metrics catalog.
     :param synthesize: Callable ``(prompt_str) -> str`` that runs the model.
     :param layer_name: Optional human-readable layer name (defaults to the id).
+    :param knowledge_gap: Optional ``{rule_id, rule_name, missing_inputs,
+        unapproved_thresholds}`` for a governed rule that matched the question but
+        cannot be evaluated. Set by the query path when it chooses to ADVISE
+        rather than execute; None for every other advisory answer.
     :returns: ``{"answer", "metrics", "executed_sql": "", "results": [],
-        "kb_empty": bool}``.
+        "kb_empty": bool, "knowledge_gap": dict | None}``.
     """
     # Governed metrics — fail soft: an advisory answer grounded only in the KB is
     # still useful, and a DDB hiccup must not error the turn.
@@ -282,13 +370,21 @@ def build_advisory_answer(
         layer_name=layer_name or layer_id,
         metrics=metrics,
         kb_chunks=kb_chunks,
+        knowledge_gap=knowledge_gap,
     )
     answer = synthesize(prompt)
 
-    # Defense in depth for the empty-KB case: if the model returned nothing
-    # usable AND the KB was empty, give a deterministic, honest fallback rather
-    # than a blank bubble.
-    if not (answer or "").strip() and kb_empty:
+    # Defense in depth: if the model returned nothing usable, give a
+    # deterministic, honest fallback rather than a blank bubble. A knowledge gap
+    # takes precedence over the empty-KB text and applies even when the KB is
+    # populated — a matched-but-unevaluable rule is concrete content to report,
+    # and it is the one thing the user actually asked about.
+    gap_fallback = (
+        _gap_fallback_answer(knowledge_gap=knowledge_gap) if knowledge_gap else ""
+    )
+    if not (answer or "").strip() and gap_fallback:
+        answer = gap_fallback
+    elif not (answer or "").strip() and kb_empty:
         if metrics:
             names = ", ".join(m["name"] for m in metrics)
             answer = (
@@ -309,4 +405,7 @@ def build_advisory_answer(
         "executed_sql": "",
         "results": [],
         "kb_empty": kb_empty,
+        # Echoed so the caller can render the gap structurally (which rule, which
+        # inputs) rather than parsing it back out of the prose.
+        "knowledge_gap": knowledge_gap,
     }

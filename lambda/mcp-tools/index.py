@@ -506,8 +506,19 @@ def tool_list_ontologies(args: Dict[str, Any]) -> Dict[str, Any]:
     ontologies: List[Dict[str, Any]] = []
     for _ontology_id, versions in groups.items():
         config = max(versions, key=lambda v: _version_num(v.get('version', 'v0')))
-        # 'type' is the stored discriminator: 'VKG' (default) or 'SemanticRAG'.
+        # 'type' is the stored discriminator: 'VKG' (default), 'SemanticRAG',
+        # or 'Hybrid'.
         otype = config.get('type', 'VKG')
+        # Map the stored type to the caller-chain 'mode' hint. Hybrid and VKG
+        # map to themselves; everything else (SemanticRAG) falls through to
+        # 'SemanticRAG' — preserving the original binary behavior for VKG and
+        # SemanticRAG while adding the new Hybrid outcome.
+        if otype == 'Hybrid':
+            mode = 'Hybrid'
+        elif otype == 'VKG':
+            mode = 'VKG'
+        else:
+            mode = 'SemanticRAG'
         if status_filter and config.get('status') != status_filter:
             continue
         ontologies.append(
@@ -515,7 +526,7 @@ def tool_list_ontologies(args: Dict[str, Any]) -> Dict[str, Any]:
                 'id': config.get('id'),
                 'name': config.get('name'),
                 # 'mode' is the caller-chain hint: which query tool to invoke next.
-                'mode': 'VKG' if otype == 'VKG' else 'SemanticRAG',
+                'mode': mode,
                 'type': otype,
                 'status': config.get('status', 'unknown'),
                 'updatedAt': config.get('updatedAt', ''),

@@ -48,7 +48,7 @@ async def get_graph_summary(ontology_id: str):
         logger.warning(f"Error getting graph summary: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to get graph summary: {str(e)}"
+            detail="Failed to get graph summary"
         )
 
 
@@ -77,7 +77,7 @@ async def get_graph_stats(ontology_id: str):
         logger.warning(f"Error getting graph stats: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to get graph stats: {str(e)}"
+            detail="Failed to get graph stats"
         )
 
 
@@ -100,7 +100,7 @@ async def get_graph_classes(ontology_id: str):
         logger.warning(f"Error getting graph classes: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to get graph classes: {str(e)}"
+            detail="Failed to get graph classes"
         )
 
 
@@ -123,5 +123,5 @@ async def get_graph_properties(ontology_id: str):
         logger.warning(f"Error getting graph properties: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to get graph properties: {str(e)}"
+            detail="Failed to get graph properties"
         )

@@ -1,0 +1,27 @@
+#!/bin/sh
+# Pre-push hook: run the hermetic unit suite before a push leaves the machine.
+#
+# This is fast local feedback, NOT enforcement — it is skippable
+# (`git push --no-verify`) and only active after a one-time opt-in:
+#
+#     git config core.hooksPath .githooks
+#
+# The authoritative gate is GitLab CI (.gitlab-ci.yml), which runs server-side
+# on every push and cannot be bypassed.
+#
+# The unit suite (~3.5 min) is deliberately on pre-push, not pre-commit — too
+# slow to run on every commit.
+
+set -e
+
+echo "pre-push: running unit tests (python -m pytest tests/unit/)..."
+
+if ! python -m pytest tests/unit/ -q; then
+    echo ""
+    echo "pre-push: unit tests FAILED — push aborted."
+    echo "          Override intentionally with: git push --no-verify"
+    exit 1
+fi
+
+echo "pre-push: unit tests passed."
+exit 0

@@ -93,6 +93,61 @@ def test_streaming_runner_surfaces_graph_traversal_in_totals():
     )
 
 
+def test_streaming_runner_surfaces_vkg_executed_sql_from_reasoning():
+    """The VKG agent surfaces the executed Athena SQL under
+    result['reasoning']['sqlQuery'] (NOT a top-level 'executed_sql' like the RAG
+    path). run_finished totals must fall back to it so the eval notebooks'
+    executed_sql column + the codeBased exec-metric evaluator see the predicted
+    SQL. Regression guard for the null-EX root cause (2026-07-26)."""
+    emitter = AGUIEmitter(turn_id="t-vkg")
+
+    def run_agent(callback):
+        return {
+            "answer": "42.",
+            "sql_query": "SELECT (COUNT(?x) AS ?n) WHERE { ?x a :Customer }",  # SPARQL
+            "results": [{"n": 42}],
+            "reasoning": {
+                # Executed Athena SQL (Ontop translation) — VKG's canonical slot.
+                "sqlQuery": "SELECT count(*) FROM bird_x.customers",
+            },
+        }
+
+    out = list(
+        stream_agent_run(
+            emitter=emitter, run_agent=run_agent,
+            poll_interval=0.005, max_wait_seconds=2,
+        )
+    )
+    totals = [e for e in out if e["type"] == "run_finished"][-1]["totals"]
+    # ``sql`` keeps the SPARQL lineage; ``executedSql`` carries the executed SQL.
+    assert totals["sql"].strip().startswith("SELECT (COUNT")
+    assert totals["executedSql"] == "SELECT count(*) FROM bird_x.customers"
+
+
+def test_streaming_runner_executed_sql_prefers_toplevel_for_rag():
+    """The RAG path sets a top-level result['executed_sql']; totals must keep
+    using it (the reasoning.sqlQuery fallback must not clobber it)."""
+    emitter = AGUIEmitter(turn_id="t-rag")
+
+    def run_agent(callback):
+        return {
+            "answer": "ok",
+            "sql_query": "SELECT 1",
+            "results": [],
+            "executed_sql": "SELECT 1 FROM dual",   # RAG top-level slot
+            "reasoning": {},
+        }
+
+    out = list(
+        stream_agent_run(
+            emitter=emitter, run_agent=run_agent,
+            poll_interval=0.005, max_wait_seconds=2,
+        )
+    )
+    totals = [e for e in out if e["type"] == "run_finished"][-1]["totals"]
+    assert totals["executedSql"] == "SELECT 1 FROM dual"
+
+
 def test_streaming_runner_renders_clarification_as_message_chunk():
     """A needs_clarification result (empty answer) must be synthesised into a
     message_chunk so the clarification question + options render in the chat

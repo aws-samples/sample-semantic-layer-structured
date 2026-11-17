@@ -14,3 +14,34 @@
 # 8_mcp_server_testing.ipynb; the flagged line is a variable assignment ("TOKEN ="),
 # not a literal secret — the token is minted at runtime via Cognito client_credentials.
 dcddb1837fe8280da0475ee4e41e3e80cc926223:notebooks/9_mcp_server_testing.ipynb:generic-api-key:88
+
+# --------------------------------------------------------------------------------------
+# Triaged when `secret-scan` was added to .gitlab-ci.yml. A `gitleaks git .` history scan
+# reported these six; each was read at the flagged commit before being entered here.
+# --------------------------------------------------------------------------------------
+
+# False positives: PEM *shapes* in Snowflake key-handling tests and validators, never a
+# key. The flagged bodies are the literals `BODY`, `MIIEvg` and `MIIEvgIBADAN`, or a
+# shared `PEM_BODY` test constant — a real RSA private key is ~1700 base64 characters.
+# The payload builder needs these strings to assert that it rejects a public key, a
+# missing header and a truncated footer, so the header/footer text has to appear
+# verbatim in the source.
+3d86b1b20584dfa94406c51dc8f850af9143895c:tests/unit/test_bootstrap_connector.py:private-key:54
+9b9f874124f155a7c08271e96f9ffbbb4c2ea9c7:cdk/__tests__/snowflake-secret-payload.test.ts:private-key:76
+9b9f874124f155a7c08271e96f9ffbbb4c2ea9c7:cdk/__tests__/snowflake-secret-payload.test.ts:private-key:97
+05c872ac4215467be1f3484560224b9a7fe6b92f:cdk/__tests__/env-config.test.ts:private-key:32
+
+# False positive: the flagged line is the validator itself —
+# `privateKey.includes('-----BEGIN ENCRYPTED PRIVATE KEY-----')`, which is how the sync
+# script detects an encrypted key that arrived without its passphrase. The PEM header is
+# a comparison string in production source, not a value.
+7d64aad9105eed719875e37bd3ce40f4c102917b:cdk/scripts/snowflake-secret-payload.ts:private-key:132
+
+# False positive: notebook OUTPUT, not input — a deliberately truncated JWT prefix printed
+# to show that a token was minted. It is 30 characters of a token that expired in 2026 and
+# cannot be completed. The prefix is deliberately NOT quoted here: the first version of this
+# comment reproduced it, and gitleaks then flagged this very file (generic-api-key, line 41),
+# which is a finding that cannot be triaged without editing the entry that triages it.
+# Same class as the notebook entry above; this notebook has since been renamed to
+# 10_mcp_server_testing.ipynb, so the finding only exists in history.
+9488bc4b392a3fa686954e617b5146ee53912e2f:notebooks/8_mcp_server_testing.ipynb:generic-api-key:218

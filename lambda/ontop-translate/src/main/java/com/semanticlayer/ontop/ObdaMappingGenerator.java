@@ -60,14 +60,28 @@ public class ObdaMappingGenerator {
                 continue;
             }
 
-            // The subject template uses a REAL mapped column (NOT the old synthetic
-            // __pk). A class with no mapped property columns cannot form a subject IRI
-            // — it is instance-less and unqueryable — so skip (and log) it.
-            final String subjectColumn = OntologyMappings.subjectColumnFor(ontologyJson, classIri);
-            if (subjectColumn == null) {
+            // The subject template uses REAL mapped columns (NOT the old synthetic __pk):
+            // the ontology's DECLARED primary key when it has one, else a single
+            // name-heuristic column. Ontop treats the subject as ROW IDENTITY, so this
+            // choice decides whether every property access joins on the true key or
+            // self-joins on a value column — the single largest measured drag on BIRD EX
+            // (0.0500 vs 0.1313). A class with no mapped property columns cannot form a
+            // subject IRI at all — it is instance-less and unqueryable — so skip and log.
+            final List<String> subjectColumns =
+                OntologyMappings.subjectColumnsFor(ontologyJson, classIri);
+            if (subjectColumns.isEmpty()) {
                 LOG.warning("Skipping class with no mapped property columns (no subject column): "
                     + classIri);
                 continue;
+            }
+            if (!OntologyMappings.hasDeclaredKey(ontologyJson, classIri)) {
+                // Loud about the guess: a wrong identity yields plausible SQL with wrong
+                // join semantics, which is invisible downstream without this line.
+                LOG.warning("No primaryKey declared for class " + classIri
+                    + " — falling back to the NAME HEURISTIC subject column '"
+                    + subjectColumns.get(0) + "'. Row identity is a GUESS; if it is not a "
+                    + "real key, property access self-joins on a value column and results "
+                    + "are silently wrong.");
             }
 
             // Collect property triples for every property nested under this class IRI
@@ -94,6 +108,26 @@ public class ObdaMappingGenerator {
                         ? OntologyMappings.rangeFor(ontologyJson, propIri)
                         : null;
                 if (rangeClassIri != null && !rangeClassIri.isBlank()) {
+                    // Ontop unifies an FK template with the target's SUBJECT template
+                    // STRUCTURALLY. A single FK column therefore cannot match a target
+                    // whose declared key is COMPOSITE (<Target/{a};{b}>), and the join
+                    // reformulates to EMPTY — zero rows, no error. Emitting the FK as a
+                    // plain literal instead at least keeps the value queryable and makes
+                    // the un-joinable edge visible in the log rather than silently
+                    // returning nothing.
+                    final List<String> targetKey =
+                        OntologyMappings.subjectColumnsFor(ontologyJson, rangeClassIri);
+                    if (targetKey.size() > 1) {
+                        LOG.warning("FK property " + propIri + " references " + rangeClassIri
+                            + ", whose declared key is COMPOSITE " + targetKey
+                            + ", but the FK maps a single column '" + bareColumn
+                            + "'. A single-column IRI template cannot unify with a composite "
+                            + "subject template, so this join would reformulate to EMPTY. "
+                            + "Emitting the FK as a literal; declare the full composite FK to "
+                            + "make the join resolvable.");
+                        propertyTriples.add("<" + propIri + "> {" + bareColumn + "}");
+                        continue;
+                    }
                     // FK key-prefix transform: when the bridge/child FK stores the id
                     // UNPREFIXED but the target PK is PREFIXED (coverage.party_id
                     // 'PARTY000042' vs party.party_id 'PARTY#PARTY000042'), the comment
@@ -121,7 +155,7 @@ public class ObdaMappingGenerator {
                 }
             }
 
-            entries.add(buildEntry(classIri, table, subjectColumn, propertyTriples,
+            entries.add(buildEntry(classIri, table, subjectColumns, propertyTriples,
                                    computedColumns));
         }
 
@@ -137,20 +171,33 @@ public class ObdaMappingGenerator {
      *                        class; emitted verbatim (2-part) into the source SQL with
      *                        NO catalog prefix (catalog is applied at execution time via
      *                        the Athena QueryExecutionContext).
-     * @param subjectColumn   the REAL bare column used as the row-identity in the subject
-     *                        template; chosen by {@link OntologyMappings#subjectColumnFor}
-     *                        and guaranteed to be one of this class's mapped columns.
+     * @param subjectColumns  the REAL bare columns forming the row-identity in the subject
+     *                        template, from {@link OntologyMappings#subjectColumnsFor};
+     *                        each is guaranteed to be one of this class's mapped columns.
+     *                        More than one means a COMPOSITE declared key.
      * @param propertyTriples already-rendered property triples of the form
      *                        {@code <propIri> {bareColumn}}.
      * @return the textual OBDA entry: a {@code mappingId} line, a {@code source} line
      *         and a {@code target} line.
      */
     private String buildEntry(final String classIri, final String table,
-                              final String subjectColumn, final List<String> propertyTriples,
+                              final List<String> subjectColumns,
+                              final List<String> propertyTriples,
                               final Map<String, String> computedColumns) {
-        // Subject template references a REAL mapped column of the relation, so Ontop
-        // emits SQL that resolves against the actual Athena table (no synthetic __pk).
-        final String subject = "<" + classIri + "/{" + subjectColumn + "}>";
+        // Subject template references REAL mapped columns of the relation, so Ontop emits
+        // SQL that resolves against the actual Athena table (no synthetic __pk). A
+        // composite key renders as <Class/{a};{b}>: the ';' is a literal separator inside
+        // the IRI path, so distinct column-value pairs cannot collide into one IRI (which
+        // would merge unrelated rows into a single subject). Junction tables — precisely
+        // the ones a single-column guess gets most wrong — need this.
+        final StringBuilder subjectTemplate = new StringBuilder();
+        for (final String column : subjectColumns) {
+            if (subjectTemplate.length() > 0) {
+                subjectTemplate.append(';');
+            }
+            subjectTemplate.append('{').append(column).append('}');
+        }
+        final String subject = "<" + classIri + "/" + subjectTemplate + ">";
 
         // target is a Turtle-like template: subject, rdf:type triple, then one
         // property triple per mapped column, all separated by " ; " and ended
@@ -175,7 +222,12 @@ public class ObdaMappingGenerator {
         final StringBuilder entry = new StringBuilder();
         entry.append("mappingId\t").append(classIri).append("\n");
         // 2-part source, no catalog prefix.
-        entry.append("source\t\tSELECT ").append(selectList).append(" FROM ").append(table).append("\n");
+        // Quote the identifier: an unquoted reserved word (e.g. `sets`, `Match`) makes
+        // JSqlParser fail, which sends Ontop down its live-DB "black box view" path and
+        // breaks reformulator construction entirely. See
+        // OntologyMappings.quoteDottedTable for the full failure mode.
+        entry.append("source\t\tSELECT ").append(selectList).append(" FROM ")
+             .append(OntologyMappings.quoteDottedTable(table)).append("\n");
         entry.append("target\t\t").append(target);
         return entry.toString();
     }

@@ -119,7 +119,7 @@ async def get_query_suggestions(ontology_id: str):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.error(f"Error getting query suggestions: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 def _ddb_to_jsonable(value):

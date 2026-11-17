@@ -1,0 +1,17 @@
+# Test/dev-only dependencies. NOT installed into the Lambda container images
+# (those use agents/requirements.txt + lambda/rest-api/requirements.txt). The
+# unit suite covers BOTH the agents/ packages and the lambda/rest-api/ FastAPI
+# app, so local test + CI install all three:
+#   pip install -r agents/requirements.txt -r lambda/rest-api/requirements.txt -r requirements-dev.txt
+#
+# Runtime imports (boto3, pydantic, fastapi, sqlglot, ...) come from the two
+# runtime files; the heavyweight SDKs (strands, bedrock_agentcore,
+# mcp_proxy_for_aws, opentelemetry) are stubbed by tests/unit/conftest.py.
+
+pytest==9.0.3          # pinned to the version the suite is developed against
+pytest-cov==7.0.0      # coverage plugin (--cov / --cov-fail-under)
+coverage==7.14.1       # coverage.py engine used by pytest-cov
+
+# Test-only libs imported by tests/unit but not by any runtime requirements file:
+moto==5.2.1            # mock AWS (mock_aws) for query-api / sessions tests
+httpx==0.28.1          # required by fastapi.testclient.TestClient

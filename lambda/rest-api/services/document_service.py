@@ -164,20 +164,15 @@ class DocumentService:
 
         # Kick off the doc-pipeline state machine. Failures are logged and
         # the upload still succeeds (status row stays in pre-pipeline state)
-        # so the steward can retry by re-uploading. The execution input is
-        # the chunker's expected payload shape.
+        # so the steward can retry by re-uploading.
         if self._state_machine_arn:
             try:
-                self._get_sfn().start_execution(
-                    stateMachineArn=self._state_machine_arn,
-                    name=f"doc-{doc_id}",
-                    input=json.dumps({
-                        'docId': doc_id,
-                        'ontologyId': ontology_id,
-                        's3Bucket': self._bucket,
-                        's3Key': s3_key,
-                        'filename': filename,
-                    }),
+                self.start_pipeline(
+                    ontology_id=ontology_id,
+                    doc_id=doc_id,
+                    s3_bucket=self._bucket,
+                    s3_key=s3_key,
+                    filename=filename,
                 )
                 item['executionStarted'] = True
             except Exception as exc:  # noqa: BLE001 — never block the upload
@@ -188,6 +183,54 @@ class DocumentService:
                 item['executionStarted'] = False
                 item['executionError'] = str(exc)
         return item
+
+    def start_pipeline(
+        self,
+        *,
+        ontology_id: str,
+        doc_id: str,
+        s3_bucket: str,
+        s3_key: str,
+        filename: str,
+        execution_name: Optional[str] = None,
+    ) -> str:
+        """Start one doc-pipeline state-machine execution for one document.
+
+        Extracted from ``upload_document`` so the build path can re-run the
+        pipeline for documents that were uploaded earlier (see
+        ``OntologyService.dispatch_build``): a build is when the layer's classes
+        exist, so the Link stage has something to link entities against, and a
+        rebuild changes those classes — both callers need exactly this payload,
+        which is the Chunk stage's expected input shape.
+
+        :param ontology_id: Owning semantic layer id (partition key of the doc row).
+        :param doc_id: Document id (the ``DOCJOB#`` suffix).
+        :param s3_bucket: Bucket holding the raw upload.
+        :param s3_key: Key of the raw upload.
+        :param filename: Original filename — the stages use it for the extension.
+        :param execution_name: Execution name. Defaults to ``doc-<docId>``. Step
+            Functions rejects a duplicate name for 90 days, so a caller that may
+            re-run the same document (the build fan-out) MUST pass a unique name.
+        :returns: The started execution's ARN.
+        :raises RuntimeError: If no state-machine ARN is configured — raising
+            rather than silently skipping, so a mis-wired deployment surfaces
+            instead of leaving documents permanently un-indexed.
+        """
+        if not self._state_machine_arn:
+            raise RuntimeError('DOC_PIPELINE_STATE_MACHINE_ARN env var is empty')
+
+        resp = self._get_sfn().start_execution(
+            stateMachineArn=self._state_machine_arn,
+            name=execution_name or f"doc-{doc_id}",
+            input=json.dumps({
+                'docId': doc_id,
+                'ontologyId': ontology_id,
+                's3Bucket': s3_bucket,
+                's3Key': s3_key,
+                'filename': filename,
+            }),
+        )
+        return resp.get('executionArn', '')
 
     def get_document(
         self, *, ontology_id: str, doc_id: str

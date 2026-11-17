@@ -34,6 +34,18 @@ class OntologyMappingsTest {
     }
 
     @Test
+    void quoteDottedTableQuotesHyphenatedConnectorTable() {
+        // A DynamoDB-connector table name carries HYPHENS. Unquoted,
+        // default.semantic-layer-dev-riders parses as arithmetic subtraction and Ontop
+        // mis-resolves the relation. Unconditional per-segment quoting emits the
+        // hyphenated tail as one literal identifier.
+        assertEquals("\"default\".\"semantic-layer-dev-riders\"",
+            OntologyMappings.quoteDottedTable("default.semantic-layer-dev-riders"));
+        // A single-segment (no-dot) value is handled without throwing.
+        assertEquals("\"weird-name\"", OntologyMappings.quoteDottedTable("weird-name"));
+    }
+
+    @Test
     void splitDottedTableSplitsOnLastDot() {
         assertArrayEquals(
             new String[] {"normalized", "admin_codes"},
@@ -146,16 +158,106 @@ class OntologyMappingsTest {
             OntologyMappings.subjectColumnFor(TestFixtures.adminCodesOntology(), "http://x/AdminCode"));
     }
 
+    // ── Declared primary key (preferred over every name heuristic) ────────────────
+    //
+    // Ontop treats the subject template as ROW IDENTITY, so a guessed identity does not
+    // merely mislabel rows — it makes every property access self-join on that column.
+    // Over the 2026-08-09 BIRD run the name heuristic put identity on value columns
+    // (`aboutme`, a free-text bio; `amount`; `avgscrmath`) in 42% of executed rows, which
+    // scored EX 0.0500 against 0.1313 for rows with clean SQL. These tests pin the
+    // declared key winning, since that is the whole mechanism of the fix.
+
+    /** Build a one-class ontology over columns {@code aboutme, id, userid}. */
+    private static Map<String, Object> classWith(final Object mappingEntry) {
+        return Map.of(
+            "classes", Map.of("http://x/C", Map.of()),
+            "properties", Map.of(
+                "http://x/C/aboutme", Map.of("type", "DatatypeProperty"),
+                "http://x/C/theId", Map.of("type", "DatatypeProperty"),
+                "http://x/C/userId", Map.of("type", "DatatypeProperty")),
+            "mappings", Map.of(
+                "http://x/C", mappingEntry,
+                "http://x/C/aboutme", Map.of("column", "t.aboutme"),
+                "http://x/C/theId", Map.of("column", "t.id"),
+                "http://x/C/userId", Map.of("column", "t.userid")));
+    }
+
     @Test
-    void isKeyLikeSubjectMatchesIdPkSuffix() {
-        // Key-like columns (id / *_id / pk) are treated as unique so the
-        // db-metadata can declare a uniqueConstraint (todo item 3).
-        assertTrue(OntologyMappings.isKeyLikeSubject("id"));
-        assertTrue(OntologyMappings.isKeyLikeSubject("admin_code_id"));
-        assertTrue(OntologyMappings.isKeyLikeSubject("pk"));
-        assertFalse(OntologyMappings.isKeyLikeSubject("code_value"));
-        assertFalse(OntologyMappings.isKeyLikeSubject("name"));
-        assertFalse(OntologyMappings.isKeyLikeSubject(null));
+    void declaredKeyBeatsNameHeuristic() {
+        // `id` would win on name; the DECLARED key is `userid` and must be used instead.
+        final Map<String, Object> ont =
+            classWith(Map.of("table", "db.t", "primaryKey", "t.userid"));
+        assertEquals(List.of("userid"), OntologyMappings.subjectColumnsFor(ont, "http://x/C"));
+        assertTrue(OntologyMappings.hasDeclaredKey(ont, "http://x/C"));
+    }
+
+    @Test
+    void declaredCompositeKeyKeepsBothColumnsInOrder() {
+        // A junction table's identity is the COMBINATION. Declaration order is preserved
+        // so the subject template is stable across builds.
+        final Map<String, Object> ont =
+            classWith(Map.of("table", "db.t", "primaryKey", "t.userid, t.id"));
+        assertEquals(List.of("userid", "id"),
+            OntologyMappings.subjectColumnsFor(ont, "http://x/C"));
+    }
+
+    @Test
+    void declaredKeyDropsColumnsTheClassDoesNotMap() {
+        // The subject template's columns must also be declared columns of the relation,
+        // or Ontop emits SQL referencing a column the db-metadata lacks (COLUMN_NOT_FOUND).
+        final Map<String, Object> ont =
+            classWith(Map.of("table", "db.t", "primaryKey", "t.userid, t.not_mapped"));
+        assertEquals(List.of("userid"), OntologyMappings.subjectColumnsFor(ont, "http://x/C"));
+    }
+
+    @Test
+    void noDeclaredKeyFallsBackToHeuristicAndIsNotTreatedAsDeclared() {
+        // Without a declaration we still produce a subject (layers predate this field),
+        // but hasDeclaredKey must be false so no uniqueConstraint is emitted for a guess.
+        final Map<String, Object> ont = classWith(Map.of("table", "db.t"));
+        assertEquals(List.of("id"), OntologyMappings.subjectColumnsFor(ont, "http://x/C"));
+        assertFalse(OntologyMappings.hasDeclaredKey(ont, "http://x/C"));
+    }
+
+    @Test
+    void declaredKeyOfOnlyUnmappedColumnsIsNotADeclaredKey() {
+        // A declaration we cannot honor must not claim to be honored — otherwise the
+        // db-metadata would assert uniqueness on columns absent from the subject.
+        final Map<String, Object> ont =
+            classWith(Map.of("table", "db.t", "primaryKey", "t.nope"));
+        assertFalse(OntologyMappings.hasDeclaredKey(ont, "http://x/C"));
+        assertEquals(List.of("id"), OntologyMappings.subjectColumnsFor(ont, "http://x/C"));
+    }
+
+    @Test
+    void subjectColumnsIsEmptyWhenClassMapsNoColumns() {
+        final Map<String, Object> ont = Map.of(
+            "classes", Map.of("http://x/C", Map.of()),
+            "properties", Map.of("http://x/C/nomap", Map.of("type", "DatatypeProperty")),
+            "mappings", Map.of());
+        assertTrue(OntologyMappings.subjectColumnsFor(ont, "http://x/C").isEmpty());
+    }
+
+    /**
+     * A reserved-word table name ({@code sets}, {@code Match}) MUST come out quoted.
+     * Unquoted, JSqlParser fails to parse the OBDA source query, Ontop falls back to its
+     * live-database "black box view" path, and the offline configuration throws
+     * "Has no parent provider" — which broke every SPARQL query for bird_card_games
+     * (table {@code sets}) and bird_european_football_2 (table {@code Match}).
+     */
+    @Test
+    void quoteDottedTableQuotesBothSegmentsIncludingReservedWords() {
+        assertEquals("\"bird_card_games\".\"sets\"",
+            OntologyMappings.quoteDottedTable("bird_card_games.sets"));
+        assertEquals("\"bird_european_football_2\".\"Match\"",
+            OntologyMappings.quoteDottedTable("bird_european_football_2.Match"));
+        // Mixed case is preserved verbatim (Athena resolves it case-insensitively).
+        assertEquals("\"db\".\"postHistory\"",
+            OntologyMappings.quoteDottedTable("db.postHistory"));
+        // A single-segment value yields one quoted identifier, not a stray dot.
+        assertEquals("\"sets\"", OntologyMappings.quoteDottedTable("sets"));
+        // An embedded double quote is escaped by doubling, per SQL identifier rules.
+        assertEquals("\"db\".\"we\"\"ird\"", OntologyMappings.quoteDottedTable("db.we\"ird"));
     }
 
     @Test

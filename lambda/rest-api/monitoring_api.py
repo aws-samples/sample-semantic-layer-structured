@@ -1,8 +1,8 @@
 """Monitoring API — per-layer production-signal breakdown for the admin tab.
 
 Surfaces, for one semantic layer's LIVE query traffic, how queries resolved
-across the four resolution layers (metric / semantic / advisory / agentic) plus
-the share of user turns that used correction language, correlated with the
+across the resolution layers (metric / rule / semantic / advisory / agentic)
+plus the share of user turns that used correction language, correlated with the
 lessons AgentCore Memory has extracted. All read-only; the aggregation lives in
 ``services/monitoring_service.MonitoringService``.
 
@@ -37,10 +37,16 @@ async def get_breakdown(ontology_id: str):
     try:
         breakdown = monitoring_service.aggregate(ontology_id=ontology_id)
     except Exception as exc:  # noqa: BLE001 — translate to HTTP error
-        logger.error(
+        # The error IS handled here: it is caught and translated into a NEW
+        # HTTPException(500); the original is not re-propagated. error+exc_info is
+        # intentional so a genuine 500 surfaces with a traceback in operator
+        # dashboards (downgrading to warning would hide real server faults).
+        logger.error(  # nosemgrep: logging-error-without-handling
             "monitoring aggregate failed for %s: %s", ontology_id, exc, exc_info=True
         )
-        raise HTTPException(status_code=500, detail="failed to aggregate monitoring data")
+        raise HTTPException(
+            status_code=500, detail="failed to aggregate monitoring data"
+        ) from exc
     return JSONResponse(content=breakdown)
 
 # NOTE: deliberately no "/health" route here. The "/{ontology_id}" path param

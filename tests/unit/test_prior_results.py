@@ -133,6 +133,80 @@ def test_returns_error_when_turn_missing(monkeypatch) -> None:
     assert 'not found' in result['error']
 
 
+def _fake_resource_with_item(item):
+    fake_table = MagicMock()
+    fake_table.get_item.return_value = {'Item': item}
+    fake_resource = MagicMock()
+    fake_resource.Table.return_value = fake_table
+    return fake_resource
+
+
+def test_foreign_user_denied(monkeypatch) -> None:
+    """A caller bound to user 'alice' must not read a session owned by 'bob'."""
+    set_session_id('s1', 'alice')
+    monkeypatch.setenv('CHAT_SESSIONS_TABLE', 'chat-sessions')
+
+    item = {
+        'sessionId': 's1',
+        'userId': 'bob',  # victim owns the session
+        'messages': [
+            {'role': 'assistant', 'turnId': 't1',
+             'totals': {'sql': 'q', 'columns': ['id'], 'rows': [['1']],
+                        'rowCount': 1}},
+        ],
+    }
+    with patch.object(prior_results.boto3, 'resource',
+                      return_value=_fake_resource_with_item(item)):
+        result = json.loads(_call(turn_id='t1'))
+
+    assert result == {'error': 'session not owned by caller'}
+    # Reset so later tests aren't affected by the bound user.
+    set_session_id('', None)
+
+
+def test_owner_allowed(monkeypatch) -> None:
+    """The rightful owner still gets rows when the bound user matches."""
+    set_session_id('s1', 'alice')
+    monkeypatch.setenv('CHAT_SESSIONS_TABLE', 'chat-sessions')
+
+    item = {
+        'sessionId': 's1',
+        'userId': 'alice',
+        'messages': [
+            {'role': 'assistant', 'turnId': 't1',
+             'totals': {'sql': 'SELECT 1', 'columns': ['id'], 'rows': [['1']],
+                        'rowCount': 1}},
+        ],
+    }
+    with patch.object(prior_results.boto3, 'resource',
+                      return_value=_fake_resource_with_item(item)):
+        result = json.loads(_call(turn_id='t1'))
+
+    assert result['rows'] == [['1']]
+    set_session_id('', None)
+
+
+def test_no_bound_user_skips_ownership_check(monkeypatch) -> None:
+    """Backward-compat: with no user bound, the ownership gate is skipped."""
+    set_session_id('s1')  # no user_id
+    monkeypatch.setenv('CHAT_SESSIONS_TABLE', 'chat-sessions')
+
+    item = {
+        'sessionId': 's1',
+        'userId': 'bob',
+        'messages': [
+            {'role': 'assistant', 'turnId': 't1',
+             'totals': {'sql': 'q', 'columns': ['id'], 'rows': [['1']],
+                        'rowCount': 1}},
+        ],
+    }
+    with patch.object(prior_results.boto3, 'resource',
+                      return_value=_fake_resource_with_item(item)):
+        result = json.loads(_call(turn_id='t1'))
+
+    assert result['rows'] == [['1']]
+
+
 def test_returns_error_when_turn_has_no_totals(monkeypatch) -> None:
     set_session_id('s1')
     monkeypatch.setenv('CHAT_SESSIONS_TABLE', 'chat-sessions')

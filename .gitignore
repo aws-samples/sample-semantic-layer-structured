@@ -27,14 +27,10 @@ MANIFEST
 venv/
 venv
 .venv/
-.venv-eval/
 env/
 ENV/
 virtualenv/
 .env/
-
-# Red team breach transcripts (real, unredacted) — keep the dir, not the output
-tests/eval/red_team/reports/*_breaches.json
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -104,6 +100,7 @@ cdk/cdk-outputs-agentcore.json
 .env.production
 .env.production.local
 *.env
+.env.*
 
 # AWS Credentials (NEVER commit these)
 .aws/
@@ -164,6 +161,21 @@ docs/workshop*
 # *.db
 # *.sqlite
 
+# Benchmark datasets + generated ingest outputs (downloaded data, per-benchmark
+# JSONL, and manifests are large / reproducible artifacts — never committed).
+# The ingestion runbook lives at scripts/benchmarks/README.md (tracked).
+# Written as "/**" plus a directory re-include rather than "data/eval/benchmarks/"
+# because git CANNOT re-include a file whose parent DIRECTORY is excluded — it
+# never descends into it, so the gold_validity.json negation below would be dead.
+data/eval/benchmarks/**
+!data/eval/benchmarks/*/
+# EXCEPT the gold-validity sidecars. These are small (single-digit KB) EVIDENCE
+# files, not bulk data: notebook 12's coverage gate reads them to exclude rows
+# whose gold SQL cannot run on Athena. Untracked, a fresh clone silently falls
+# back to the raw denominator and reports 89.4% coverage instead of 99.55%.
+# They also cannot be regenerated offline — the probe needs live Athena.
+!data/eval/benchmarks/*/gold_validity.json
+
 # Large Files
 *.zip
 *.tar
@@ -210,6 +222,7 @@ docs/security_reports/
 # Local configuration
 config.local.json
 local.config.js
+.mcp.json
 
 # Generated files
 generated/
@@ -227,3 +240,9 @@ generated/
 # Local Claude project instructions (not shared)
 CLAUDE.md
 data/eval/results/.resume_*.json
+.omni/
+.claude/
+.github/
+.cursor/
+.kiro/
+.agents/

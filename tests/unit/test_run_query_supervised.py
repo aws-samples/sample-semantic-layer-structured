@@ -7,6 +7,7 @@ This asserts that wiring and the byte-compatible response shape.
 """
 from unittest.mock import MagicMock
 
+from agents.shared.metric_lookup import MetricMatch
 from agents.shared.tier2_graph import WorkflowContext
 
 
@@ -30,7 +31,7 @@ def test_run_query_routes_into_tier2_workflow(monkeypatch):
             disambiguation={"customer": {"iri": "ex:Customer"}},
         )
 
-    monkeypatch.setattr(main, 'tier1_lookup', lambda **_: None)
+    monkeypatch.setattr(main, 'tier1_lookup', lambda **_: MetricMatch())
     monkeypatch.setattr(main, 'tier2_resolve', fake_tier2_resolve)
     monkeypatch.setattr(main, 'get_latest_metadata_item',
                         lambda _id: {'name': 'demo', 'namespace': 'ns-x'})

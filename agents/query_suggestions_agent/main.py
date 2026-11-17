@@ -20,7 +20,12 @@ from strands.models import BedrockModel
 from boto3.dynamodb.conditions import Key
 from typing import Dict, Any, Optional
 
-from .token_manager import count_tokens
+try:
+    from agents.shared.token_manager import count_tokens
+    from agents.shared.boto_session import get_boto_session
+except ImportError:
+    from shared.token_manager import count_tokens  # type: ignore
+    from shared.boto_session import get_boto_session  # type: ignore
 from .query_prompts import SYSTEM_PROMPT, QUERY_MODEL_ID
 try:
     from agents.shared.advisory import build_advisory_answer
@@ -53,14 +58,8 @@ def metrics_table():
     return dynamodb.Table(os.environ.get('METRICS_TABLE', 'semantic-layer-metrics'))
 
 
-_boto_session: Optional[boto3.Session] = None
-
-
-def get_boto_session() -> boto3.Session:
-    global _boto_session
-    if _boto_session is None:
-        _boto_session = boto3.Session(region_name=os.getenv('AWS_REGION', 'us-east-1'))
-    return _boto_session
+# boto3 session management (get_boto_session) is provided by
+# agents.shared.boto_session, imported above.
 
 
 def get_latest_metadata_item(id: str) -> Optional[dict]:

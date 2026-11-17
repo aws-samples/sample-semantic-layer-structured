@@ -32,7 +32,7 @@ def test_1_imports():
         )
         print("✅ Graph-surface functions imported successfully")
 
-        from ontology_query_agent.token_manager import count_tokens
+        from shared.token_manager import count_tokens
         token_count = count_tokens("Hello world")
         print(f"✅ token_manager works: {token_count} tokens")
 

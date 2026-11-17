@@ -44,9 +44,13 @@ import java.util.logging.Logger;
  *       {@code source} {@code SELECT * FROM db.table}.</li>
  *   <li>Columns are the BARE column name (last dotted segment of {@code "table.column"})
  *       — the same bare names the OBDA {@code target} references. The OBDA subject
- *       template's column (chosen by {@link OntologyMappings#subjectColumnFor}) is one
- *       of these mapped columns, so it is always present here too — no synthetic column
+ *       template's columns (from {@link OntologyMappings#subjectColumnsFor}) are all
+ *       mapped columns, so they are always present here too — no synthetic column
  *       is added.</li>
+ *   <li>A {@code uniqueConstraint} is emitted ONLY for a key the ontology DECLARES
+ *       ({@code mappings[classIri].primaryKey}), never for a name-heuristic subject.
+ *       The constraint licenses Ontop to drop de-duplication, and the old
+ *       name-pattern rule asserted it falsely on many-side FK columns.</li>
  * </ul>
  */
 public class DbMetadataGenerator {
@@ -92,8 +96,7 @@ public class DbMetadataGenerator {
             // Stay consistent with the OBDA generator: a class with no mapped property
             // columns has no real subject column, so the OBDA generator skips it. Skip
             // it here too so the relation set matches the mapping set exactly.
-            final String subjectColumn = OntologyMappings.subjectColumnFor(ontologyJson, classIri);
-            if (subjectColumn == null) {
+            if (OntologyMappings.subjectColumnsFor(ontologyJson, classIri).isEmpty()) {
                 LOG.warning("Skipping class with no mapped property columns (no subject column): "
                     + classIri);
                 continue;
@@ -157,22 +160,35 @@ public class DbMetadataGenerator {
         // No synthetic column is added: the OBDA subject template's column is one of the
         // mapped property columns above, so it is already declared on this relation.
 
-        // Relation name is the 2-part [db, table] split of the dotted value, with
-        // NO catalog — matching the OBDA "SELECT * FROM db.table" source exactly.
+        // Relation name is the 2-part [db, table] split of the dotted value, with NO
+        // catalog — matching the OBDA source exactly. Each segment is QUOTED, because
+        // the OBDA source is now `SELECT * FROM "db"."table"` (quoting is required so a
+        // reserved-word table name parses at all — see
+        // OntologyMappings.quoteDottedTable). Ontop builds a RelationID from BOTH sides
+        // and case-FOLDS only UNQUOTED identifiers, so quoting one side alone
+        // desynchronizes them: quoted `"coverage"` never matches folded `COVERAGE`, and
+        // reformulator construction fails with `The relation "normalized"."coverage" is
+        // unknown to the JsonSerializedMetadataProvider`. Quoting both sides keeps the
+        // two IDs identical.
         final Map<String, Object> relation = new LinkedHashMap<>();
-        relation.put("name", List.of(OntologyMappings.splitDottedTable(table)));
+        relation.put("name", quotedNameSegments(table));
         relation.put("columns", columns);
-        // Declare a uniqueConstraint on the subject column when it is key-like
-        // (id / *_id / pk). This lets Ontop treat the column as unique and DROP
-        // the defensive DISTINCT + IS-NOT-NULL it otherwise wraps a class-level
-        // COUNT in — which undercounts on a non-null unique key. A non-key
-        // (preference-3) subject stays unconstrained (correctly conservative,
-        // since duplicate/NULL values would genuinely collapse). (todo item 3)
-        final String subjectColumn = OntologyMappings.subjectColumnFor(ontologyJson, classIri);
-        if (OntologyMappings.isKeyLikeSubject(subjectColumn)) {
+        // Declare a uniqueConstraint ONLY for a key the ontology actually DECLARES.
+        // The constraint lets Ontop treat the columns as unique and DROP the defensive
+        // DISTINCT + IS-NOT-NULL it otherwise wraps a class-level COUNT in (which
+        // undercounts on a non-null unique key). But that is a licence to remove
+        // de-duplication, so claiming it from a NAME PATTERN is unsound: the previous rule
+        // declared every `*_id` subject unique and was measurably FALSE on many-side FK
+        // columns (`trans.account_id`, `disp.account_id`, `order.account_id` all repeat),
+        // telling Ontop to skip de-duplication that the data genuinely requires. A
+        // heuristic (guessed) subject now stays unconstrained — correctly conservative.
+        final List<String> keyColumns =
+            OntologyMappings.declaredKeyColumnsFor(ontologyJson, classIri);
+        if (!keyColumns.isEmpty()) {
             final Map<String, Object> uniqueConstraint = new LinkedHashMap<>();
-            uniqueConstraint.put("name", subjectColumn + "_pk");
-            uniqueConstraint.put("determinants", List.of(subjectColumn));
+            uniqueConstraint.put("name", String.join("_", keyColumns) + "_pk");
+            // A composite declared key constrains the COMBINATION, not each column.
+            uniqueConstraint.put("determinants", List.copyOf(keyColumns));
             relation.put("uniqueConstraints", List.of(uniqueConstraint));
         } else {
             relation.put("uniqueConstraints", List.of());
@@ -183,6 +199,26 @@ public class DbMetadataGenerator {
     }
 
     /**
+     * Split a dotted {@code "database.table"} value into individually DOUBLE-QUOTED
+     * name segments for the db-metadata {@code name} array.
+     *
+     * <p>These must match the OBDA {@code source} identifier exactly: Ontop derives a
+     * RelationID from each and case-folds only UNQUOTED identifiers, so both sides must
+     * be quoted or neither. See the call site for the full failure mode.
+     *
+     * @param dottedTable the dotted mapping value, e.g. {@code "bird_card_games.sets"}.
+     * @return the quoted segments, e.g. {@code ["\"bird_card_games\"", "\"sets\""]}.
+     */
+    private List<String> quotedNameSegments(final String dottedTable) {
+        final List<String> segments = new java.util.ArrayList<>();
+        for (final String segment : OntologyMappings.splitDottedTable(dottedTable)) {
+            // Escape any embedded double quote by doubling it, per SQL identifier rules.
+            segments.add('"' + segment.replace("\"", "\"\"") + '"');
+        }
+        return segments;
+    }
+
+    /**
      * Build one column descriptor.
      *
      * @param name the BARE column name (no dotted prefix).
@@ -190,6 +226,10 @@ public class DbMetadataGenerator {
      */
     private Map<String, Object> buildColumn(final String name, final String datatype) {
         final Map<String, Object> column = new LinkedHashMap<>();
+        // Column names stay UNQUOTED. Only the RELATION name needs quoting (to agree
+        // with the quoted OBDA source identifier); Ontop resolves attributes within an
+        // already-resolved relation, and a quoted column name here is read as a
+        // different attribute than the `SELECT *` expansion produces.
         column.put("name", name);
         column.put("datatype", datatype == null || datatype.isBlank() ? DEFAULT_DATATYPE : datatype);
         column.put("isNullable", true);
@@ -198,26 +238,54 @@ public class DbMetadataGenerator {
 
     /**
      * Map a property's {@code xsd:range} to the SQL datatype Ontop should believe the
-     * column has. Only BOOLEAN is promoted away from the {@code VARCHAR} default: a
-     * physically-boolean Athena column declared VARCHAR makes Ontop generate string
-     * functions (lower/STR) over a boolean, which Athena rejects (gt-08). Numeric/date
-     * casts are handled explicitly in the SPARQL (xsd:decimal etc.), so VARCHAR stays
-     * the safe default for everything else (Athena exposes most columns as strings at
-     * the JDBC layer). An {@code owl:ObjectProperty} keeps VARCHAR — its column value is
-     * templated into an IRI, never compared as a typed literal.
+     * column has. BOOLEAN and NUMERIC ranges are promoted away from the {@code VARCHAR}
+     * default; everything else stays VARCHAR.
+     *
+     * <p>BOOLEAN: a physically-boolean Athena column declared VARCHAR makes Ontop
+     * generate string functions (lower/STR) over a boolean, which Athena rejects
+     * (gt-08).
+     *
+     * <p>NUMERIC: the benchmark tables' numeric columns are physically numeric in
+     * Athena/Glue ({@code double}/{@code bigint}/…), and the ontology generator maps
+     * them to numeric xsd ranges (#double/#integer/#long/#decimal/#float). Declaring
+     * them VARCHAR forced the SPARQL generator to wrap them in {@code xsd:decimal(?x)}
+     * casts, which Ontop's serializer then rejects over a VARCHAR-declared column
+     * ({@code SQLSerializationException} — the dominant BIRD/CWD failure). Declaring
+     * the REAL numeric SQL type lets Ontop reformulate {@code SUM/AVG/COUNT} natively.
+     * This is safe: the declared type matches the physical Athena column type.
+     *
+     * <p>An {@code owl:ObjectProperty} keeps VARCHAR — its column value is templated
+     * into an IRI, never compared as a typed literal.
      *
      * @param ontologyJson the full ontology document.
      * @param propIri      the property whose backing column type we are declaring.
-     * @return {@code "BOOLEAN"} for an {@code xsd:boolean}-ranged datatype property,
-     *         otherwise {@code "VARCHAR"}.
+     * @return the SQL datatype Ontop should believe the backing column has.
      */
     private String sqlDatatypeFor(final Map<String, Object> ontologyJson, final String propIri) {
         if (OntologyMappings.isObjectProperty(ontologyJson, propIri)) {
             return DEFAULT_DATATYPE;
         }
         final String range = OntologyMappings.rangeFor(ontologyJson, propIri);
-        if (range != null && range.endsWith("#boolean")) {
+        if (range == null) {
+            return DEFAULT_DATATYPE;
+        }
+        if (range.endsWith("#boolean")) {
             return "BOOLEAN";
+        }
+        // Numeric xsd ranges → real SQL numeric types (match the physical Athena
+        // column) so Ontop aggregations reformulate instead of failing on a cast.
+        if (range.endsWith("#integer") || range.endsWith("#int")
+                || range.endsWith("#short") || range.endsWith("#byte")) {
+            return "INTEGER";
+        }
+        if (range.endsWith("#long")) {
+            return "BIGINT";
+        }
+        if (range.endsWith("#decimal")) {
+            return "DECIMAL";
+        }
+        if (range.endsWith("#double") || range.endsWith("#float")) {
+            return "DOUBLE";
         }
         return DEFAULT_DATATYPE;
     }

@@ -189,6 +189,20 @@ def test_on_event_create_deletes_nothing(handler):
     assert client.deleted_config_ids == []
 
 
+@pytest.fixture(autouse=True)
+def _stub_ensure_log_group(handler, monkeypatch):
+    """Stub ``_ensure_log_group`` to a no-op for the is_complete/create tests.
+
+    ``_create_config`` pre-creates the runtime's CloudWatch log group via a real
+    ``boto3.client('logs').create_log_group`` call. These tests inject a fake
+    bedrock-agentcore-control client to exercise the create/conflict/waiter logic,
+    but do NOT mock the logs client, so without this stub the log-group call hits
+    real AWS and fails with NoCredentialsError in CI. Log-group creation is a
+    separate concern (its own idempotency is not what these tests pin), so no-op it.
+    """
+    monkeypatch.setattr(handler, "_ensure_log_group", lambda *_a, **_k: None)
+
+
 def test_is_complete_delete_is_immediately_complete(handler):
     """is_complete(Delete) completes at once — on_event already issued the delete."""
     client = _FakeClient()
